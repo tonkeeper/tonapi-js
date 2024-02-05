@@ -42,6 +42,7 @@
     "@tonapi/client": ">=0.0.1-beta.0"
   },
   "devDependencies": {
+    "@ton/core": "^0.54.0",
     "@types/node": "^20.11.16",
     "@tonapi/client": "*"
   }
