@@ -1,8 +1,8 @@
 const path = require('path');
 const fs = require('fs');
 
-var template = 'export declare class Api<SecurityDataType extends unknown> {';
-var templateCorrect = 'export declare class Api<SecurityDataType extends unknown = unknown> {';
+var template = 'declare class Api<SecurityDataType extends unknown> {';
+var templateCorrect = 'declare class Api<SecurityDataType extends unknown = unknown> {';
 
 var filePath = path.resolve(process.cwd(), './dist/index.d.ts');
 var fileContent = fs.readFileSync(filePath).toString();
