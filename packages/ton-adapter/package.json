@@ -1,0 +1,48 @@
+{
+  "name": "@tonapi/ton-adapter",
+  "version": "0.0.1-beta.0",
+  "description": "Tonapi adapter for @ton/ton",
+  "files": ["dist"],
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "import": "./dist/index.mjs",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup && npx rimraf ./dist/index.d.mts"
+  },
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/startfellows/tonapi-sdk-js/issues"
+  },
+  "homepage": "https://github.com/startfellows/tonapi-sdk-js#readme",
+  "repository": "https://github.com/startfellows/tonapi-sdk-js",
+  "keywords": [
+    "TON",
+    "Blockchain",
+    "API"
+  ],
+  "author": "Ton Apps",
+  "authors": [
+    {
+      "name": "vlkmx"
+    },
+    {
+      "name": "siandreev"
+    }
+  ],
+  "peerDependencies": {
+    "@ton/core": ">=0.54.0",
+    "@tonapi/client": ">=0.0.1-beta.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.16",
+    "@tonapi/client": "*"
+  }
+}
