@@ -1,51 +1,20 @@
-# tonapi-sdk-js
+# TonAPI SDK
 
-## Overview
-This SDK, automatically generated, facilitates access to endpoints provided by tonapi.io. For detailed API information, visit the [swagger documentation](https://docs.tonconsole.com/tonapi).
+[Learn more about the TonApi](https://tonapi.io)
 
-To utilize tonapi, please set up an [account](https://tonconsole.com/).
+This repository contains JavaScript SDK packages related to the TonApi
 
-## Installation
+Note, that you need to set up an [account](https://tonconsole.com/) to utilize TonApi.
 
-Install the package using npm or yarn:
+## @ton-api/client
+This SDK, automatically generated, facilitates access to endpoints provided by tonapi.io
 
-```sh
-npm install tonapi-sdk-js
-# or
-yarn add tonapi-sdk-js
-```
+- [github](./packages/client)
+- [npm](https://www.npmjs.com/package/@ton-api/client)
 
-## Usage
 
-Below is an example of how to use the SDK in your JavaScript project:
+## @ton-api/ton-adapter
+This is adapter allows to utilize [TonApi client](https://www.npmjs.com/package/@ton-api/client) with [@ton/ton](https://www.npmjs.com/package/@ton/ton) and [@ton/core](https://www.npmjs.com/package/@ton/core) libraries
 
-```js
-// client.js
-
-import { HttpClient, Api } from 'tonapi-sdk-js';
-
-// Configure the HTTP client with your host and token
-const httpClient = new HttpClient({
-    baseUrl: 'https://tonapi.io/',
-    baseApiParams: {
-        headers: {
-            Authorization: `Bearer ${YOUR_TOKEN}`,
-            'Content-type': 'application/json'
-        }
-    }
-});
-
-// Initialize the API client
-const client = new Api(httpClient);
-
-// Fetch a typed array of account events
-const events = await client.accounts.getAccountEvents(address, { limit: 50 });
-
-// Retrieve an NFT collection
-const collection = await client.nft.getNftCollection(address);
-
-// Obtain information about a specific jetton
-const jetton = await client.jettons.getJettonInfo(address);
-```
-
-For those upgrading from v0 to v1, please refer to [the migration guide](/migration.md) for detailed instructions.
+- [github](./packages/ton-adapter)
+- [npm](https://www.npmjs.com/package/@ton-api/ton-adapter)
