@@ -20,14 +20,18 @@
   },
   "license": "GPL-3.0",
   "bugs": {
-    "url": "https://github.com/startfellows/tonapi-sdk-js/issues"
+    "url": "https://github.com/tonkeeper/tonapi-js/issues"
   },
-  "homepage": "https://github.com/startfellows/tonapi-sdk-js#readme",
-  "repository": "https://github.com/startfellows/tonapi-sdk-js",
+  "homepage": "https://github.com/tonkeeper/tonapi-js/blob/main/packages/client#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tonkeeper/tonapi-js.git"
+  },
   "keywords": [
     "TON",
     "Blockchain",
-    "API"
+    "API",
+    "TonApi"
   ],
   "author": "Ton Apps",
   "authors": [
