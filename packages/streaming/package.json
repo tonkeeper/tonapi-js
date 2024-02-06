@@ -1,0 +1,48 @@
+{
+  "name": "@ton-api/streaming",
+  "version": "0.0.1-beta.0",
+  "description": "Realtime streaming SDK for tonapi.io",
+  "files": ["dist"],
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "import": "./dist/index.mjs",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+  },
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/tonkeeper/tonapi-js/issues"
+  },
+  "homepage": "https://github.com/tonkeeper/tonapi-js/blob/main/packages/streaming#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tonkeeper/tonapi-js.git"
+  },
+  "keywords": [
+    "TON",
+    "Blockchain",
+    "API",
+    "TonApi",
+    "Realtime",
+    "Streaming"
+  ],
+  "author": "Ton Apps",
+  "authors": [
+    {
+      "name": "vlkmx"
+    },
+    {
+      "name": "siandreev"
+    }
+  ],
+  "dependencies": {
+    "ws": "^8.16.0"
+  }
+}
