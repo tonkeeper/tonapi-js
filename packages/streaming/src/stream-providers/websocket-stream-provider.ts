@@ -5,7 +5,7 @@ import {
     JsonRpcMessage
 } from '../models';
 import { StreamProvider, StreamSubscription } from './stream-provider';
-import { ErrorEvent, MessageEvent, WebSocket } from 'ws';
+import '@ton-api/isomorphic-ws';
 
 export class WebsocketStreamProvider implements StreamProvider {
     private socket: WebSocket | undefined;
@@ -76,7 +76,7 @@ export class WebsocketStreamProvider implements StreamProvider {
         };
     }
 
-    private errorsHandler(e: ErrorEvent): void {
+    private errorsHandler(e: Event): void {
         if (!this.isClosed) {
             if (this.socket?.readyState === EventSource.CLOSED) {
                 this.socket.close();

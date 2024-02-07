@@ -46,11 +46,10 @@
     }
   ],
   "dependencies": {
-    "ws": "^8.16.0"
+    "@ton-api/isomorphic-ws": "^0.0.1"
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",
-    "@types/ws": "^8.5.10",
     "dotenv": "^16.4.1",
     "jest": "^29.7.0",
     "ts-jest": "^29.1.2"
