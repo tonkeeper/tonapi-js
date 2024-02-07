@@ -5,6 +5,7 @@ import {
     JsonRpcMessage
 } from '../models';
 import { StreamProvider, StreamSubscription } from './stream-provider';
+import { ErrorEvent, MessageEvent, WebSocket } from 'ws';
 
 export class WebsocketStreamProvider implements StreamProvider {
     private socket: WebSocket | undefined;
@@ -75,7 +76,7 @@ export class WebsocketStreamProvider implements StreamProvider {
         };
     }
 
-    private errorsHandler(e: Event): void {
+    private errorsHandler(e: ErrorEvent): void {
         if (!this.isClosed) {
             if (this.socket?.readyState === EventSource.CLOSED) {
                 this.socket.close();
@@ -90,12 +91,12 @@ export class WebsocketStreamProvider implements StreamProvider {
         }
     }
 
-    private async messagesHandler(e: MessageEvent<string>): Promise<void> {
+    private async messagesHandler(e: MessageEvent): Promise<void> {
         if (!this.isClosed) {
             let incomingEvent: JsonRpcMessage;
 
             try {
-                incomingEvent = JSON.parse(e.data);
+                incomingEvent = JSON.parse(e.data as string);
                 if (!incomingEvent || typeof incomingEvent !== 'object') {
                     throw new Error('Rpc message must be an object');
                 }

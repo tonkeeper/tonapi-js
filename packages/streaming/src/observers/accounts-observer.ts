@@ -4,32 +4,34 @@ import { Observer } from './observer';
 export type AccountsObserverTrigger = { account: string; operations?: string[] };
 
 export class AccountsObserver extends Observer<AccountsObserverTrigger, AccountEvent> {
-    protected override afterSubscribed({ triggers }: { triggers: AccountsObserverTrigger[] }) {
+    protected override afterSubscribed(subscriber: { triggers: AccountsObserverTrigger[] }) {
         const triggersToAdd: AccountsObserverTrigger[] = [];
 
-        triggers.forEach(trigger => {
-            this.subscribers.forEach(sub => {
-                sub.triggers.forEach(subTrigger => {
-                    if (trigger.account === subTrigger.account) {
-                        if (!subTrigger.operations?.length) {
-                            return;
-                        }
+        subscriber.triggers.forEach(trigger => {
+            this.subscribers
+                .filter(s => s !== subscriber)
+                .forEach(sub => {
+                    sub.triggers.forEach(subTrigger => {
+                        if (trigger.account === subTrigger.account) {
+                            if (!subTrigger.operations?.length) {
+                                return;
+                            }
 
-                        const isForAllOps = !trigger.operations?.length;
-                        const isNotIncluded = trigger.operations!.some(
-                            op => !subTrigger.operations!.includes(op)
-                        );
+                            const isForAllOps = !trigger.operations?.length;
+                            const isNotIncluded = trigger.operations!.some(
+                                op => !subTrigger.operations!.includes(op)
+                            );
 
-                        if (isForAllOps || isNotIncluded) {
-                            triggersToAdd.push(trigger);
+                            if (isForAllOps || isNotIncluded) {
+                                triggersToAdd.push(trigger);
+                            }
                         }
-                    }
+                    });
                 });
-            });
         });
 
         if (triggersToAdd.length) {
-            const params = triggers.map(t => {
+            const params = subscriber.triggers.map(t => {
                 if (!t.operations?.length) {
                     return t.account;
                 }

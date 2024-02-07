@@ -17,7 +17,7 @@ export abstract class Observer<T, E> {
         }
 
         const subscriber = { callback, triggers };
-        this.subscribers = this.subscribers.concat({ callback, triggers });
+        this.subscribers = this.subscribers.concat(subscriber);
 
         if (!this.socketSubscription) {
             this.socketSubscription = this.stream.subscribe(this.onEvent);

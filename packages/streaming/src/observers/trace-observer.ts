@@ -2,9 +2,9 @@ import { TraceEvent, JsonRpcEvent, TraceEventRpc } from '../models';
 import { Observer } from './observer';
 
 export class TraceObserver extends Observer<string, TraceEvent> {
-    protected override afterSubscribed({ triggers }: { triggers: string[] }) {
-        const accountsToAdd = triggers.filter(t =>
-            this.subscribers.every(s => !s.triggers.includes(t))
+    protected override afterSubscribed(subscriber: { triggers: string[] }) {
+        const accountsToAdd = subscriber.triggers.filter(t =>
+            this.subscribers.filter(s => s !== subscriber).every(s => !s.triggers.includes(t))
         );
 
         if (accountsToAdd.length) {

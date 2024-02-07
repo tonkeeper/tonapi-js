@@ -14,14 +14,14 @@ export class MempoolObserver extends Observer<string, MempoolEvent> {
         return super.subscribe(accounts, callback);
     }
 
-    protected override afterSubscribed({ triggers }: { triggers: string[] }) {
-        if (triggers.includes('all')) {
+    protected override afterSubscribed(subscriber: { triggers: string[] }) {
+        if (subscriber.triggers.includes('all')) {
             this.send('subscribe_mempool');
             return;
         }
 
-        const accountsToAdd = triggers.filter(t =>
-            this.subscribers.every(s => !s.triggers.includes(t))
+        const accountsToAdd = subscriber.triggers.filter(t =>
+            this.subscribers.filter(s => s !== subscriber).every(s => !s.triggers.includes(t))
         );
 
         if (accountsToAdd.length) {

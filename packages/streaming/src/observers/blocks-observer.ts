@@ -6,15 +6,17 @@ export class BlocksObserver extends Observer<number, BlockEvent> {
         return super.subscribe(workchain, callback);
     }
 
-    protected override afterSubscribed({ triggers }: { triggers: number[] }) {
-        if (triggers.length !== 1) {
+    protected override afterSubscribed(subscriber: { triggers: number[] }) {
+        if (subscriber.triggers.length !== 1) {
             throw new Error('BlocksObserver supports only one trigger-workchain');
         }
-        const wc = triggers[0]!;
+        const wc = subscriber.triggers[0]!;
 
-        const needAddWc = this.subscribers.every(s => !s.triggers.includes(wc));
+        const needAddWc = this.subscribers
+            .filter(s => s !== subscriber)
+            .every(s => !s.triggers.includes(wc));
         if (needAddWc) {
-            this.send('subscribe_block', `workchain=${wc}`);
+            this.send('subscribe_block', [`workchain=${wc}`]);
         }
     }
 
@@ -26,7 +28,7 @@ export class BlocksObserver extends Observer<number, BlockEvent> {
         const needRemoveWc = this.subscribers.every(s => !s.triggers.includes(wc));
 
         if (needRemoveWc) {
-            this.send('unsubscribe_block', `workchain=${wc}`);
+            this.send('unsubscribe_block', [`workchain=${wc}`]);
         }
     }
 
