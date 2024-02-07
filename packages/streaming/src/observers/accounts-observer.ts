@@ -5,16 +5,14 @@ export type AccountsObserverTrigger = { account: string; operations?: string[] }
 
 export class AccountsObserver extends Observer<AccountsObserverTrigger, AccountEvent> {
     protected override afterSubscribed(subscriber: { triggers: AccountsObserverTrigger[] }) {
-        const triggersToAdd: AccountsObserverTrigger[] = [];
-
-        subscriber.triggers.forEach(trigger => {
+        const triggersToAdd = subscriber.triggers.filter(trigger =>
             this.subscribers
                 .filter(s => s !== subscriber)
-                .forEach(sub => {
-                    sub.triggers.forEach(subTrigger => {
+                .every(sub => {
+                    sub.triggers.every(subTrigger => {
                         if (trigger.account === subTrigger.account) {
                             if (!subTrigger.operations?.length) {
-                                return;
+                                return false;
                             }
 
                             const isForAllOps = !trigger.operations?.length;
@@ -22,13 +20,13 @@ export class AccountsObserver extends Observer<AccountsObserverTrigger, AccountE
                                 op => !subTrigger.operations!.includes(op)
                             );
 
-                            if (isForAllOps || isNotIncluded) {
-                                triggersToAdd.push(trigger);
-                            }
+                            return isForAllOps || isNotIncluded;
                         }
+
+                        return true;
                     });
-                });
-        });
+                })
+        );
 
         if (triggersToAdd.length) {
             const params = subscriber.triggers.map(t => {
@@ -68,6 +66,6 @@ export class AccountsObserver extends Observer<AccountsObserverTrigger, AccountE
             return true;
         }
 
-        return false; // TODO check op;
+        return false; // TODO check op, not yet supported by tonapi;
     }
 }
