@@ -1,9 +1,0 @@
-{
-  "mode": "pre",
-  "tag": "next",
-  "initialVersions": {
-    "@tonapi/client": "0.0.1-beta.0",
-    "@tonapi/ton-adapter": "0.0.1-beta.0"
-  },
-  "changesets": []
-}
