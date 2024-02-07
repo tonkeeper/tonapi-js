@@ -2,11 +2,11 @@ import {
     isJsonRpcResponse,
     isJsonRpcResponseSuccess,
     JsonRpcEvent,
-    JsonRpcMessage,
-    StreamSubscription
-} from './models';
+    JsonRpcMessage
+} from '../models';
+import { StreamProvider, StreamSubscription } from './stream-provider';
 
-export class Stream {
+export class WebsocketStreamProvider implements StreamProvider {
     private socket: WebSocket | undefined;
 
     private isClosed = false;
@@ -47,7 +47,7 @@ export class Stream {
         });
     }
 
-    public close(): void {
+    public async close(): Promise<void> {
         this.isClosed = true;
         this.socket?.close();
     }

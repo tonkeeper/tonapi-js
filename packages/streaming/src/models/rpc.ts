@@ -1,7 +1,7 @@
 export type JsonRpcRequest = {
     id: number | string;
     method: string;
-    params: Record<string, unknown> | unknown[];
+    params: Record<string, unknown> | unknown[] | string;
 };
 
 export type JsonRpcResponseSuccess = {

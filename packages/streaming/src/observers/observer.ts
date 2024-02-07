@@ -1,5 +1,5 @@
-import { Stream } from '../stream';
 import { JsonRpcEvent } from '../models';
+import { StreamProvider } from '../stream-providers';
 
 export abstract class Observer<T, E> {
     protected subscribers: {
@@ -9,7 +9,7 @@ export abstract class Observer<T, E> {
 
     private socketSubscription: (() => void) | undefined;
 
-    constructor(private readonly stream: Stream) {}
+    constructor(private readonly stream: StreamProvider) {}
 
     public subscribe(triggers: T[] | T, callback: (event: E) => void) {
         if (!Array.isArray(triggers)) {
@@ -36,7 +36,7 @@ export abstract class Observer<T, E> {
         };
     }
 
-    protected send(...args: Parameters<Stream['send']>) {
+    protected send(...args: Parameters<StreamProvider['send']>) {
         return this.stream.send(...args);
     }
 
