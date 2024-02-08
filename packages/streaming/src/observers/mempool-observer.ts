@@ -2,6 +2,8 @@ import { JsonRpcEvent, MempoolEvent, MempoolEventRpc } from '../models';
 import { Observer } from './observer';
 
 export class MempoolObserver extends Observer<string, MempoolEvent> {
+    private needToRemoveAllSubscription = false;
+
     /**
      *
      * @param accounts list of accounts to watch (in raw-form) or a single account (in raw-form) or 'all' to watch all the accounts
@@ -34,7 +36,16 @@ export class MempoolObserver extends Observer<string, MempoolEvent> {
             this.subscribers.every(s => !s.triggers.includes(t))
         );
 
-        if (accountsToRemove.includes('all') && !this.subscribers.length) {
+        if (accountsToRemove.includes('all')) {
+            if (!this.subscribers.length) {
+                this.send('unsubscribe_mempool');
+                return;
+            } else {
+                this.needToRemoveAllSubscription = true;
+            }
+        }
+
+        if (!this.subscribers.length && this.needToRemoveAllSubscription) {
             this.send('unsubscribe_mempool');
             return;
         }
@@ -54,8 +65,12 @@ export class MempoolObserver extends Observer<string, MempoolEvent> {
     }
 
     protected override tryTrigger(trigger: string, event: MempoolEvent) {
+        if (trigger === 'all') {
+            return true;
+        }
+
         if (!event.involved_accounts) {
-            return trigger === 'all';
+            return false;
         }
 
         return event.involved_accounts.some(acc => acc.includes(trigger));
