@@ -1,4 +1,6 @@
-# TonAPI SDK adapter for @ton/core
+# @ton-api/ton-adapter
+
+⚠️ Note that the package is in public beta right now.
 
 ## Overview
 This is adapter allows to utilize [TonApi client](https://www.npmjs.com/package/@ton-api/client) with [@ton/ton](https://www.npmjs.com/package/@ton/ton) and [@ton/core](https://www.npmjs.com/package/@ton/core) libraries

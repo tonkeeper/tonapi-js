@@ -1,6 +1,6 @@
 {
   "name": "@ton-api/ton-adapter",
-  "version": "0.0.1-beta.1",
+  "version": "0.0.1-beta.2",
   "description": "TonApi adapter for @ton/ton",
   "files": ["dist"],
   "main": "./dist/index.js",
