@@ -17,6 +17,7 @@
     }
   },
   "scripts": {
+    "build": "tsup && npx rimraf ./dist/index.d.mts",
     "test": "jest"
   },
   "license": "GPL-3.0",
@@ -38,9 +39,6 @@
   ],
   "author": "Ton Apps",
   "authors": [
-    {
-      "name": "vlkmx"
-    },
     {
       "name": "siandreev"
     }
