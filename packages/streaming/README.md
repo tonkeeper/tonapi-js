@@ -1,5 +1,7 @@
 # @ton-api/streaming
 
+⚠️ Note that the package is in public beta right now.
+
 ## TonAPI streaming api SDK
 
 [Learn more about the streaming api](https://docs.tonconsole.com/tonapi/streaming-api)
