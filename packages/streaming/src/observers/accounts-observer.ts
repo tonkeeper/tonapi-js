@@ -63,9 +63,13 @@ export class AccountsObserver extends Observer<AccountsObserverTrigger, AccountE
 
     protected override tryTrigger(trigger: AccountsObserverTrigger, event: AccountEvent) {
         if (event.account_id === trigger.account) {
-            return true;
+            if (event.operation === undefined) {
+                return true;
+            }
+
+            return !!trigger.operations?.includes(event.operation);
         }
 
-        return false; // TODO check op, not yet supported by tonapi;
+        return false;
     }
 }

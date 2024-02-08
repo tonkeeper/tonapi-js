@@ -13,8 +13,8 @@ Use it to track transactions and accounts changes.
 ## Getting started
 Install package `npm i @ton-api/streaming`
 
-environment
 
+### Subscribe to new blocks
 ```ts
 import { BlocksObserver, WebsocketStreamProvider,BlockEvent } from '@ton-api/streaming';
 
