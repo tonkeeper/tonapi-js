@@ -1,4 +1,4 @@
-# TonAPI SDK http client
+# @ton-api/client
 
 ## Overview
 This SDK, automatically generated, facilitates access to endpoints provided by tonapi.io. For detailed API information, visit the [documentation](https://docs.tonconsole.com/tonapi).
