@@ -192,7 +192,10 @@ function TvmStackRecordToTupleItem(record: TvmStackRecord): TupleItem {
         case 'nan':
             return { type: 'nan' };
         case 'cell':
-            return { type: 'cell', cell: Cell.fromBase64(record.cell!) };
+            return {
+                type: 'cell',
+                cell: Cell.fromBoc(Buffer.from(record.cell!, 'hex'))[0]!
+            };
         case 'null':
             return { type: 'null' };
         case 'tuple':
