@@ -211,9 +211,10 @@ function TupleItemToTonapiString(item: TupleItem): string {
         case 'null':
             return 'Null';
         case 'cell':
-        case 'slice':
         case 'builder':
             return item.cell.toBoc().toString('base64');
+        case 'slice':
+            return item.cell.toBoc().toString('hex');
         case 'tuple':
             throw new Error('Tuple is not supported in TonApi get method parameters');
         default:
