@@ -14,6 +14,7 @@ import {
     TupleReader
 } from '@ton/core';
 import { Api, TvmStackRecord } from '@tonapi/client';
+import { Buffer } from 'buffer';
 
 export class ContractAdapter {
     constructor(private readonly tonapi: Api) {}
@@ -192,7 +193,15 @@ function TvmStackRecordToTupleItem(record: TvmStackRecord): TupleItem {
         case 'nan':
             return { type: 'nan' };
         case 'cell':
-            return { type: 'cell', cell: Cell.fromBase64(record.cell!) };
+            try {
+                const cell = Cell.fromBase64(record.cell!);
+                return { type: 'cell', cell };
+            } catch (_) {
+                return {
+                    type: 'cell',
+                    cell: Cell.fromBase64(Buffer.from(record.cell!, 'hex').toString('base64'))
+                };
+            }
         case 'null':
             return { type: 'null' };
         case 'tuple':
