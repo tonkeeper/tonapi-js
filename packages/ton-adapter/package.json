@@ -1,6 +1,6 @@
 {
   "name": "@ton-api/ton-adapter",
-  "version": "0.0.1-beta.2",
+  "version": "0.0.1-beta.3",
   "description": "TonApi adapter for @ton/ton",
   "files": ["dist"],
   "main": "./dist/index.js",
@@ -44,11 +44,11 @@
   ],
   "peerDependencies": {
     "@ton/core": ">=0.54.0",
-    "@tonapi/client": ">=0.0.1-beta.0"
+    "@ton-api/client": ">=0.0.1-beta.0"
   },
   "devDependencies": {
     "@ton/core": "^0.54.0",
     "@types/node": "^20.11.16",
-    "@tonapi/client": "*"
+    "@ton-api/client": "*"
   }
 }
