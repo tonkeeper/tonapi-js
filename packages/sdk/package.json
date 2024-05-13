@@ -1,0 +1,53 @@
+{
+  "name": "@ton-api/sdk",
+  "version": "0.0.1-beta.0",
+  "description": "Ton dApps SDK uses tonapi.io",
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "import": "./dist/index.mjs",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup && npx rimraf ./dist/index.d.mts",
+    "test": "jest"
+  },
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/tonkeeper/tonapi-js/issues"
+  },
+  "homepage": "https://github.com/tonkeeper/tonapi-js/blob/main/packages/sdk#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tonkeeper/tonapi-js.git"
+  },
+  "keywords": [
+    "TON",
+    "Blockchain",
+    "API",
+    "TonApi",
+    "SDK"
+  ],
+  "author": "Ton Apps",
+  "authors": [
+    {
+      "name": "siandreev"
+    }
+  ],
+  "dependencies": {
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.12",
+    "dotenv": "^16.4.1",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.2"
+  }
+}
