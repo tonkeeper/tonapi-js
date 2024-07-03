@@ -4,9 +4,10 @@
   "version": "0.0.1-beta.0",
   "scripts": {
     "build": "rm -rf dist && yarn generate && yarn tsc",
-    "generate": "swagger-typescript-api -p https://raw.githubusercontent.com/tonkeeper/opentonapi/master/api/openapi.yml --unwrap-response-data --module-name-first-tag --single-http-client -o ./src -n api-generated"
+    "generate": "swagger-typescript-api -p https://raw.githubusercontent.com/tonkeeper/opentonapi/master/api/openapi.yml --unwrap-response-data --module-name-first-tag --single-http-client -o ./src -n api-generated",
+    "postinstall": "patch-package"
   },
-  "license": "GPL-3.0",
+  "license": "MIT",
   "devDependencies": {
     "@changesets/cli": "^2.27.1",
     "@jscutlery/semver": "^4.2.0",
@@ -18,6 +19,7 @@
     "eslint-plugin-import": "^2.29.1",
     "eslint-plugin-prettier": "^5.1.3",
     "eslint-plugin-unused-imports": "^3.0.0",
+    "patch-package": "^8.0.0",
     "prettier": "^3.2.4",
     "rimraf": "^5.0.5",
     "tsup": "^8.0.1",

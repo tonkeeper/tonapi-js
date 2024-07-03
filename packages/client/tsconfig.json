@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "sourceMap": false,
+    "outDir": "dist",
+    "rootDir": "./src",
+    "baseUrl": "./",
+    "noUncheckedIndexedAccess": false
+  },
+  "include": ["src/client.ts"],
+  "exclude": ["node_modules/**", "**/*.test.ts"]
+}

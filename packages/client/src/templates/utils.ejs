@@ -1,0 +1,133 @@
+import { Address, Cell, TupleItem } from "@ton/core";
+
+type ComponentRef = keyof typeof components;
+
+function snakeToCamel(snakeCaseString: string): string {
+  return snakeCaseString.replace(/(_\w)/g, (match) => match[1]?.toUpperCase() ?? '');
+}
+
+function camelToSnake(camel: string): string {
+  return camel.replace(/([A-Z])/g, (match) => `_${match.toLowerCase()}`);
+}
+
+function cellParse(src: string): Cell {
+  return Cell.fromBase64(Buffer.from(src, "hex").toString("base64"));
+}
+
+function prepareResponseData<U>(obj: any, orSchema?: any): U {
+  const ref = (orSchema && orSchema.$ref) as ComponentRef | undefined;
+  const schema = ref ? components[ref] : orSchema;
+
+  <% if (false) { // DO NOT FOR BUILD: For debugging error cases type mismatch %>
+    if (schema) {
+      if ((schema.type === "array" && !Array.isArray(obj)) || (!(schema.type === "array") && Array.isArray(obj))) {
+        console.log('SCHEMA', schema);
+        console.log('ARR', obj);
+        throw new Error("Array type mismatch");
+      } else if (schema.type !== 'array' && ((schema.type === "object" && typeof obj !== "object") || (!(schema.type === "object") && typeof obj === "object"))) {
+        console.log('SCHEMA', schema);
+        console.log('OBJ', obj);
+        throw new Error("Object type mismatch");
+      }
+    }
+<% } %>
+
+  if (Array.isArray(obj)) {
+    const itemSchema = schema && schema.items;
+
+    return obj.map((item) => prepareResponseData(item, itemSchema)) as unknown as U;
+  } else if (schema) {
+    if (schema.type === "string") {
+      if (schema.format === "address") {
+        return Address.parse(obj as string) as U;
+      }
+
+      if (schema.format === "cell") {
+        return obj && (cellParse(obj as string) as U);
+      }
+    }
+
+
+    if (schema.type === "integer") {
+      if (schema.format === "int64") {
+        return BigInt(obj as number) as U;
+      }
+
+      return Number(obj as number) as U;
+    }
+
+    if (schema.type === "object") {
+      if (schema.format === "tuple-item") {
+        
+        switch (obj.type) {
+          case "tuple":
+          const itemSchema = schema.properties.tuple.items;
+            return {
+              type: "tuple",
+              items: obj.tuple.map((item: any) => prepareResponseData(item, itemSchema))
+            } as U;
+          case "num":
+            return {
+              type: "int",
+              value: BigInt(obj.num)
+            } as U;
+          case "cell":
+            return {
+              type: "cell",
+              cell: cellParse(obj.cell as string)
+            } as U;
+          case "null":
+            return {
+              type: "null"
+            } as U;
+          case "nan":
+            return {
+              type: "nan"
+            } as U;
+          default:
+            throw new Error(`Unknown tuple item type: ${obj.type}`);
+        }
+      }
+    }
+  }
+  
+  // case of non tuple-item object
+  if (obj !== null && typeof obj === "object") {
+    return Object.keys(obj).reduce(
+      (acc, key) => {
+        const objSchema = schema?.properties && schema.properties[key];
+
+        const camelCaseKey = snakeToCamel(key);
+
+        acc[camelCaseKey] = prepareResponseData(obj[key], objSchema);
+        return acc;
+      },
+      {} as Record<string, unknown>,
+    ) as U;
+  } 
+
+  return obj as unknown as U;
+}
+
+function prepareRequestData(data: any, orSchema?: any): any {
+  const ref = (orSchema && orSchema.$ref) as ComponentRef | undefined;
+  const schema = ref ? components[ref] : orSchema;
+
+  if (Array.isArray(data)) {
+    const itemSchema = schema && schema.items;
+
+    return data.map((item) => prepareRequestData(item, itemSchema));
+  } else if (schema && schema.format === "address") {
+    return (data as Address).toRawString();
+  } else if (data !== null && typeof data === "object") {
+    return Object.keys(data).reduce((acc, key) => {
+      const objSchema = schema?.properties && schema.properties[key];
+
+      const snakeCaseKey = camelToSnake(key);
+
+      acc[snakeCaseKey] = prepareRequestData(data[key], objSchema);
+      return acc;
+    }, {} as Record<string, unknown>);
+  }
+  return data;
+}

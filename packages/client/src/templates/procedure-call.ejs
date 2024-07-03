@@ -1,0 +1,119 @@
+<%
+const { utils, route, config } = it;
+const { requestBodyInfo, responseBodyInfo, specificArgNameResolver } = route;
+const { _, getInlineParseContent, getParseContent, parseSchema, getComponentByRef, require } = utils;
+const { parameters, path, method, payload, query, formData, security, requestParams } = route.request;
+const { type, errorType, contentTypes } = route.response;
+const { HTTP_CLIENT, RESERVED_REQ_PARAMS_ARG_NAMES } = config.constants;
+const routeDocs = includeFile("@base/route-docs", { config, route, utils });
+const queryName = (query && query.name) || "query";
+
+// #region Address parameters
+const ADDRESS_KEY = 'Address';
+const getNameAddressFromId = (name) => name + '_' + ADDRESS_KEY;
+const getNameIdFromAddress = (name) => name.slice(0, -8);
+
+const originPathParams = _.values(parameters);
+const addressType = parameters.filter(param => param.type === ADDRESS_KEY).map(param => param.name);
+const pathParams = originPathParams.map(
+    (param) => ({
+        ...param,
+        name: addressType.includes(param.name) ? getNameAddressFromId(param.name) : param.name
+    })
+);
+// #endregion
+
+const isFetchTemplate = config.httpClientType === HTTP_CLIENT.FETCH;
+
+const requestConfigParam = {
+    name: specificArgNameResolver.resolve(RESERVED_REQ_PARAMS_ARG_NAMES),
+    optional: true,
+    type: "RequestParams",
+    defaultValue: "{}",
+}
+
+const argToTmpl = ({ name, optional, type, defaultValue }) => `${name}${!defaultValue && optional ? '?' : ''}: ${type}${defaultValue ? ` = ${defaultValue}` : ''}`;
+
+const rawWrapperArgs = _.compact([
+    ...pathParams,
+    query,
+    payload,
+    requestConfigParam,
+]);
+
+// Sort by optionality
+const wrapperArgs = _
+    .sortBy(rawWrapperArgs, [o => o.optional])
+    .map(argToTmpl)
+    .join(', ');
+
+// RequestParams["type"]
+const requestContentKind = {
+    "JSON": "ContentType.Json",
+    "URL_ENCODED": "ContentType.UrlEncoded",
+    "FORM_DATA": "ContentType.FormData",
+    "TEXT": "ContentType.Text",
+}
+// RequestParams["format"]
+const responseContentKind = {
+    "JSON": '"json"',
+    "IMAGE": '"blob"',
+    "FORM_DATA": isFetchTemplate ? '"formData"' : '"document"',
+}
+
+const bodyTmpl = _.get(payload, "name") || null;
+const queryTmpl = (query != null && queryName) || null;
+const bodyContentKindTmpl = requestContentKind[requestBodyInfo.contentKind] || null;
+const responseFormatTmpl = responseContentKind[responseBodyInfo.success && responseBodyInfo.success.schema && responseBodyInfo.success.schema.contentKind] || null;
+const securityTmpl = security ? 'true' : null;
+
+const describeReturnType = () => !config.toJS ? '' : `Promise<HttpResponse<${type}, ${errorType}>`;
+
+const reducedPathParams = addressType.map((name) => `const ${name} = ${getNameAddressFromId(name)}.toRawString();`).join('\n');
+
+const rawSchema = responseBodyInfo.success.schema.content?.['application/json'].schema;
+const schemaTmpl = rawSchema ? `, ${JSON.stringify(utils.clearSchemaReferenceInformation(rawSchema))}` : '';
+
+const rawRequestBody = route.raw.requestBody;
+const rawRequestBodySchema = rawRequestBody && rawRequestBody.$ref ? getComponentByRef(rawRequestBody.$ref) : rawRequestBody;
+const rawRequestBodyContent = rawRequestBodySchema?.content || rawRequestBodySchema?.rawTypeData?.content;
+const rawRequestBodySchemaContent = rawRequestBodyContent && rawRequestBodyContent?.['application/json']?.schema;
+const requestBodyTmpl = rawRequestBodySchemaContent ? `, ${JSON.stringify(utils.clearSchemaReferenceInformation(rawRequestBodySchemaContent))}` : '';
+
+// DO NOT FOR BUILD: For single log in console for debugging
+// if (!global.singleRunTestConsole && route.routeName.usage === 'getAccounts') {
+//     const params = route.request
+//     global.singleRunTestConsole = true;
+// }
+
+const queryAddressParams = route.routeParams.query.filter(param => param.format === 'address')
+const queryTmplValue = queryAddressParams.length === 0 ? queryTmpl : `${queryTmpl} && {
+    ...${queryTmpl},
+    ${queryAddressParams.map(param => `${param.name}: ${queryTmpl}.${param.name}?.toRawString()`).join(',\n')}
+}`
+
+%>
+/**
+<%~ routeDocs.description %>
+
+ *<% /* Here you can add some other JSDoc tags */ %>
+
+<%~ routeDocs.lines %>
+
+ */
+<%~ route.routeName.usage %><%~ route.namespace ? ': ' : ' = ' %> async (<%~ wrapperArgs %>)<%~ config.toJS ? `: ${describeReturnType()}` : "" %> => {
+    <%~ reducedPathParams %>
+    const res = await <%~ config.singleHttpClient ? 'this.http.request' : 'this.request' %><<%~ type %>, <%~ errorType %>>({
+        path: `<%~ path %>`,
+        method: '<%~ _.upperCase(method) %>',
+        <%~ queryTmpl ? `query: ${queryTmplValue},` : '' %>
+        <%~ bodyTmpl ? `body: prepareRequestData(${bodyTmpl}${requestBodyTmpl}),` : '' %>
+        <%~ securityTmpl ? `secure: ${securityTmpl},` : '' %>
+        <%~ bodyContentKindTmpl ? `type: ${bodyContentKindTmpl},` : '' %>
+        <%~ responseFormatTmpl ? `format: ${responseFormatTmpl},` : '' %>
+        ...<%~ _.get(requestConfigParam, "name") %>,
+    })
+
+    return prepareResponseData<<%~ type %>>(res<%~ schemaTmpl %>);
+}<%~ route.namespace ? ',' : '' %>
+
