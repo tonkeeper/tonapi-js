@@ -3,7 +3,7 @@ import { Address, Cell, Tuple, TupleItem } from "@ton/core";
 import fetchMock from "jest-fetch-mock";
 import JSONBigWrapper from "json-bigint";
 
-const JSONBig = JSONBigWrapper({ useNativeBigInt: true });
+export const JSONBig = JSONBigWrapper({ useNativeBigInt: true });
 
 const config: ApiConfig = {
   baseUrl: "https://tonapi.io",
@@ -15,45 +15,7 @@ const config: ApiConfig = {
 };
 
 const http = new HttpClient(config);
-const client = new Api(http);
-
-test("should return address", async () => {
-  const addressString = "UQC62nZpm36EFzADVfXDVd_4OpbFyc1D3w3ZvCPHLni8Dst4";
-  const addressObject = Address.parse(addressString);
-  const res = await client.blockchain.getBlockchainRawAccount(addressObject);
-
-  // const myAddress = Address.parse('UQC62nZpm36EFzADVfXDVd_4OpbFyc1D3w3ZvCPHLni8Dst4');
-  // const account = await client.blockchain.getBlockchainRawAccount(myAddress);
-  expect(Address.isAddress(res.address)).toBe(true);
-});
-
-test("nft test", async () => {
-  const addressStringValid =
-    "0:7c9fc62291740a143086c807fe322accfd12737b3c2243676228176707c7ce40";
-  const addressObjectValid = Address.parse(addressStringValid);
-  const resValid = await client.nft.getNftItemByAddress(addressObjectValid);
-  // console.log(resValid);
-
-  expect(resValid).toBeDefined();
-  expect(resValid.address.toRaw).toBeDefined();
-
-  const addressStringInvalid =
-    "0:7c9fc62291740a143086c807fe322accfd12737b3c224367622817670757ce40";
-  const addressObjectInvalid = Address.parse(addressStringInvalid);
-  // const resInvalid = await client.nft.getNftItemByAddress(addressObjectInvalid);
-  // await expect(resInvalid).rejects.toThrow()
-});
-
-test("body format data test", async () => {
-  const addressStrings = [
-    "0:009d03ddede8c2620a72f999d03d5888102250a214bf574a29ff64df80162168",
-    "0:7c9fc62291740a143086c807fe322accfd12737b3c2243676228176707c7ce40",
-  ];
-  const accountIds = addressStrings.map((value) => Address.parse(value));
-  const res = await client.accounts.getAccounts({ accountIds });
-
-  expect(res).toBeDefined();
-});
+export const client = new Api(http);
 
 test("BigInt parse data test", async () => {
   fetchMock.enableMocks();
@@ -103,17 +65,6 @@ test("BigInt parse data test", async () => {
   expect(typeof accounts[1].balance).toBe("bigint");
 
   fetchMock.disableMocks();
-});
-
-test("Cell test", async () => {
-  const addressString =
-    "0:009d03ddede8c2620a72f999d03d5888102250a214bf574a29ff64df80162168";
-  const addressObject = Address.parse(addressString);
-  const res = await client.blockchain.getBlockchainRawAccount(addressObject);
-
-  expect(res).toBeDefined();
-  expect(res.code).toBeDefined();
-  expect(res.code).toBeInstanceOf(Cell);
 });
 
 function guardTuple(item: TupleItem): item is Tuple {

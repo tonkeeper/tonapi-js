@@ -73,6 +73,31 @@ export interface ServiceStatus {
     indexingLatency: number;
 }
 
+export interface ReducedBlock {
+    /**
+     * @format int32
+     * @example 0
+     */
+    workchainId: number;
+    /** @example 8000000000000000 */
+    shard: string;
+    /**
+     * @format int32
+     * @example 21734019
+     */
+    seqno: number;
+    /** @example "(-1,4234234,8000000000000000)" */
+    masterRef?: string;
+    /** @example 130 */
+    txQuantity: number;
+    /**
+     * @format int64
+     * @example 23814011000000
+     */
+    utime: BigInt;
+    shardsBlocks: string[];
+}
+
 export interface BlockchainBlock {
     /** @example 130 */
     txQuantity: number;
@@ -183,6 +208,10 @@ export interface BlockchainBlocks {
     blocks: BlockchainBlock[];
 }
 
+export interface ReducedBlocks {
+    blocks: ReducedBlock[];
+}
+
 export interface BlockchainBlockShards {
     shards: {
         /** @example "(0,8000000000000000,4234234)" */
@@ -200,8 +229,8 @@ export enum AccountStatus {
 }
 
 export interface StateInit {
-    /** @example "te6ccgEBBgEARAABFP8A9KQT9LzyyAsBAgEgAgMCAUgEBQAE8jAAONBsIdMfMO1E0NM/MAHAAZekyMs/ye1UkzDyBuIAEaE0MdqJoaZ+YQ==" */
-    boc: string;
+    /** @format cell */
+    boc: Cell;
 }
 
 export interface Message {
@@ -248,11 +277,14 @@ export interface Message {
     /** @example "0xdeadbeaf" */
     opCode?: string;
     init?: StateInit;
+    /** @example "1219de582369ac80ee1afe12147930f458a54ff1eea612611a8bc6bd31581a6c" */
+    hash: string;
     /**
      * hex-encoded BoC with raw message body
+     * @format cell
      * @example "B5EE9C7201010101001100001D00048656C6C6F2C20776F726C64218"
      */
-    rawBody?: string;
+    rawBody?: Cell;
     /** @example "nft_transfer" */
     decodedOpName?: string;
     decodedBody?: any;
@@ -430,6 +462,12 @@ export interface Transaction {
     aborted: boolean;
     /** @example true */
     destroyed: boolean;
+    /**
+     * hex encoded boc with raw transaction
+     * @format cell
+     * @example "b5ee9c72410206010001380003b372cf3b5b8c891e517c9addbda1c0386a09ccacbb0e3faf630b51cfc8152325acb00002ac5795c0e41fdf79135cb7da03cc623b165d614b562a51eeccd8a5e097f405abf6b37f4e73000002ac5629732c1666887ed000144030480102030101a004008272abc8f2971aa4404ac6da1597720f348b2e1247b1ad9f55cbd3b6812f0a5f08b269bb65039fb1f6074d00f794e857f6dfd01131d299df456af10a8a4943d4d165000d0c80608840492001ab48015581f575c3b8c6ab3d6"
+     */
+    raw: Cell;
 }
 
 export interface Transactions {
@@ -711,8 +749,10 @@ export interface Oracle {
 }
 
 export interface OracleBridgeParams {
-    bridgeAddr: string;
-    oracleMultisigAddress: string;
+    /** @format address */
+    bridgeAddr: Address;
+    /** @format address */
+    oracleMultisigAddress: Address;
     externalChainAddress: string;
     oracles: Oracle[];
 }
@@ -733,8 +773,10 @@ export interface JettonBridgePrices {
 }
 
 export interface JettonBridgeParams {
-    bridgeAddress: string;
-    oraclesAddress: string;
+    /** @format address */
+    bridgeAddress: Address;
+    /** @format address */
+    oraclesAddress: Address;
     stateFlags: number;
     /** @format int64 */
     burnBridgeFee?: BigInt;
@@ -832,8 +874,11 @@ export interface BlockchainRawAccount {
      * @example "b5ee9c72410104010087000114ff00f4a413f4a0f2c80b0102012002030002d200dfa5ffff76a268698fe9ffe8e42c5267858f90e785ffe4f6aa6467c444ffb365ffc10802faf0807d014035e7a064b87d804077e7857fc10803dfd2407d014035e7a064b86467cd8903a32b9ba4410803ade68afd014035e7a045ea432b6363796103bb7b9363210c678b64b87d807d8040c249b3e4"
      */
     code?: Cell;
-    /** @example "b5ee9c7241010101002600004811fd096c0000000000000000000000000000000000000000000000000000000000000000cb78264d" */
-    data?: string;
+    /**
+     * @format cell
+     * @example "b5ee9c7241010101002600004811fd096c0000000000000000000000000000000000000000000000000000000000000000cb78264d"
+     */
+    data?: Cell;
     /**
      * @format int64
      * @example 123456789
@@ -848,7 +893,8 @@ export interface BlockchainRawAccount {
     libraries?: {
         /** @example true */
         public: boolean;
-        root: string;
+        /** @format cell */
+        root: Cell;
     }[];
 }
 
@@ -863,6 +909,11 @@ export interface Account {
      * @example 123456789
      */
     balance: BigInt;
+    /**
+     * {'USD': 1, 'IDR': 1000}
+     * @example {}
+     */
+    currenciesBalance?: Record<string, any>;
     /**
      * unix timestamp
      * @format int64
@@ -889,6 +940,64 @@ export interface Accounts {
     accounts: Account[];
 }
 
+export interface GaslessConfig {
+    /**
+     * sending excess to this address decreases the commission of a gasless transfer
+     * @format address
+     * @example "0:dfbd5be8497fdc0c9fcbdfc676864840ddf8ad6423d6d5657d9b0e8270d6c8ac"
+     */
+    relayAddress: Address;
+    /** list of jettons, any of them can be used to pay for gas */
+    gasJettons: {
+        /** @format address */
+        masterId: Address;
+    }[];
+}
+
+export interface SignRawMessage {
+    /**
+     * @format address
+     * @example "0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf"
+     */
+    address: Address;
+    /** Number of nanocoins to send. Decimal string. */
+    amount: string;
+    /**
+     * Raw one-cell BoC encoded in hex.
+     * @format cell
+     */
+    payload?: Cell;
+    /**
+     * Raw once-cell BoC encoded in hex.
+     * @format cell
+     */
+    stateInit?: Cell;
+}
+
+export interface SignRawParams {
+    /**
+     * @format address
+     * @example "0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf"
+     */
+    relayAddress: Address;
+    /**
+     * Commission for the transaction. In nanocoins.
+     * @example "1000000"
+     */
+    commission: string;
+    /**
+     * @format address
+     * @example "0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf"
+     */
+    from: Address;
+    /**
+     * @format int64
+     * @example 1717397217
+     */
+    validUntil: BigInt;
+    messages: SignRawMessage[];
+}
+
 export interface MethodExecutionResult {
     /** @example true */
     success: boolean;
@@ -907,18 +1016,34 @@ export interface RawBlockchainConfig {
 }
 
 export interface BlockchainConfig {
-    /** config address */
-    '0': string;
-    /** elector address */
-    '1': string;
-    /** minter address */
-    '2': string;
-    /** The address of the transaction fee collector. */
-    '3'?: string;
-    /** dns root address */
-    '4': string;
+    /**
+     * config address
+     * @format address
+     */
+    '0': Address;
+    /**
+     * elector address
+     * @format address
+     */
+    '1': Address;
+    /**
+     * minter address
+     * @format address
+     */
+    '2': Address;
+    /**
+     * The address of the transaction fee collector.
+     * @format address
+     */
+    '3'?: Address;
+    /**
+     * dns root address
+     * @format address
+     */
+    '4': Address;
     '5'?: {
-        blackholeAddr?: string;
+        /** @format address */
+        blackholeAddr?: Address;
         /** @format int64 */
         feeBurnNom: BigInt;
         /** @format int64 */
@@ -1164,7 +1289,7 @@ export interface BlockchainConfig {
     };
     /** The configuration for the consensus protocol above catchain. */
     '31'?: {
-        fundamentalSmcAddr: string[];
+        fundamentalSmcAddr: Address[];
     };
     '32'?: ValidatorsSet;
     '33'?: ValidatorsSet;
@@ -1182,7 +1307,7 @@ export interface BlockchainConfig {
     };
     /** suspended accounts */
     '44': {
-        accounts: string[];
+        accounts: Address[];
         suspendedUntil: number;
     };
     /** Bridge parameters for wrapping TON in other networks. */
@@ -1210,10 +1335,10 @@ export interface BlockchainConfig {
         jettonBridgeParams: JettonBridgeParams;
     };
     /**
-     * config boc in base64 format
-     * @example "te6ccgEBBgEARAABFP8A9KQT9LzyyAsBAgEgAgMCAUgEBQAE8jAAONBsIdMfMO1E0NM/MAHAAZekyMs/ye1UkzDyBuIAEaE0MdqJoaZ+YQ=="
+     * config boc in hex format
+     * @format cell
      */
-    raw: string;
+    raw: Cell;
 }
 
 export interface DomainNames {
@@ -1365,14 +1490,55 @@ export interface NftItems {
     nftItems: NftItem[];
 }
 
-export interface Refund {
-    /** @example "DNS.ton" */
-    type: 'DNS.ton' | 'DNS.tg' | 'GetGems';
+export interface Multisigs {
+    multisigs: Multisig[];
+}
+
+export interface Multisig {
     /**
      * @format address
      * @example "0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf"
      */
-    origin: Address;
+    address: Address;
+    /**
+     * @format int64
+     * @example 1
+     */
+    seqno: BigInt;
+    /** @format int32 */
+    threshold: number;
+    signers: Address[];
+    proposers: Address[];
+    orders: MultisigOrder[];
+}
+
+export interface MultisigOrder {
+    /**
+     * @format address
+     * @example "0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf"
+     */
+    address: Address;
+    /**
+     * @format int64
+     * @example 1
+     */
+    orderSeqno: BigInt;
+    /** @format int32 */
+    threshold: number;
+    /** @example false */
+    sentForExecution: boolean;
+    signers: Address[];
+    /** @format int32 */
+    approvalsNum: number;
+    /** @format int64 */
+    expirationDate: BigInt;
+}
+
+export interface Refund {
+    /** @example "DNS.ton" */
+    type: 'DNS.ton' | 'DNS.tg' | 'GetGems';
+    /** @example "0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf" */
+    origin: string;
 }
 
 export interface ValueFlow {
@@ -1880,8 +2046,11 @@ export interface Subscriptions {
 export interface Auction {
     /** @example "wallet.ton" */
     domain: string;
-    /** @example "owner" */
-    owner: string;
+    /**
+     * @format address
+     * @example "0:c704dadfabac88eab58e340de03080df81ff76636431f48624ad6e26fb2da0a4"
+     */
+    owner: Address;
     /**
      * @format int64
      * @example 1660050553
@@ -1961,8 +2130,8 @@ export interface NftCollection {
      */
     nextItemIndex: BigInt;
     owner?: AccountAddress;
-    /** @example "697066733a2f2f516d596e437861746f5178433571584b79773971656768415853626f3544644e6a32387631487669437a47355359" */
-    rawCollectionContent: string;
+    /** @format cell */
+    rawCollectionContent: Cell;
     /** @example {} */
     metadata?: Record<string, any>;
     previews?: ImagePreview[];
@@ -2074,8 +2243,8 @@ export interface DecodedMessage {
 
 export interface DecodedRawMessage {
     message: {
-        /** @example "te6ccgEBAQEABgAACCiAmCMBAgEABwA=" */
-        boc: string;
+        /** @format cell */
+        boc: Cell;
         /** @example "nft_transfer" */
         decodedOpName?: string;
         /** @example "0xdeadbeaf" */
@@ -2406,7 +2575,8 @@ export interface EncryptedComment {
 }
 
 export interface BlockchainAccountInspect {
-    code: string;
+    /** @format cell */
+    code: Cell;
     codeHash: string;
     methods: {
         /** @format int64 */
@@ -2748,6 +2918,19 @@ const components = {
             indexing_latency: { type: 'integer' }
         }
     },
+    '#/components/schemas/ReducedBlock': {
+        type: 'object',
+        required: ['workchain_id', 'shard', 'seqno', 'tx_quantity', 'utime', 'shards_blocks'],
+        properties: {
+            workchain_id: { type: 'integer', format: 'int32' },
+            shard: { type: 'string' },
+            seqno: { type: 'integer', format: 'int32' },
+            master_ref: { type: 'string' },
+            tx_quantity: { type: 'integer' },
+            utime: { type: 'integer', format: 'int64' },
+            shards_blocks: { type: 'array', items: { type: 'string' } }
+        }
+    },
     '#/components/schemas/BlockchainBlock': {
         type: 'object',
         required: [
@@ -2819,6 +3002,13 @@ const components = {
             blocks: { type: 'array', items: { $ref: '#/components/schemas/BlockchainBlock' } }
         }
     },
+    '#/components/schemas/ReducedBlocks': {
+        type: 'object',
+        required: ['blocks'],
+        properties: {
+            blocks: { type: 'array', items: { $ref: '#/components/schemas/ReducedBlock' } }
+        }
+    },
     '#/components/schemas/BlockchainBlockShards': {
         type: 'object',
         required: ['shards'],
@@ -2843,7 +3033,7 @@ const components = {
     '#/components/schemas/StateInit': {
         type: 'object',
         required: ['boc'],
-        properties: { boc: { type: 'string' } }
+        properties: { boc: { type: 'string', format: 'cell' } }
     },
     '#/components/schemas/Message': {
         type: 'object',
@@ -2857,7 +3047,8 @@ const components = {
             'fwd_fee',
             'ihr_fee',
             'import_fee',
-            'created_at'
+            'created_at',
+            'hash'
         ],
         properties: {
             msg_type: { type: 'string', enum: ['int_msg', 'ext_in_msg', 'ext_out_msg'] },
@@ -2874,7 +3065,8 @@ const components = {
             created_at: { type: 'integer', format: 'int64' },
             op_code: { type: 'string' },
             init: { $ref: '#/components/schemas/StateInit' },
-            raw_body: { type: 'string' },
+            hash: { type: 'string' },
+            raw_body: { type: 'string', format: 'cell' },
             decoded_op_name: { type: 'string' },
             decoded_body: {}
         }
@@ -2972,7 +3164,8 @@ const components = {
             'out_msgs',
             'block',
             'aborted',
-            'destroyed'
+            'destroyed',
+            'raw'
         ],
         properties: {
             hash: { type: 'string' },
@@ -2998,7 +3191,8 @@ const components = {
             action_phase: { $ref: '#/components/schemas/ActionPhase' },
             bounce_phase: { $ref: '#/components/schemas/BouncePhaseType' },
             aborted: { type: 'boolean' },
-            destroyed: { type: 'boolean' }
+            destroyed: { type: 'boolean' },
+            raw: { type: 'string', format: 'cell' }
         }
     },
     '#/components/schemas/Transactions': {
@@ -3206,8 +3400,8 @@ const components = {
         type: 'object',
         required: ['bridge_addr', 'oracle_multisig_address', 'external_chain_address', 'oracles'],
         properties: {
-            bridge_addr: { type: 'string' },
-            oracle_multisig_address: { type: 'string' },
+            bridge_addr: { type: 'string', format: 'address' },
+            oracle_multisig_address: { type: 'string', format: 'address' },
             external_chain_address: { type: 'string' },
             oracles: { type: 'array', items: { $ref: '#/components/schemas/Oracle' } }
         }
@@ -3235,8 +3429,8 @@ const components = {
         type: 'object',
         required: ['bridge_address', 'oracles_address', 'state_flags', 'oracles'],
         properties: {
-            bridge_address: { type: 'string' },
-            oracles_address: { type: 'string' },
+            bridge_address: { type: 'string', format: 'address' },
+            oracles_address: { type: 'string', format: 'address' },
             state_flags: { type: 'integer' },
             burn_bridge_fee: { type: 'integer', format: 'int64' },
             oracles: { type: 'array', items: { $ref: '#/components/schemas/Oracle' } },
@@ -3284,7 +3478,7 @@ const components = {
             balance: { type: 'integer', format: 'int64' },
             extra_balance: { type: 'object', additionalProperties: { type: 'string' } },
             code: { type: 'string', format: 'cell' },
-            data: { type: 'string' },
+            data: { type: 'string', format: 'cell' },
             last_transaction_lt: { type: 'integer', format: 'int64' },
             last_transaction_hash: { type: 'string' },
             frozen_hash: { type: 'string' },
@@ -3295,7 +3489,10 @@ const components = {
                 items: {
                     type: 'object',
                     required: ['public', 'root'],
-                    properties: { public: { type: 'boolean' }, root: { type: 'string' } }
+                    properties: {
+                        public: { type: 'boolean' },
+                        root: { type: 'string', format: 'cell' }
+                    }
                 }
             }
         }
@@ -3306,6 +3503,7 @@ const components = {
         properties: {
             address: { type: 'string', format: 'address' },
             balance: { type: 'integer', format: 'int64' },
+            currencies_balance: { type: 'object', additionalProperties: true },
             last_activity: { type: 'integer', format: 'int64' },
             status: { $ref: '#/components/schemas/AccountStatus' },
             interfaces: { type: 'array', items: { type: 'string' } },
@@ -3323,6 +3521,42 @@ const components = {
         required: ['accounts'],
         properties: { accounts: { type: 'array', items: { $ref: '#/components/schemas/Account' } } }
     },
+    '#/components/schemas/GaslessConfig': {
+        type: 'object',
+        required: ['gas_jettons', 'relay_address'],
+        properties: {
+            relay_address: { type: 'string', format: 'address' },
+            gas_jettons: {
+                type: 'array',
+                items: {
+                    type: 'object',
+                    required: ['master_id'],
+                    properties: { master_id: { type: 'string', format: 'address' } }
+                }
+            }
+        }
+    },
+    '#/components/schemas/SignRawMessage': {
+        type: 'object',
+        required: ['address', 'amount'],
+        properties: {
+            address: { type: 'string', format: 'address' },
+            amount: { type: 'string' },
+            payload: { type: 'string', format: 'cell' },
+            stateInit: { type: 'string', format: 'cell' }
+        }
+    },
+    '#/components/schemas/SignRawParams': {
+        type: 'object',
+        required: ['messages', 'relay_address', 'commission', 'from', 'valid_until'],
+        properties: {
+            relay_address: { type: 'string', format: 'address' },
+            commission: { type: 'string' },
+            from: { type: 'string', format: 'address' },
+            valid_until: { type: 'integer', format: 'int64' },
+            messages: { type: 'array', items: { $ref: '#/components/schemas/SignRawMessage' } }
+        }
+    },
     '#/components/schemas/MethodExecutionResult': {
         type: 'object',
         required: ['success', 'exit_code', 'stack'],
@@ -3339,8 +3573,8 @@ const components = {
         required: ['type'],
         properties: {
             type: { type: 'string', enum: ['cell', 'num', 'nan', 'null', 'tuple'] },
-            cell: { type: 'string', format: 'cell' },
-            slice: { type: 'string' },
+            cell: { type: 'string', format: 'cell-base64' },
+            slice: { type: 'string', format: 'cell' },
             num: { type: 'string' },
             tuple: { type: 'array', items: { $ref: '#/components/schemas/TvmStackRecord' } }
         }
@@ -3354,16 +3588,16 @@ const components = {
         type: 'object',
         required: ['raw', '0', '1', '2', '4', '44'],
         properties: {
-            '0': { type: 'string' },
-            '1': { type: 'string' },
-            '2': { type: 'string' },
-            '3': { type: 'string' },
-            '4': { type: 'string' },
+            '0': { type: 'string', format: 'address' },
+            '1': { type: 'string', format: 'address' },
+            '2': { type: 'string', format: 'address' },
+            '3': { type: 'string', format: 'address' },
+            '4': { type: 'string', format: 'address' },
             '5': {
                 type: 'object',
                 required: ['fee_burn_nom', 'fee_burn_denom'],
                 properties: {
-                    blackhole_addr: { type: 'string' },
+                    blackhole_addr: { type: 'string', format: 'address' },
                     fee_burn_nom: { type: 'integer', format: 'int64' },
                     fee_burn_denom: { type: 'integer', format: 'int64' }
                 }
@@ -3591,7 +3825,12 @@ const components = {
             '31': {
                 type: 'object',
                 required: ['fundamental_smc_addr'],
-                properties: { fundamental_smc_addr: { type: 'array', items: { type: 'string' } } }
+                properties: {
+                    fundamental_smc_addr: {
+                        type: 'array',
+                        items: { type: 'string', format: 'address' }
+                    }
+                }
             },
             '32': { $ref: '#/components/schemas/ValidatorsSet' },
             '33': { $ref: '#/components/schemas/ValidatorsSet' },
@@ -3619,7 +3858,7 @@ const components = {
                 type: 'object',
                 required: ['accounts', 'suspended_until'],
                 properties: {
-                    accounts: { type: 'array', items: { type: 'string' } },
+                    accounts: { type: 'array', items: { type: 'string', format: 'address' } },
                     suspended_until: { type: 'integer' }
                 }
             },
@@ -3665,7 +3904,7 @@ const components = {
                     jetton_bridge_params: { $ref: '#/components/schemas/JettonBridgeParams' }
                 }
             },
-            raw: { type: 'string' }
+            raw: { type: 'string', format: 'cell' }
         }
     },
     '#/components/schemas/DomainNames': {
@@ -3791,12 +4030,52 @@ const components = {
             nft_items: { type: 'array', items: { $ref: '#/components/schemas/NftItem' } }
         }
     },
+    '#/components/schemas/Multisigs': {
+        type: 'object',
+        required: ['multisigs'],
+        properties: {
+            multisigs: { type: 'array', items: { $ref: '#/components/schemas/Multisig' } }
+        }
+    },
+    '#/components/schemas/Multisig': {
+        type: 'object',
+        required: ['address', 'seqno', 'threshold', 'signers', 'proposers', 'orders'],
+        properties: {
+            address: { type: 'string', format: 'address' },
+            seqno: { type: 'integer', format: 'int64' },
+            threshold: { type: 'integer', format: 'int32' },
+            signers: { type: 'array', items: { type: 'string', format: 'address' } },
+            proposers: { type: 'array', items: { type: 'string', format: 'address' } },
+            orders: { type: 'array', items: { $ref: '#/components/schemas/MultisigOrder' } }
+        }
+    },
+    '#/components/schemas/MultisigOrder': {
+        type: 'object',
+        required: [
+            'address',
+            'order_seqno',
+            'threshold',
+            'sent_for_execution',
+            'signers',
+            'approvals_num',
+            'expiration_date'
+        ],
+        properties: {
+            address: { type: 'string', format: 'address' },
+            order_seqno: { type: 'integer', format: 'int64' },
+            threshold: { type: 'integer', format: 'int32' },
+            sent_for_execution: { type: 'boolean' },
+            signers: { type: 'array', items: { type: 'string', format: 'address' } },
+            approvals_num: { type: 'integer', format: 'int32' },
+            expiration_date: { type: 'integer', format: 'int64' }
+        }
+    },
     '#/components/schemas/Refund': {
         type: 'object',
         required: ['type', 'origin'],
         properties: {
             type: { type: 'string', enum: ['DNS.ton', 'DNS.tg', 'GetGems'] },
-            origin: { type: 'string', format: 'address' }
+            origin: { type: 'string' }
         }
     },
     '#/components/schemas/ValueFlow': {
@@ -4190,7 +4469,7 @@ const components = {
         required: ['domain', 'owner', 'price', 'bids', 'date'],
         properties: {
             domain: { type: 'string' },
-            owner: { type: 'string' },
+            owner: { type: 'string', format: 'address' },
             price: { type: 'integer', format: 'int64' },
             bids: { type: 'integer', format: 'int64' },
             date: { type: 'integer', format: 'int64' }
@@ -4249,7 +4528,7 @@ const components = {
             address: { type: 'string', format: 'address' },
             next_item_index: { type: 'integer', format: 'int64' },
             owner: { $ref: '#/components/schemas/AccountAddress' },
-            raw_collection_content: { type: 'string' },
+            raw_collection_content: { type: 'string', format: 'cell' },
             metadata: { type: 'object', additionalProperties: true },
             previews: { type: 'array', items: { $ref: '#/components/schemas/ImagePreview' } },
             approved_by: { $ref: '#/components/schemas/NftApprovedBy' }
@@ -4363,7 +4642,7 @@ const components = {
                 type: 'object',
                 required: ['boc'],
                 properties: {
-                    boc: { type: 'string' },
+                    boc: { type: 'string', format: 'cell' },
                     decoded_op_name: { type: 'string' },
                     op_code: { type: 'string' },
                     decoded_body: {}
@@ -4627,7 +4906,7 @@ const components = {
         type: 'object',
         required: ['code', 'code_hash', 'methods'],
         properties: {
-            code: { type: 'string' },
+            code: { type: 'string', format: 'cell' },
             code_hash: { type: 'string' },
             methods: {
                 type: 'array',
@@ -4821,6 +5100,35 @@ export class Api<SecurityDataType extends unknown> {
 
             return prepareResponseData<ServiceStatus>(res, {
                 $ref: '#/components/schemas/ServiceStatus'
+            });
+        },
+
+        /**
+         * @description Get reduced blockchain blocks data
+         *
+         * @tags Blockchain
+         * @name GetReducedBlockchainBlocks
+         * @request GET:/v2/blockchain/reduced/blocks
+         */
+        getReducedBlockchainBlocks: async (
+            query: {
+                /** @format int64 */
+                from: BigInt;
+                /** @format int64 */
+                to: BigInt;
+            },
+            params: RequestParams = {}
+        ) => {
+            const res = await this.http.request<ReducedBlocks, Error>({
+                path: `/v2/blockchain/reduced/blocks`,
+                method: 'GET',
+                query: query,
+                format: 'json',
+                ...params
+            });
+
+            return prepareResponseData<ReducedBlocks>(res, {
+                $ref: '#/components/schemas/ReducedBlocks'
             });
         },
 
@@ -5184,10 +5492,10 @@ export class Api<SecurityDataType extends unknown> {
          */
         sendBlockchainMessage: async (
             data: {
-                /** @example "te6ccgECBQEAARUAAkWIAWTtae+KgtbrX26Bep8JSq8lFLfGOoyGR/xwdjfvpvEaHg" */
-                boc?: string;
+                /** @format cell */
+                boc?: Cell;
                 /** @maxItems 10 */
-                batch?: string[];
+                batch?: Cell[];
             },
             params: RequestParams = {}
         ) => {
@@ -5197,8 +5505,12 @@ export class Api<SecurityDataType extends unknown> {
                 body: prepareRequestData(data, {
                     type: 'object',
                     properties: {
-                        boc: { type: 'string' },
-                        batch: { type: 'array', maxItems: 10, items: { type: 'string' } }
+                        boc: { type: 'string', format: 'cell' },
+                        batch: {
+                            type: 'array',
+                            maxItems: 10,
+                            items: { type: 'string', format: 'cell' }
+                        }
                     }
                 }),
                 ...params
@@ -5281,8 +5593,8 @@ export class Api<SecurityDataType extends unknown> {
          */
         decodeMessage: async (
             data: {
-                /** @example "te6ccgECBQEAARUAAkWIAWTtae+KgtbrX26Bep8JSq8lFLfGOoyGR/xwdjfvpvEaHg" */
-                boc: string;
+                /** @format cell */
+                boc: Cell;
             },
             params: RequestParams = {}
         ) => {
@@ -5292,7 +5604,7 @@ export class Api<SecurityDataType extends unknown> {
                 body: prepareRequestData(data, {
                     type: 'object',
                     required: ['boc'],
-                    properties: { boc: { type: 'string' } }
+                    properties: { boc: { type: 'string', format: 'cell' } }
                 }),
                 format: 'json',
                 ...params
@@ -5312,8 +5624,8 @@ export class Api<SecurityDataType extends unknown> {
          */
         emulateMessageToEvent: async (
             data: {
-                /** @example "te6ccgECBQEAARUAAkWIAWTtae+KgtbrX26Bep8JSq8lFLfGOoyGR/xwdjfvpvEaHg" */
-                boc: string;
+                /** @format cell */
+                boc: Cell;
             },
             query?: {
                 ignore_signature_check?: boolean;
@@ -5327,7 +5639,7 @@ export class Api<SecurityDataType extends unknown> {
                 body: prepareRequestData(data, {
                     type: 'object',
                     required: ['boc'],
-                    properties: { boc: { type: 'string' } }
+                    properties: { boc: { type: 'string', format: 'cell' } }
                 }),
                 format: 'json',
                 ...params
@@ -5345,8 +5657,8 @@ export class Api<SecurityDataType extends unknown> {
          */
         emulateMessageToTrace: async (
             data: {
-                /** @example "te6ccgECBQEAARUAAkWIAWTtae+KgtbrX26Bep8JSq8lFLfGOoyGR/xwdjfvpvEaHg" */
-                boc: string;
+                /** @format cell */
+                boc: Cell;
             },
             query?: {
                 ignore_signature_check?: boolean;
@@ -5360,7 +5672,7 @@ export class Api<SecurityDataType extends unknown> {
                 body: prepareRequestData(data, {
                     type: 'object',
                     required: ['boc'],
-                    properties: { boc: { type: 'string' } }
+                    properties: { boc: { type: 'string', format: 'cell' } }
                 }),
                 format: 'json',
                 ...params
@@ -5378,8 +5690,8 @@ export class Api<SecurityDataType extends unknown> {
          */
         emulateMessageToWallet: async (
             data: {
-                /** @example "te6ccgECBQEAARUAAkWIAWTtae+KgtbrX26Bep8JSq8lFLfGOoyGR/xwdjfvpvEaHg" */
-                boc: string;
+                /** @format cell */
+                boc: Cell;
                 /** additional per account configuration */
                 params?: {
                     /**
@@ -5403,7 +5715,7 @@ export class Api<SecurityDataType extends unknown> {
                     type: 'object',
                     required: ['boc'],
                     properties: {
-                        boc: { type: 'string' },
+                        boc: { type: 'string', format: 'cell' },
                         params: {
                             type: 'array',
                             items: {
@@ -5436,8 +5748,8 @@ export class Api<SecurityDataType extends unknown> {
         emulateMessageToAccountEvent: async (
             accountId_Address: Address,
             data: {
-                /** @example "te6ccgECBQEAARUAAkWIAWTtae+KgtbrX26Bep8JSq8lFLfGOoyGR/xwdjfvpvEaHg" */
-                boc: string;
+                /** @format cell */
+                boc: Cell;
             },
             query?: {
                 ignore_signature_check?: boolean;
@@ -5452,7 +5764,7 @@ export class Api<SecurityDataType extends unknown> {
                 body: prepareRequestData(data, {
                     type: 'object',
                     required: ['boc'],
-                    properties: { boc: { type: 'string' } }
+                    properties: { boc: { type: 'string', format: 'cell' } }
                 }),
                 format: 'json',
                 ...params
@@ -5547,11 +5859,16 @@ export class Api<SecurityDataType extends unknown> {
             data: {
                 accountIds: Address[];
             },
+            query?: {
+                /** @example "usd" */
+                currency?: string;
+            },
             params: RequestParams = {}
         ) => {
             const res = await this.http.request<Accounts, Error>({
                 path: `/v2/accounts/_bulk`,
                 method: 'POST',
+                query: query,
                 body: prepareRequestData(data, {
                     type: 'object',
                     required: ['accountIds'],
@@ -6084,6 +6401,25 @@ export class Api<SecurityDataType extends unknown> {
                 required: ['public_key'],
                 properties: { public_key: { type: 'string' } }
             });
+        },
+
+        /**
+         * @description Get account's multisigs
+         *
+         * @tags Accounts
+         * @name GetAccountMultisigs
+         * @request GET:/v2/accounts/{account_id}/multisigs
+         */
+        getAccountMultisigs: async (accountId_Address: Address, params: RequestParams = {}) => {
+            const accountId = accountId_Address.toRawString();
+            const res = await this.http.request<Multisigs, Error>({
+                path: `/v2/accounts/${accountId}/multisigs`,
+                method: 'GET',
+                format: 'json',
+                ...params
+            });
+
+            return prepareResponseData<Multisigs>(res, { $ref: '#/components/schemas/Multisigs' });
         },
 
         /**
@@ -6658,11 +6994,8 @@ export class Api<SecurityDataType extends unknown> {
                 {
                     /** @example "comment" */
                     comment: string;
-                    /**
-                     * @format address
-                     * @example "0:0000000000000"
-                     */
-                    destination: Address;
+                    /** @example "0:0000000000000" */
+                    destination: string;
                 },
                 Error
             >({
@@ -6676,18 +7009,12 @@ export class Api<SecurityDataType extends unknown> {
             return prepareResponseData<{
                 /** @example "comment" */
                 comment: string;
-                /**
-                 * @format address
-                 * @example "0:0000000000000"
-                 */
-                destination: Address;
+                /** @example "0:0000000000000" */
+                destination: string;
             }>(res, {
                 type: 'object',
                 required: ['comment', 'destination'],
-                properties: {
-                    comment: { type: 'string' },
-                    destination: { type: 'string', format: 'address' }
-                }
+                properties: { comment: { type: 'string' }, destination: { type: 'string' } }
             });
         }
     };
@@ -7174,6 +7501,7 @@ export class Api<SecurityDataType extends unknown> {
          */
         getAccountInfoByStateInit: async (
             data: {
+                /** @format cell-base64 */
                 stateInit: string;
             },
             params: RequestParams = {}
@@ -7184,7 +7512,7 @@ export class Api<SecurityDataType extends unknown> {
                 body: prepareRequestData(data, {
                     type: 'object',
                     required: ['stateInit'],
-                    properties: { stateInit: { type: 'string' } }
+                    properties: { stateInit: { type: 'string', format: 'cell-base64' } }
                 }),
                 format: 'json',
                 ...params
@@ -7271,6 +7599,7 @@ export class Api<SecurityDataType extends unknown> {
                     signature: string;
                     /** @example "84jHVNLQmZsAAAAAZB0Zryi2wqVJI-KaKNXOvCijEi46YyYzkaSHyJrMPBMOkVZa" */
                     payload: string;
+                    /** @format cell-base64 */
                     stateInit?: string;
                 };
             },
@@ -7305,7 +7634,7 @@ export class Api<SecurityDataType extends unknown> {
                                 },
                                 signature: { type: 'string' },
                                 payload: { type: 'string' },
-                                stateInit: { type: 'string' }
+                                stateInit: { type: 'string', format: 'cell-base64' }
                             }
                         }
                     }
@@ -7359,6 +7688,109 @@ export class Api<SecurityDataType extends unknown> {
             });
 
             return prepareResponseData<Seqno>(res, { $ref: '#/components/schemas/Seqno' });
+        }
+    };
+    gasless = {
+        /**
+         * @description Returns configuration of gasless transfers
+         *
+         * @tags Gasless
+         * @name GaslessConfig
+         * @request GET:/v2/gasless/config
+         */
+        gaslessConfig: async (params: RequestParams = {}) => {
+            const res = await this.http.request<GaslessConfig, Error>({
+                path: `/v2/gasless/config`,
+                method: 'GET',
+                format: 'json',
+                ...params
+            });
+
+            return prepareResponseData<GaslessConfig>(res, {
+                $ref: '#/components/schemas/GaslessConfig'
+            });
+        },
+
+        /**
+         * @description Estimates the cost of the given messages and returns a payload to sign.
+         *
+         * @tags Gasless
+         * @name GaslessEstimate
+         * @request POST:/v2/gasless/estimate/{master_id}
+         */
+        gaslessEstimate: async (
+            masterId_Address: Address,
+            data: {
+                /** @format address */
+                walletAddress: Address;
+                walletPublicKey: string;
+                messages: {
+                    /** @format cell */
+                    boc: Cell;
+                }[];
+            },
+            params: RequestParams = {}
+        ) => {
+            const masterId = masterId_Address.toRawString();
+            const res = await this.http.request<SignRawParams, Error>({
+                path: `/v2/gasless/estimate/${masterId}`,
+                method: 'POST',
+                body: prepareRequestData(data, {
+                    type: 'object',
+                    required: ['messages', 'walletAddress', 'walletPublicKey'],
+                    properties: {
+                        walletAddress: { type: 'string', format: 'address' },
+                        walletPublicKey: { type: 'string' },
+                        messages: {
+                            type: 'array',
+                            items: {
+                                type: 'object',
+                                required: ['boc'],
+                                properties: { boc: { type: 'string', format: 'cell' } }
+                            }
+                        }
+                    }
+                }),
+                format: 'json',
+                ...params
+            });
+
+            return prepareResponseData<SignRawParams>(res, {
+                $ref: '#/components/schemas/SignRawParams'
+            });
+        },
+
+        /**
+         * No description
+         *
+         * @tags Gasless
+         * @name GaslessSend
+         * @request POST:/v2/gasless/send
+         */
+        gaslessSend: async (
+            data: {
+                /** hex encoded public key */
+                walletPublicKey: string;
+                /** @format cell */
+                boc: Cell;
+            },
+            params: RequestParams = {}
+        ) => {
+            const res = await this.http.request<void, Error>({
+                path: `/v2/gasless/send`,
+                method: 'POST',
+                body: prepareRequestData(data, {
+                    type: 'object',
+                    required: ['boc', 'walletPublicKey'],
+                    properties: {
+                        walletPublicKey: { type: 'string' },
+                        boc: { type: 'string', format: 'cell' }
+                    }
+                }),
+                ...params
+            });
+
+            return prepareResponseData<void>(res);
         }
     };
     liteServer = {
@@ -7702,6 +8134,7 @@ export class Api<SecurityDataType extends unknown> {
          */
         sendRawMessage: async (
             data: {
+                /** @format cell-base64 */
                 body: string;
             },
             params: RequestParams = {}
@@ -7721,7 +8154,7 @@ export class Api<SecurityDataType extends unknown> {
                 body: prepareRequestData(data, {
                     type: 'object',
                     required: ['body'],
-                    properties: { body: { type: 'string' } }
+                    properties: { body: { type: 'string', format: 'cell-base64' } }
                 }),
                 format: 'json',
                 ...params
@@ -8471,6 +8904,26 @@ export class Api<SecurityDataType extends unknown> {
                     }
                 }
             });
+        }
+    };
+    multisig = {
+        /**
+         * @description Get multisig account info
+         *
+         * @tags Multisig
+         * @name GetMultisigAccount
+         * @request GET:/v2/multisig/{account_id}
+         */
+        getMultisigAccount: async (accountId_Address: Address, params: RequestParams = {}) => {
+            const accountId = accountId_Address.toRawString();
+            const res = await this.http.request<Multisig, Error>({
+                path: `/v2/multisig/${accountId}`,
+                method: 'GET',
+                format: 'json',
+                ...params
+            });
+
+            return prepareResponseData<Multisig>(res, { $ref: '#/components/schemas/Multisig' });
         }
     };
 }
