@@ -5049,9 +5049,23 @@ function prepareRequestData(data: any, orSchema?: any): any {
         const itemSchema = schema && schema.items;
 
         return data.map(item => prepareRequestData(item, itemSchema));
-    } else if (schema && schema.format === 'address') {
-        return (data as Address).toRawString();
-    } else if (data !== null && typeof data === 'object') {
+    } else if (schema) {
+        if (schema.type === 'string') {
+            if (schema.format === 'address') {
+                return (data as Address).toRawString();
+            }
+
+            if (schema.format === 'cell') {
+                return (data as Cell).hash().toString('hex');
+            }
+
+            if (schema.format === 'cell-base64') {
+                return (data as Cell).hash().toString('base64');
+            }
+        }
+    }
+
+    if (data !== null && typeof data === 'object') {
         return Object.keys(data).reduce(
             (acc, key) => {
                 const objSchema = schema?.properties && schema.properties[key];
@@ -7502,7 +7516,7 @@ export class Api<SecurityDataType extends unknown> {
         getAccountInfoByStateInit: async (
             data: {
                 /** @format cell-base64 */
-                stateInit: string;
+                stateInit: Cell;
             },
             params: RequestParams = {}
         ) => {
@@ -7600,7 +7614,7 @@ export class Api<SecurityDataType extends unknown> {
                     /** @example "84jHVNLQmZsAAAAAZB0Zryi2wqVJI-KaKNXOvCijEi46YyYzkaSHyJrMPBMOkVZa" */
                     payload: string;
                     /** @format cell-base64 */
-                    stateInit?: string;
+                    stateInit?: Cell;
                 };
             },
             params: RequestParams = {}
@@ -8135,7 +8149,7 @@ export class Api<SecurityDataType extends unknown> {
         sendRawMessage: async (
             data: {
                 /** @format cell-base64 */
-                body: string;
+                body: Cell;
             },
             params: RequestParams = {}
         ) => {

@@ -114,20 +114,37 @@ function prepareRequestData(data: any, orSchema?: any): any {
   const schema = ref ? components[ref] : orSchema;
 
   if (Array.isArray(data)) {
-    const itemSchema = schema && schema.items;
+      const itemSchema = schema && schema.items;
 
-    return data.map((item) => prepareRequestData(item, itemSchema));
-  } else if (schema && schema.format === "address") {
-    return (data as Address).toRawString();
-  } else if (data !== null && typeof data === "object") {
-    return Object.keys(data).reduce((acc, key) => {
-      const objSchema = schema?.properties && schema.properties[key];
+      return data.map(item => prepareRequestData(item, itemSchema));
+  } else if (schema) {
+      if (schema.type === 'string') {
+          if (schema.format === 'address') {
+              return (data as Address).toRawString();
+          }
 
-      const snakeCaseKey = camelToSnake(key);
+          if (schema.format === 'cell') {
+              return (data as Cell).hash().toString('hex');
+          }
 
-      acc[snakeCaseKey] = prepareRequestData(data[key], objSchema);
-      return acc;
-    }, {} as Record<string, unknown>);
+          if (schema.format === 'cell-base64') {
+              return (data as Cell).hash().toString('base64');
+          }
+      }
+  }
+  
+  if (data !== null && typeof data === 'object') {
+      return Object.keys(data).reduce(
+          (acc, key) => {
+              const objSchema = schema?.properties && schema.properties[key];
+
+              const snakeCaseKey = camelToSnake(key);
+
+              acc[snakeCaseKey] = prepareRequestData(data[key], objSchema);
+              return acc;
+          },
+          {} as Record<string, unknown>
+      );
   }
   return data;
 }

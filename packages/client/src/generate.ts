@@ -2,7 +2,7 @@ import {
   PrimitiveTypeStruct,
   SchemaComponent,
   generateApi,
-  generateTemplates,
+  // generateTemplates,
 } from "swagger-typescript-api";
 
 import path from "path";
@@ -69,66 +69,12 @@ generateApi({
   //   url: "https://raw.githubusercontent.com/tonkeeper/opentonapi/master/api/openapi.yml",
   input: path.resolve(process.cwd(), "src/api.yml"),
   templates: path.resolve(process.cwd(), "src/templates"),
-  httpClientType: "fetch", // or "axios"
-  //   defaultResponseAsSuccess: false,
-  //   generateRouteTypes: false,
-  //   generateResponses: true,
-  //   extractRequestParams: false,
-  //   extractRequestBody: false,
-  // extractEnums: true,
+  httpClientType: "fetch",
   unwrapResponseData: true,
   moduleNameFirstTag: true,
   singleHttpClient: true,
-  // generateUnionEnums: true,
   cleanOutput: false,
   generateClient: true,
-  // typePrefix: 'C',
-  // unwrapResponseData: true,
-  //   prettier: {
-  //     // By default prettier config is load from your project
-  //     printWidth: 120,
-  //     tabWidth: 2,
-  //     trailingComma: "all",
-  //     parser: "typescript",
-  //   },
-  //   defaultResponseType: "void",
-  // singleHttpClient: true,
-  //   cleanOutput: false,
-  //   enumNamesAsValues: false,
-  // moduleNameFirstTag: true,
-  //   generateUnionEnums: false,
-  //   typePrefix: "",
-  //   typeSuffix: "",
-  //   enumKeyPrefix: "",
-  //   enumKeySuffix: "",
-  //   addReadonly: false,
-  //   sortTypes: false,
-  //   sortRouters: false,
-  //   extractingOptions: {
-  //     requestBodySuffix: ["Payload", "Body", "Input"],
-  //     requestParamsSuffix: ["Params"],
-  //     responseBodySuffix: ["Data", "Result", "Output"],
-  //     responseErrorSuffix: [
-  //       "Error",
-  //       "Fail",
-  //       "Fails",
-  //       "ErrorData",
-  //       "HttpError",
-  //       "BadResponse",
-  //     ],
-  //   },
-  //   /** allow to generate extra files based with this extra templates, see more below */
-  //   extraTemplates: [],
-  //   anotherArrayType: false,
-  //   fixInvalidTypeNamePrefix: "Type",
-  //   fixInvalidEnumKeyPrefix: "Value",
-  // codeGenConstructs: (constructs) => ({
-  //   ...constructs,
-  //   address: (key, value) => {
-  //       console.log(key, value);
-  //       return "Address";
-  //   },
-  // }),
   primitiveTypeConstructs: (struct: PrimitiveTypeStruct) => ({
     ...struct,
     integer: {
@@ -139,7 +85,7 @@ generateApi({
       $default: "string",
       address: "Address",
       cell: "Cell",
-      tuple: "Tuple",
+      "cell-base64": "Cell",
       "tuple-item": "TupleItem",
     },
   }),
@@ -148,55 +94,6 @@ generateApi({
     onFormatTypeName: (typeName, rawTypeName, schemaType) => {
       return typeName === 'TvmStackRecord' ? 'TupleItem' : typeName;
     },
-    // onCreateRequestParams: (rawType) => {
-    //   const patchedRowType = rawType.map
-    //   rawType
-    //   console.log('rawType: ', rawType);
-    //   return rawType;
-    // },
-    // onCreateRoute: (routeData) => {
-    //   console.log('routeData: ', routeData);
-    //   return routeData;
-    // },
-    //     onCreateRouteName: (routeNameInfo, rawRouteInfo) => {},
-    // onFormatRouteName: (routeInfo, templateRouteName) => {
-    //   console.log('routeInfo: ', routeInfo);
-    //   return templateRouteName;
-    // },
-    // onFormatTypeName: (typeName, rawTypeName, schemaType) => {
-    //   console.log('typeName: ', typeName, rawTypeName, schemaType);
-    //   return typeName;
-    // },
-    // onInit: (configuration) => {
-    //   // console.log('configuration: ', configuration.originalSchema);
-    //   return {
-    //     ...configuration,
-    //     originalSchema: replaceType(configuration.originalSchema),
-    //     swaggerSchema: replaceType(configuration.swaggerSchema),
-    //     };
-    // },
-    // onPreParseSchema: (originalSchema, typeName, schemaType) => {
-    //   // console.log('typeName: ', typeName, schemaType);
-    //   // console.log(originalSchema);
-
-    //   return {
-    //     ...originalSchema,
-    //     properties: originalSchema.properties && mapObject(originalSchema.properties, (value: any) => {
-    //       const newValueType = value["x-tc-type"] ? value["x-tc-type"] : value.type;
-    //       return {
-    //         ...value,
-    //         type: newValueType,
-    //       };
-    //     }),
-    //   };
-    // },
-    // onParseSchema: (originalSchema, parsedSchema) => {
-    //   // if (parsedSchema['$ref']?.includes('AccountAddress')) {
-    //   // console.log('parsedSchema: ', parsedSchema);
-    //   // }
-    //   return parsedSchema;
-    // },
-    //     onPrepareConfig: (currentConfiguration) => {},
   },
 });
 
