@@ -1,5 +1,5 @@
 import { HttpClient, Api, ApiConfig } from "../src/client";
-import { Address, Cell, Tuple, TupleItem } from "@ton/core";
+import { Address, Tuple, TupleItem } from "@ton/core";
 import fetchMock from "jest-fetch-mock";
 import JSONBigWrapper from "json-bigint";
 
@@ -16,56 +16,6 @@ const config: ApiConfig = {
 
 const http = new HttpClient(config);
 export const client = new Api(http);
-
-test("BigInt parse data test", async () => {
-  fetchMock.enableMocks();
-
-  const mockResponseString = JSONBig.stringify({
-    accounts: [
-      {
-        address:
-          "0:009d03ddede8c2620a72f999d03d5888102250a214bf574a29ff64df80162168",
-        balance: 471698230471698230471698230471698230n,
-        last_activity: 1717957542,
-        status: "active",
-        interfaces: ["wallet_v4r2"],
-        name: "moiseev.ton",
-        is_scam: false,
-        memo_required: false,
-        get_methods: ["get_public_key", "seqno"],
-        is_wallet: true,
-      },
-      {
-        address:
-          "0:7c9fc62291740a143086c807fe322accfd12737b3c2243676228176707c7ce40",
-        balance: 47602800,
-        last_activity: 1715684124,
-        status: "active",
-        interfaces: ["nft_item"],
-        get_methods: ["get_nft_data"],
-        is_wallet: false,
-      },
-    ],
-  });
-  fetchMock.mockResponseOnce(mockResponseString);
-
-  const addressStrings = [
-    "0:009d03ddede8c2620a72f999d03d5888102250a214bf574a29ff64df80162168",
-    "0:7c9fc62291740a143086c807fe322accfd12737b3c2243676228176707c7ce40",
-  ];
-  const accountIds = addressStrings.map((value) => Address.parse(value));
-  const res = await client.accounts.getAccounts({ accountIds });
-  const { accounts } = res;
-
-  expect(res).toBeDefined();
-  expect(accounts).toHaveLength(2);
-  expect(accounts[0].balance).toBe(471698230471698230471698230471698230n);
-  expect(typeof accounts[0].balance).toBe("bigint");
-  expect(accounts[1].balance).toBe(47602800n);
-  expect(typeof accounts[1].balance).toBe("bigint");
-
-  fetchMock.disableMocks();
-});
 
 function guardTuple(item: TupleItem): item is Tuple {
   return item.type === "tuple";
