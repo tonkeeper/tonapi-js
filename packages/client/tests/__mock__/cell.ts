@@ -15,3 +15,27 @@ export const getBlockchainRawAccount = JSONBig.stringify({
         due_payment: 0
     }
 });
+
+export const execGetMethodForBlockchainAccount = JSONBig.stringify({
+    "success": true,
+    "exit_code": 0,
+    "stack": [
+        {
+            "type": "num",
+            "num": "0xf"
+        },
+        {
+            "type": "num",
+            "num": "0x64"
+        },
+        {
+            "type": "cell",
+            "cell": "b5ee9c72010101010024000043801e1670765fe3410765c61a025aac396dae486f24630d380d4bb3edf2e8595b2990"
+        }
+    ],
+    "decoded": {
+        "numerator": 15,
+        "denominator": 100,
+        "destination": "0:f0b383b2ff1a083b2e30d012d561cb6d724379231869c06a5d9f6f9742cad94c"
+    }
+});

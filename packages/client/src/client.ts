@@ -4977,6 +4977,11 @@ function prepareResponseData<U>(obj: any, orSchema?: any): U {
             if (schema.format === 'cell') {
                 return obj && (cellParse(obj as string) as U);
             }
+
+            // maybe not used
+            if (schema.format === 'cell-base64') {
+                return obj && (Cell.fromBase64(obj as string) as U);
+            }
         }
 
         if (schema.type === 'integer') {
@@ -5006,7 +5011,12 @@ function prepareResponseData<U>(obj: any, orSchema?: any): U {
                     case 'cell':
                         return {
                             type: 'cell',
-                            cell: cellParse(obj.cell as string)
+                            cell: cellParse(obj.cell as string) // TODO: check if it is correct
+                        } as U;
+                    case 'slice':
+                        return {
+                            type: 'slice',
+                            slice: cellParse(obj.slice as string)
                         } as U;
                     case 'null':
                         return {
