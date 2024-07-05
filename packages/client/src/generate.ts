@@ -79,7 +79,7 @@ generateApi({
     ...struct,
     integer: {
       $default: "number",
-      int64: 'BigInt',
+      int64: 'bigint',
     },
     string: {
       $default: "string",

@@ -41,13 +41,13 @@ export interface BlockCurrencyCollection {
      * @format int64
      * @example 10000000000
      */
-    grams: BigInt;
+    grams: bigint;
     other: {
         /**
          * @format int64
          * @example 13
          */
-        id: BigInt;
+        id: bigint;
         /** @example "10000000000" */
         value: string;
     }[];
@@ -94,7 +94,7 @@ export interface ReducedBlock {
      * @format int64
      * @example 23814011000000
      */
-    utime: BigInt;
+    utime: bigint;
     shardsBlocks: string[];
 }
 
@@ -144,17 +144,17 @@ export interface BlockchainBlock {
      * @format int64
      * @example 1674826775
      */
-    genUtime: BigInt;
+    genUtime: bigint;
     /**
      * @format int64
      * @example 23814011000000
      */
-    startLt: BigInt;
+    startLt: bigint;
     /**
      * @format int64
      * @example 23814011000001
      */
-    endLt: BigInt;
+    endLt: bigint;
     /**
      * @format int32
      * @example 0
@@ -184,7 +184,7 @@ export interface BlockchainBlock {
      * @format int64
      * @example 0
      */
-    genSoftwareCapabilities?: BigInt;
+    genSoftwareCapabilities?: bigint;
     /** @example "(-1,4234234,8000000000000000)" */
     masterRef?: string;
     prevRefs: string[];
@@ -192,12 +192,12 @@ export interface BlockchainBlock {
      * @format int64
      * @example 0
      */
-    inMsgDescrLength: BigInt;
+    inMsgDescrLength: bigint;
     /**
      * @format int64
      * @example 0
      */
-    outMsgDescrLength: BigInt;
+    outMsgDescrLength: bigint;
     /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
     randSeed: string;
     /** @example "A6A0BD6608672B11B79538A50B2204E748305C12AA0DED9C16CF0006CE3AF8DB" */
@@ -240,7 +240,7 @@ export interface Message {
      * @format int64
      * @example 25713146000001
      */
-    createdLt: BigInt;
+    createdLt: bigint;
     /** @example true */
     ihrDisabled: boolean;
     /** @example true */
@@ -251,29 +251,29 @@ export interface Message {
      * @format int64
      * @example 60000000
      */
-    value: BigInt;
+    value: bigint;
     /**
      * @format int64
      * @example 5681002
      */
-    fwdFee: BigInt;
+    fwdFee: bigint;
     /**
      * @format int64
      * @example 5681002
      */
-    ihrFee: BigInt;
+    ihrFee: bigint;
     destination?: AccountAddress;
     source?: AccountAddress;
     /**
      * @format int64
      * @example 5681002
      */
-    importFee: BigInt;
+    importFee: bigint;
     /**
      * @format int64
      * @example 5681002
      */
-    createdAt: BigInt;
+    createdAt: bigint;
     /** @example "0xdeadbeaf" */
     opCode?: string;
     init?: StateInit;
@@ -332,12 +332,12 @@ export interface ComputePhase {
      * @format int64
      * @example 1000
      */
-    gasFees?: BigInt;
+    gasFees?: bigint;
     /**
      * @format int64
      * @example 10000
      */
-    gasUsed?: BigInt;
+    gasUsed?: bigint;
     /**
      * @format int32
      * @example 5
@@ -356,12 +356,12 @@ export interface StoragePhase {
      * @format int64
      * @example 25713146000001
      */
-    feesCollected: BigInt;
+    feesCollected: bigint;
     /**
      * @format int64
      * @example 25713146000001
      */
-    feesDue?: BigInt;
+    feesDue?: bigint;
     statusChange: AccStatusChange;
 }
 
@@ -370,12 +370,12 @@ export interface CreditPhase {
      * @format int64
      * @example 100
      */
-    feesCollected: BigInt;
+    feesCollected: bigint;
     /**
      * @format int64
      * @example 1000
      */
-    credit: BigInt;
+    credit: bigint;
 }
 
 export interface ActionPhase {
@@ -400,12 +400,12 @@ export interface ActionPhase {
      * @format int64
      * @example 1000
      */
-    fwdFees: BigInt;
+    fwdFees: bigint;
     /**
      * @format int64
      * @example 1000
      */
-    totalFees: BigInt;
+    totalFees: bigint;
     resultCodeDescription?: string;
 }
 
@@ -416,7 +416,7 @@ export interface Transaction {
      * @format int64
      * @example 25713146000001
      */
-    lt: BigInt;
+    lt: bigint;
     account: AccountAddress;
     /** @example true */
     success: boolean;
@@ -424,19 +424,19 @@ export interface Transaction {
      * @format int64
      * @example 1645544908
      */
-    utime: BigInt;
+    utime: bigint;
     origStatus: AccountStatus;
     endStatus: AccountStatus;
     /**
      * @format int64
      * @example 25713146000001
      */
-    totalFees: BigInt;
+    totalFees: bigint;
     /**
      * @format int64
      * @example 25713146000001
      */
-    endBalance: BigInt;
+    endBalance: bigint;
     transactionType: TransactionType;
     /** @example "55e8809519cd3c49098c9ee45afdafcea7a894a74d0f628d94a115a50e045122" */
     stateUpdateOld: string;
@@ -452,7 +452,7 @@ export interface Transaction {
      * @format int64
      * @example 25713146000001
      */
-    prevTransLt?: BigInt;
+    prevTransLt?: bigint;
     computePhase?: ComputePhase;
     storagePhase?: StoragePhase;
     creditPhase?: CreditPhase;
@@ -487,61 +487,61 @@ export interface ConfigProposalSetup {
      * @format int64
      * @example 1000000
      */
-    minStoreSec: BigInt;
+    minStoreSec: bigint;
     /**
      * @format int64
      * @example 10000000
      */
-    maxStoreSec: BigInt;
+    maxStoreSec: bigint;
     /**
      * @format int64
      * @example 1
      */
-    bitPrice: BigInt;
+    bitPrice: bigint;
     /**
      * @format int64
      * @example 500
      */
-    cellPrice: BigInt;
+    cellPrice: bigint;
 }
 
 export interface GasLimitPrices {
     /** @format int64 */
-    specialGasLimit?: BigInt;
+    specialGasLimit?: bigint;
     /** @format int64 */
-    flatGasLimit?: BigInt;
+    flatGasLimit?: bigint;
     /** @format int64 */
-    flatGasPrice?: BigInt;
+    flatGasPrice?: bigint;
     /**
      * @format int64
      * @example 1
      */
-    gasPrice: BigInt;
+    gasPrice: bigint;
     /**
      * @format int64
      * @example 1000000
      */
-    gasLimit: BigInt;
+    gasLimit: bigint;
     /**
      * @format int64
      * @example 1000000
      */
-    gasCredit: BigInt;
+    gasCredit: bigint;
     /**
      * @format int64
      * @example 1000000
      */
-    blockGasLimit: BigInt;
+    blockGasLimit: bigint;
     /**
      * @format int64
      * @example 1000000
      */
-    freezeDueLimit: BigInt;
+    freezeDueLimit: bigint;
     /**
      * @format int64
      * @example 1000000
      */
-    deleteDueLimit: BigInt;
+    deleteDueLimit: bigint;
 }
 
 export interface BlockParamLimits {
@@ -549,17 +549,17 @@ export interface BlockParamLimits {
      * @format int64
      * @example 1000000
      */
-    underload: BigInt;
+    underload: bigint;
     /**
      * @format int64
      * @example 1000000
      */
-    softLimit: BigInt;
+    softLimit: bigint;
     /**
      * @format int64
      * @example 1000000
      */
-    hardLimit: BigInt;
+    hardLimit: bigint;
 }
 
 export interface BlockLimits {
@@ -573,32 +573,32 @@ export interface MsgForwardPrices {
      * @format int64
      * @example 1000000
      */
-    lumpPrice: BigInt;
+    lumpPrice: bigint;
     /**
      * @format int64
      * @example 1000000
      */
-    bitPrice: BigInt;
+    bitPrice: bigint;
     /**
      * @format int64
      * @example 1000000
      */
-    cellPrice: BigInt;
+    cellPrice: bigint;
     /**
      * @format int64
      * @example 1000000
      */
-    ihrPriceFactor: BigInt;
+    ihrPriceFactor: bigint;
     /**
      * @format int64
      * @example 1000000
      */
-    firstFrac: BigInt;
+    firstFrac: bigint;
     /**
      * @format int64
      * @example 1000000
      */
-    nextFrac: BigInt;
+    nextFrac: bigint;
 }
 
 export interface WorkchainDescr {
@@ -611,7 +611,7 @@ export interface WorkchainDescr {
      * @format int64
      * @example 1000000
      */
-    enabledSince: BigInt;
+    enabledSince: bigint;
     /**
      * @format int
      * @example 1000000
@@ -646,7 +646,7 @@ export interface WorkchainDescr {
      * @format int64
      * @example 1000000
      */
-    version: BigInt;
+    version: bigint;
 }
 
 export interface MisbehaviourPunishmentConfig {
@@ -654,12 +654,12 @@ export interface MisbehaviourPunishmentConfig {
      * @format int64
      * @example 1000000
      */
-    defaultFlatFine: BigInt;
+    defaultFlatFine: bigint;
     /**
      * @format int64
      * @example 1000000
      */
-    defaultProportionalFine: BigInt;
+    defaultProportionalFine: bigint;
     /** @example 1000000 */
     severityFlatMult: number;
     /** @example 1000000 */
@@ -685,17 +685,17 @@ export interface SizeLimitsConfig {
      * @format int64
      * @example 1000000
      */
-    maxMsgBits: BigInt;
+    maxMsgBits: bigint;
     /**
      * @format int64
      * @example 1000000
      */
-    maxMsgCells: BigInt;
+    maxMsgCells: bigint;
     /**
      * @format int64
      * @example 1000000
      */
-    maxLibraryCells: BigInt;
+    maxLibraryCells: bigint;
     /**
      * @format int
      * @example 1000000
@@ -705,7 +705,7 @@ export interface SizeLimitsConfig {
      * @format int64
      * @example 1000000
      */
-    maxExtMsgSize: BigInt;
+    maxExtMsgSize: bigint;
     /**
      * @format int
      * @example 1000000
@@ -715,12 +715,12 @@ export interface SizeLimitsConfig {
      * @format int64
      * @example 1000000
      */
-    maxAccStateCells?: BigInt;
+    maxAccStateCells?: bigint;
     /**
      * @format int64
      * @example 1000000
      */
-    maxAccStateBits?: BigInt;
+    maxAccStateBits?: bigint;
 }
 
 export interface ValidatorsSet {
@@ -733,7 +733,7 @@ export interface ValidatorsSet {
     list: {
         publicKey: string;
         /** @format int64 */
-        weight: BigInt;
+        weight: bigint;
         adnlAddr?: string;
     }[];
 }
@@ -759,17 +759,17 @@ export interface OracleBridgeParams {
 
 export interface JettonBridgePrices {
     /** @format int64 */
-    bridgeBurnFee: BigInt;
+    bridgeBurnFee: bigint;
     /** @format int64 */
-    bridgeMintFee: BigInt;
+    bridgeMintFee: bigint;
     /** @format int64 */
-    walletMinTonsForStorage: BigInt;
+    walletMinTonsForStorage: bigint;
     /** @format int64 */
-    walletGasConsumption: BigInt;
+    walletGasConsumption: bigint;
     /** @format int64 */
-    minterMinTonsForStorage: BigInt;
+    minterMinTonsForStorage: bigint;
     /** @format int64 */
-    discoverGasConsumption: BigInt;
+    discoverGasConsumption: bigint;
 }
 
 export interface JettonBridgeParams {
@@ -779,7 +779,7 @@ export interface JettonBridgeParams {
     oraclesAddress: Address;
     stateFlags: number;
     /** @format int64 */
-    burnBridgeFee?: BigInt;
+    burnBridgeFee?: bigint;
     oracles: Oracle[];
     externalChainAddress?: string;
     prices?: JettonBridgePrices;
@@ -797,12 +797,12 @@ export interface Validator {
      * @format int64
      * @example 123456789
      */
-    stake: BigInt;
+    stake: bigint;
     /**
      * @format int64
      * @example 123456789
      */
-    maxFactor: BigInt;
+    maxFactor: bigint;
 }
 
 export interface Validators {
@@ -810,22 +810,22 @@ export interface Validators {
      * @format int64
      * @example 123456789
      */
-    electAt: BigInt;
+    electAt: bigint;
     /**
      * @format int64
      * @example 123456789
      */
-    electClose: BigInt;
+    electClose: bigint;
     /**
      * @format int64
      * @example 123456789
      */
-    minStake: BigInt;
+    minStake: bigint;
     /**
      * @format int64
      * @example 123456789
      */
-    totalStake: BigInt;
+    totalStake: bigint;
     validators: Validator[];
 }
 
@@ -834,27 +834,27 @@ export interface AccountStorageInfo {
      * @format int64
      * @example 567
      */
-    usedCells: BigInt;
+    usedCells: bigint;
     /**
      * @format int64
      * @example 567
      */
-    usedBits: BigInt;
+    usedBits: bigint;
     /**
      * @format int64
      * @example 567
      */
-    usedPublicCells: BigInt;
+    usedPublicCells: bigint;
     /**
      * @format int64
      * @example 567
      */
-    lastPaid: BigInt;
+    lastPaid: bigint;
     /**
      * @format int64
      * @example 567
      */
-    duePayment: BigInt;
+    duePayment: bigint;
 }
 
 export interface BlockchainRawAccount {
@@ -867,7 +867,7 @@ export interface BlockchainRawAccount {
      * @format int64
      * @example 123456789
      */
-    balance: BigInt;
+    balance: bigint;
     extraBalance?: Record<string, string>;
     /**
      * @format cell
@@ -883,7 +883,7 @@ export interface BlockchainRawAccount {
      * @format int64
      * @example 123456789
      */
-    lastTransactionLt: BigInt;
+    lastTransactionLt: bigint;
     /** @example "088b436a846d92281734236967970612f87fbd64a2cd3573107948379e8e4161" */
     lastTransactionHash?: string;
     /** @example "088b436a846d92281734236967970612f87fbd64a2cd3573107948379e8e4161" */
@@ -908,7 +908,7 @@ export interface Account {
      * @format int64
      * @example 123456789
      */
-    balance: BigInt;
+    balance: bigint;
     /**
      * {'USD': 1, 'IDR': 1000}
      * @example {}
@@ -919,7 +919,7 @@ export interface Account {
      * @format int64
      * @example 123456789
      */
-    lastActivity: BigInt;
+    lastActivity: bigint;
     status: AccountStatus;
     interfaces?: string[];
     /** @example "Ton foundation" */
@@ -994,7 +994,7 @@ export interface SignRawParams {
      * @format int64
      * @example 1717397217
      */
-    validUntil: BigInt;
+    validUntil: bigint;
     messages: SignRawMessage[];
 }
 
@@ -1045,31 +1045,31 @@ export interface BlockchainConfig {
         /** @format address */
         blackholeAddr?: Address;
         /** @format int64 */
-        feeBurnNom: BigInt;
+        feeBurnNom: bigint;
         /** @format int64 */
-        feeBurnDenom: BigInt;
+        feeBurnDenom: bigint;
     };
     /** Minting fees of new currencies. */
     '6'?: {
         /** @format int64 */
-        mintNewPrice: BigInt;
+        mintNewPrice: bigint;
         /** @format int64 */
-        mintAddPrice: BigInt;
+        mintAddPrice: bigint;
     };
     /** The volume of each of the additional currencies in circulation. */
     '7'?: {
         currencies: {
             /** @format int64 */
-            currencyId: BigInt;
+            currencyId: bigint;
             amount: string;
         }[];
     };
     /** The network version and additional capabilities supported by the validators. */
     '8'?: {
         /** @format int64 */
-        version: BigInt;
+        version: bigint;
         /** @format int64 */
-        capabilities: BigInt;
+        capabilities: bigint;
     };
     /** List of mandatory parameters of the blockchain config. */
     '9'?: {
@@ -1091,18 +1091,18 @@ export interface BlockchainConfig {
     /** The cost of filing complaints about incorrect operation of validators. */
     '13'?: {
         /** @format int64 */
-        deposit: BigInt;
+        deposit: bigint;
         /** @format int64 */
-        bitPrice: BigInt;
+        bitPrice: bigint;
         /** @format int64 */
-        cellPrice: BigInt;
+        cellPrice: bigint;
     };
     /** The reward in nanoTons for block creation in the TON blockchain. */
     '14'?: {
         /** @format int64 */
-        masterchainBlockFee: BigInt;
+        masterchainBlockFee: bigint;
         /** @format int64 */
-        basechainBlockFee: BigInt;
+        basechainBlockFee: bigint;
     };
     /** The reward in nanoTons for block creation in the TON blockchain. */
     '15'?: {
@@ -1110,22 +1110,22 @@ export interface BlockchainConfig {
          * @format int64
          * @example 65536
          */
-        validatorsElectedFor: BigInt;
+        validatorsElectedFor: bigint;
         /**
          * @format int64
          * @example 32768
          */
-        electionsStartBefore: BigInt;
+        electionsStartBefore: bigint;
         /**
          * @format int64
          * @example 8192
          */
-        electionsEndBefore: BigInt;
+        electionsEndBefore: bigint;
         /**
          * @format int64
          * @example 32768
          */
-        stakeHeldFor: BigInt;
+        stakeHeldFor: bigint;
     };
     /** The limits on the number of validators in the TON blockchain. */
     '16'?: {
@@ -1142,7 +1142,7 @@ export interface BlockchainConfig {
         maxStake: string;
         minTotalStake: string;
         /** @format int64 */
-        maxStakeFactor: BigInt;
+        maxStakeFactor: bigint;
     };
     /** The prices for data storage. */
     '18'?: {
@@ -1151,27 +1151,27 @@ export interface BlockchainConfig {
              * @format int64
              * @example 0
              */
-            utimeSince: BigInt;
+            utimeSince: bigint;
             /**
              * @format int64
              * @example 1
              */
-            bitPricePs: BigInt;
+            bitPricePs: bigint;
             /**
              * @format int64
              * @example 500
              */
-            cellPricePs: BigInt;
+            cellPricePs: bigint;
             /**
              * @format int64
              * @example 1000
              */
-            mcBitPricePs: BigInt;
+            mcBitPricePs: bigint;
             /**
              * @format int64
              * @example 500000
              */
-            mcCellPricePs: BigInt;
+            mcCellPricePs: bigint;
         }[];
     };
     /** The cost of computations in the masterchain. The complexity of any computation is estimated in gas units. */
@@ -1204,22 +1204,22 @@ export interface BlockchainConfig {
          * @format int64
          * @example 1000000
          */
-        mcCatchainLifetime: BigInt;
+        mcCatchainLifetime: bigint;
         /**
          * @format int64
          * @example 1000000
          */
-        shardCatchainLifetime: BigInt;
+        shardCatchainLifetime: bigint;
         /**
          * @format int64
          * @example 1000000
          */
-        shardValidatorsLifetime: BigInt;
+        shardValidatorsLifetime: bigint;
         /**
          * @format int64
          * @example 1000000
          */
-        shardValidatorsNum: BigInt;
+        shardValidatorsNum: bigint;
         /**
          * @format int
          * @example 1000000
@@ -1240,52 +1240,52 @@ export interface BlockchainConfig {
          * @format int64
          * @example 3
          */
-        roundCandidates: BigInt;
+        roundCandidates: bigint;
         /**
          * @format int64
          * @example 2000
          */
-        nextCandidateDelayMs: BigInt;
+        nextCandidateDelayMs: bigint;
         /**
          * @format int64
          * @example 16000
          */
-        consensusTimeoutMs: BigInt;
+        consensusTimeoutMs: bigint;
         /**
          * @format int64
          * @example 3
          */
-        fastAttempts: BigInt;
+        fastAttempts: bigint;
         /**
          * @format int64
          * @example 8
          */
-        attemptDuration: BigInt;
+        attemptDuration: bigint;
         /**
          * @format int64
          * @example 4
          */
-        catchainMaxDeps: BigInt;
+        catchainMaxDeps: bigint;
         /**
          * @format int64
          * @example 2097152
          */
-        maxBlockBytes: BigInt;
+        maxBlockBytes: bigint;
         /**
          * @format int64
          * @example 2097152
          */
-        maxCollatedBytes: BigInt;
+        maxCollatedBytes: bigint;
         /**
          * @format int64
          * @example 2
          */
-        protoVersion?: BigInt;
+        protoVersion?: bigint;
         /**
          * @format int64
          * @example 10000
          */
-        catchainMaxBlocksCoeff?: BigInt;
+        catchainMaxBlocksCoeff?: bigint;
     };
     /** The configuration for the consensus protocol above catchain. */
     '31'?: {
@@ -1355,12 +1355,12 @@ export interface DomainBid {
      * @format int64
      * @example 1660050553
      */
-    value: BigInt;
+    value: bigint;
     /**
      * @format int64
      * @example 1660050553
      */
-    txTime: BigInt;
+    txTime: bigint;
     /** @example "55e8809519cd3c49098c9ee45afdafcea7a894a74d0f628d94a115a50e045122" */
     txHash: string;
     bidder: AccountAddress;
@@ -1406,7 +1406,7 @@ export interface JettonBalance {
          * @format int64
          * @example 1678223064
          */
-        till: BigInt;
+        till: bigint;
     };
 }
 
@@ -1459,7 +1459,7 @@ export interface NftItem {
      * @format int64
      * @example 58
      */
-    index: BigInt;
+    index: bigint;
     owner?: AccountAddress;
     collection?: {
         /**
@@ -1504,7 +1504,7 @@ export interface Multisig {
      * @format int64
      * @example 1
      */
-    seqno: BigInt;
+    seqno: bigint;
     /** @format int32 */
     threshold: number;
     signers: Address[];
@@ -1522,7 +1522,7 @@ export interface MultisigOrder {
      * @format int64
      * @example 1
      */
-    orderSeqno: BigInt;
+    orderSeqno: bigint;
     /** @format int32 */
     threshold: number;
     /** @example false */
@@ -1531,7 +1531,7 @@ export interface MultisigOrder {
     /** @format int32 */
     approvalsNum: number;
     /** @format int64 */
-    expirationDate: BigInt;
+    expirationDate: bigint;
 }
 
 export interface Refund {
@@ -1547,12 +1547,12 @@ export interface ValueFlow {
      * @format int64
      * @example 80
      */
-    ton: BigInt;
+    ton: bigint;
     /**
      * @format int64
      * @example 10
      */
-    fees: BigInt;
+    fees: bigint;
     jettons?: {
         account: AccountAddress;
         jetton: JettonPreview;
@@ -1560,7 +1560,7 @@ export interface ValueFlow {
          * @format int64
          * @example 10
          */
-        quantity: BigInt;
+        quantity: bigint;
     }[];
 }
 
@@ -1626,7 +1626,7 @@ export interface TonTransferAction {
      * @format int64
      * @example 123456789
      */
-    amount: BigInt;
+    amount: bigint;
     /**
      * @example "Hi! This is your salary.
      * From accounting with love."
@@ -1644,7 +1644,7 @@ export interface SmartContractAction {
      * @format int64
      * @example 123456789
      */
-    tonAttached: BigInt;
+    tonAttached: bigint;
     /** @example "NftTransfer or 0x35d95a12" */
     operation: string;
     payload?: string;
@@ -1797,7 +1797,7 @@ export interface SubscriptionAction {
      * @format int64
      * @example 1000000000
      */
-    amount: BigInt;
+    amount: bigint;
     /** @example false */
     initial: boolean;
 }
@@ -1826,7 +1826,7 @@ export interface DepositStakeAction {
      * @format int64
      * @example 1660050553
      */
-    amount: BigInt;
+    amount: bigint;
     staker: AccountAddress;
     pool: AccountAddress;
     implementation: PoolImplementationType;
@@ -1838,7 +1838,7 @@ export interface WithdrawStakeAction {
      * @format int64
      * @example 1660050553
      */
-    amount: BigInt;
+    amount: bigint;
     staker: AccountAddress;
     pool: AccountAddress;
     implementation: PoolImplementationType;
@@ -1850,7 +1850,7 @@ export interface WithdrawStakeRequestAction {
      * @format int64
      * @example 1660050553
      */
-    amount?: BigInt;
+    amount?: bigint;
     staker: AccountAddress;
     pool: AccountAddress;
     implementation: PoolImplementationType;
@@ -1861,7 +1861,7 @@ export interface ElectionsRecoverStakeAction {
      * @format int64
      * @example 1660050553
      */
-    amount: BigInt;
+    amount: bigint;
     staker: AccountAddress;
 }
 
@@ -1870,7 +1870,7 @@ export interface ElectionsDepositStakeAction {
      * @format int64
      * @example 1660050553
      */
-    amount: BigInt;
+    amount: bigint;
     staker: AccountAddress;
 }
 
@@ -1884,12 +1884,12 @@ export interface JettonSwapAction {
      * @format int64
      * @example 1000000000
      */
-    tonIn?: BigInt;
+    tonIn?: bigint;
     /**
      * @format int64
      * @example 2000000000
      */
-    tonOut?: BigInt;
+    tonOut?: bigint;
     userWallet: AccountAddress;
     router: AccountAddress;
     jettonMasterIn?: JettonPreview;
@@ -1928,7 +1928,7 @@ export interface AccountEvent {
      * @format int64
      * @example 1234567890
      */
-    timestamp: BigInt;
+    timestamp: bigint;
     actions: Action[];
     /**
      * scam
@@ -1939,7 +1939,7 @@ export interface AccountEvent {
      * @format int64
      * @example 25713146000001
      */
-    lt: BigInt;
+    lt: bigint;
     /**
      * Event is not finished yet. Transactions still happening
      * @example false
@@ -1950,7 +1950,7 @@ export interface AccountEvent {
      * @format int64
      * @example 3
      */
-    extra: BigInt;
+    extra: bigint;
 }
 
 export interface AccountEvents {
@@ -1959,7 +1959,7 @@ export interface AccountEvents {
      * @format int64
      * @example 25713146000001
      */
-    nextFrom: BigInt;
+    nextFrom: bigint;
 }
 
 export interface TraceID {
@@ -1969,7 +1969,7 @@ export interface TraceID {
      * @format int64
      * @example 1645544908
      */
-    utime: BigInt;
+    utime: bigint;
 }
 
 export interface TraceIDs {
@@ -2001,37 +2001,37 @@ export interface Subscription {
      * @format int64
      * @example 1000000000
      */
-    amount: BigInt;
+    amount: bigint;
     /**
      * @format int64
      * @example 2592000
      */
-    period: BigInt;
+    period: bigint;
     /**
      * @format int64
      * @example 1653996832
      */
-    startTime: BigInt;
+    startTime: bigint;
     /**
      * @format int64
      * @example 10800
      */
-    timeout: BigInt;
+    timeout: bigint;
     /**
      * @format int64
      * @example 1653996834
      */
-    lastPaymentTime: BigInt;
+    lastPaymentTime: bigint;
     /**
      * @format int64
      * @example 0
      */
-    lastRequestTime: BigInt;
+    lastRequestTime: bigint;
     /**
      * @format int64
      * @example 217477
      */
-    subscriptionId: BigInt;
+    subscriptionId: bigint;
     /**
      * @format int32
      * @example 0
@@ -2055,17 +2055,17 @@ export interface Auction {
      * @format int64
      * @example 1660050553
      */
-    price: BigInt;
+    price: bigint;
     /**
      * @format int64
      * @example 1660050553
      */
-    bids: BigInt;
+    bids: bigint;
     /**
      * @format int64
      * @example 1660050553
      */
-    date: BigInt;
+    date: bigint;
 }
 
 export interface Auctions {
@@ -2074,7 +2074,7 @@ export interface Auctions {
      * @format int64
      * @example 1660050553
      */
-    total: BigInt;
+    total: bigint;
 }
 
 export interface WalletDNS {
@@ -2099,7 +2099,7 @@ export interface DomainInfo {
      * date of expiring. optional. not all domain in ton has expiration date
      * @format int64
      */
-    expiringAt?: BigInt;
+    expiringAt?: bigint;
     item?: NftItem;
 }
 
@@ -2128,7 +2128,7 @@ export interface NftCollection {
      * @format int64
      * @example 1
      */
-    nextItemIndex: BigInt;
+    nextItemIndex: bigint;
     owner?: AccountAddress;
     /** @format cell */
     rawCollectionContent: Cell;
@@ -2170,7 +2170,7 @@ export interface Risk {
      * @format int64
      * @example 500
      */
-    ton: BigInt;
+    ton: bigint;
     jettons: JettonQuantity[];
     nfts: NftItem[];
 }
@@ -2192,17 +2192,17 @@ export interface DecodedMessage {
              * @format int64
              * @example 1
              */
-            subwalletId: BigInt;
+            subwalletId: bigint;
             /**
              * @format int64
              * @example 1
              */
-            validUntil: BigInt;
+            validUntil: bigint;
             /**
              * @format int64
              * @example 1
              */
-            seqno: BigInt;
+            seqno: bigint;
             rawMessages: DecodedRawMessage[];
         };
         walletV4?: {
@@ -2210,17 +2210,17 @@ export interface DecodedMessage {
              * @format int64
              * @example 1
              */
-            subwalletId: BigInt;
+            subwalletId: bigint;
             /**
              * @format int64
              * @example 1
              */
-            validUntil: BigInt;
+            validUntil: bigint;
             /**
              * @format int64
              * @example 1
              */
-            seqno: BigInt;
+            seqno: bigint;
             /**
              * @format int32
              * @example 1
@@ -2233,7 +2233,7 @@ export interface DecodedMessage {
              * @format int64
              * @example 1
              */
-            subwalletId: BigInt;
+            subwalletId: bigint;
             /** @example "34254528475294857" */
             boundedQueryId: string;
             rawMessages: DecodedRawMessage[];
@@ -2262,7 +2262,7 @@ export interface Event {
      * @format int64
      * @example 1234567890
      */
-    timestamp: BigInt;
+    timestamp: bigint;
     actions: Action[];
     valueFlow: ValueFlow[];
     /**
@@ -2274,7 +2274,7 @@ export interface Event {
      * @format int64
      * @example 25713146000001
      */
-    lt: BigInt;
+    lt: bigint;
     /**
      * Event is not finished yet. Transactions still happening
      * @example false
@@ -2352,7 +2352,7 @@ export interface JettonHolders {
      * @format int64
      * @example 2000
      */
-    total: BigInt;
+    total: bigint;
 }
 
 export interface AccountStaking {
@@ -2366,22 +2366,22 @@ export interface AccountStakingInfo {
      * @format int64
      * @example 10050000000000
      */
-    amount: BigInt;
+    amount: bigint;
     /**
      * @format int64
      * @example 500000000000
      */
-    pendingDeposit: BigInt;
+    pendingDeposit: bigint;
     /**
      * @format int64
      * @example 500000000000
      */
-    pendingWithdraw: BigInt;
+    pendingWithdraw: bigint;
     /**
      * @format int64
      * @example 500000000000
      */
-    readyWithdraw: BigInt;
+    readyWithdraw: bigint;
 }
 
 export interface PoolInfo {
@@ -2393,7 +2393,7 @@ export interface PoolInfo {
     /** @example "Tonkeeper pool" */
     name: string;
     /** @format int64 */
-    totalAmount: BigInt;
+    totalAmount: bigint;
     implementation: PoolImplementationType;
     /**
      * APY in percent
@@ -2404,19 +2404,19 @@ export interface PoolInfo {
      * @format int64
      * @example 5000000000
      */
-    minStake: BigInt;
+    minStake: bigint;
     /**
      * current nomination cycle beginning timestamp
      * @format int64
      * @example 1678223064
      */
-    cycleStart: BigInt;
+    cycleStart: bigint;
     /**
      * current nomination cycle ending timestamp
      * @format int64
      * @example 1678223064
      */
-    cycleEnd: BigInt;
+    cycleEnd: bigint;
     /**
      * this pool has verified source code or managed by trusted company
      * @example true
@@ -2443,15 +2443,15 @@ export interface PoolInfo {
      * @format int64
      * @example 5000000000
      */
-    nominatorsStake: BigInt;
+    nominatorsStake: bigint;
     /**
      * stake of validator
      * @format int64
      * @example 5000000000
      */
-    validatorStake: BigInt;
+    validatorStake: bigint;
     /** @format int64 */
-    cycleLength?: BigInt;
+    cycleLength?: bigint;
 }
 
 export interface PoolImplementation {
@@ -2476,22 +2476,22 @@ export interface StorageProvider {
      * @format int64
      * @example 50000000
      */
-    ratePerMbDay: BigInt;
+    ratePerMbDay: bigint;
     /**
      * @format int64
      * @example 604800
      */
-    maxSpan: BigInt;
+    maxSpan: bigint;
     /**
      * @format int64
      * @example 64
      */
-    minimalFileSize: BigInt;
+    minimalFileSize: bigint;
     /**
      * @format int64
      * @example 10485760
      */
-    maximalFileSize: BigInt;
+    maximalFileSize: bigint;
 }
 
 export interface FoundAccounts {
@@ -2511,7 +2511,7 @@ export interface DnsExpiring {
          * @format int64
          * @example "1678275313"
          */
-        expiringAt: BigInt;
+        expiringAt: bigint;
         /** @example "blah_blah.ton" */
         name: string;
         dnsItem?: NftItem;
@@ -2577,7 +2577,7 @@ export interface BlockchainAccountInspect {
     codeHash: string;
     methods: {
         /** @format int64 */
-        id: BigInt;
+        id: bigint;
         /** @example "get_something" */
         method: string;
     }[];
@@ -2610,7 +2610,7 @@ export interface MarketTonRates {
      * @format int64
      * @example 1668436763
      */
-    lastDateUpdate: BigInt;
+    lastDateUpdate: bigint;
 }
 
 export type QueryParamsType = Record<string | number, any>;
@@ -5146,9 +5146,9 @@ export class Api<SecurityDataType extends unknown> {
         getReducedBlockchainBlocks: async (
             query: {
                 /** @format int64 */
-                from: BigInt;
+                from: bigint;
                 /** @format int64 */
-                to: BigInt;
+                to: bigint;
             },
             params: RequestParams = {}
         ) => {
@@ -5439,13 +5439,13 @@ export class Api<SecurityDataType extends unknown> {
                  * @format int64
                  * @example 39787624000003
                  */
-                after_lt?: BigInt;
+                after_lt?: bigint;
                 /**
                  * omit this parameter to get last transactions
                  * @format int64
                  * @example 39787624000003
                  */
-                before_lt?: BigInt;
+                before_lt?: bigint;
                 /**
                  * @format int32
                  * @min 1
@@ -5736,7 +5736,7 @@ export class Api<SecurityDataType extends unknown> {
                      * @format int64
                      * @example 10000000000
                      */
-                    balance?: BigInt;
+                    balance?: bigint;
                 }[];
             },
             params: RequestParams = {}
@@ -6037,7 +6037,7 @@ export class Api<SecurityDataType extends unknown> {
                  * @format int64
                  * @example 25758317000002
                  */
-                before_lt?: BigInt;
+                before_lt?: bigint;
                 /**
                  * @min 1
                  * @max 1000
@@ -6048,12 +6048,12 @@ export class Api<SecurityDataType extends unknown> {
                  * @format int64
                  * @example 1668436763
                  */
-                start_date?: BigInt;
+                start_date?: bigint;
                 /**
                  * @format int64
                  * @example 1668436763
                  */
-                end_date?: BigInt;
+                end_date?: bigint;
             },
             params: RequestParams = {}
         ) => {
@@ -6087,7 +6087,7 @@ export class Api<SecurityDataType extends unknown> {
                  * @format int64
                  * @example 25758317000002
                  */
-                before_lt?: BigInt;
+                before_lt?: bigint;
                 /**
                  * @min 1
                  * @max 1000
@@ -6098,12 +6098,12 @@ export class Api<SecurityDataType extends unknown> {
                  * @format int64
                  * @example 1668436763
                  */
-                start_date?: BigInt;
+                start_date?: bigint;
                 /**
                  * @format int64
                  * @example 1668436763
                  */
-                end_date?: BigInt;
+                end_date?: bigint;
             },
             params: RequestParams = {}
         ) => {
@@ -6197,7 +6197,7 @@ export class Api<SecurityDataType extends unknown> {
                  * @format int64
                  * @example 25758317000002
                  */
-                before_lt?: BigInt;
+                before_lt?: bigint;
                 /**
                  * @min 1
                  * @max 100
@@ -6208,12 +6208,12 @@ export class Api<SecurityDataType extends unknown> {
                  * @format int64
                  * @example 1668436763
                  */
-                start_date?: BigInt;
+                start_date?: bigint;
                 /**
                  * @format int64
                  * @example 1668436763
                  */
-                end_date?: BigInt;
+                end_date?: bigint;
             },
             params: RequestParams = {}
         ) => {
@@ -6279,7 +6279,7 @@ export class Api<SecurityDataType extends unknown> {
                  * @format int64
                  * @example 25758317000002
                  */
-                before_lt?: BigInt;
+                before_lt?: bigint;
                 /**
                  * @min 1
                  * @max 1000
@@ -6469,12 +6469,12 @@ export class Api<SecurityDataType extends unknown> {
                  * @format int64
                  * @example 1668436763
                  */
-                start_date: BigInt;
+                start_date: bigint;
                 /**
                  * @format int64
                  * @example 1668436763
                  */
-                end_date: BigInt;
+                end_date: bigint;
             },
             params: RequestParams = {}
         ) => {
@@ -6485,7 +6485,7 @@ export class Api<SecurityDataType extends unknown> {
                      * @format int64
                      * @example 1000000000
                      */
-                    balance_change: BigInt;
+                    balance_change: bigint;
                 },
                 Error
             >({
@@ -6501,7 +6501,7 @@ export class Api<SecurityDataType extends unknown> {
                  * @format int64
                  * @example 1000000000
                  */
-                balance_change: BigInt;
+                balance_change: bigint;
             }>(res, {
                 type: 'object',
                 required: ['balance_change'],
@@ -6525,7 +6525,7 @@ export class Api<SecurityDataType extends unknown> {
                  * @format int64
                  * @example 25758317000002
                  */
-                before_lt?: BigInt;
+                before_lt?: bigint;
                 /**
                  * @min 1
                  * @max 1000
@@ -6536,12 +6536,12 @@ export class Api<SecurityDataType extends unknown> {
                  * @format int64
                  * @example 1668436763
                  */
-                start_date?: BigInt;
+                start_date?: bigint;
                 /**
                  * @format int64
                  * @example 1668436763
                  */
-                end_date?: BigInt;
+                end_date?: bigint;
             },
             params: RequestParams = {}
         ) => {
@@ -6720,7 +6720,7 @@ export class Api<SecurityDataType extends unknown> {
                  * @format int64
                  * @example 25758317000002
                  */
-                before_lt?: BigInt;
+                before_lt?: bigint;
                 /**
                  * @min 1
                  * @max 1000
@@ -6731,12 +6731,12 @@ export class Api<SecurityDataType extends unknown> {
                  * @format int64
                  * @example 1668436763
                  */
-                start_date?: BigInt;
+                start_date?: bigint;
                 /**
                  * @format int64
                  * @example 1668436763
                  */
-                end_date?: BigInt;
+                end_date?: bigint;
             },
             params: RequestParams = {}
         ) => {
@@ -6933,7 +6933,7 @@ export class Api<SecurityDataType extends unknown> {
                  * @format int64
                  * @example 25758317000002
                  */
-                before_lt?: BigInt;
+                before_lt?: bigint;
                 /**
                  * @min 1
                  * @max 1000
@@ -6974,7 +6974,7 @@ export class Api<SecurityDataType extends unknown> {
                  * @format int64
                  * @example 25758317000002
                  */
-                before_lt?: BigInt;
+                before_lt?: bigint;
                 /**
                  * @min 1
                  * @max 1000
@@ -7419,12 +7419,12 @@ export class Api<SecurityDataType extends unknown> {
                  * @format int64
                  * @example 1668436763
                  */
-                start_date?: BigInt;
+                start_date?: bigint;
                 /**
                  * @format int64
                  * @example 1668436763
                  */
-                end_date?: BigInt;
+                end_date?: bigint;
                 /**
                  * @format int
                  * @min 0
@@ -7623,7 +7623,7 @@ export class Api<SecurityDataType extends unknown> {
                      * @format int64
                      * @example "1678275313"
                      */
-                    timestamp: BigInt;
+                    timestamp: bigint;
                     domain: {
                         /** @format int32 */
                         lengthBytes?: number;
@@ -7900,7 +7900,7 @@ export class Api<SecurityDataType extends unknown> {
                      * @format int64
                      * @example 7
                      */
-                    capabilities: BigInt;
+                    capabilities: bigint;
                     last: BlockRaw;
                     /**
                      * @format int32
@@ -7940,7 +7940,7 @@ export class Api<SecurityDataType extends unknown> {
                  * @format int64
                  * @example 7
                  */
-                capabilities: BigInt;
+                capabilities: bigint;
                 last: BlockRaw;
                 /**
                  * @format int32
@@ -8288,7 +8288,7 @@ export class Api<SecurityDataType extends unknown> {
                  * @format int64
                  * @example 1
                  */
-                shard: BigInt;
+                shard: bigint;
                 /**
                  * exact
                  * @example false
@@ -8396,7 +8396,7 @@ export class Api<SecurityDataType extends unknown> {
                  * @format int64
                  * @example 23814011000000
                  */
-                lt: BigInt;
+                lt: bigint;
                 /**
                  * hash
                  * @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85"
@@ -8468,7 +8468,7 @@ export class Api<SecurityDataType extends unknown> {
                  * @format int64
                  * @example 23814011000000
                  */
-                lt?: BigInt;
+                lt?: bigint;
             },
             params: RequestParams = {}
         ) => {
@@ -8491,7 +8491,7 @@ export class Api<SecurityDataType extends unknown> {
                         /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
                         account?: string;
                         /** @format int64 */
-                        lt?: BigInt;
+                        lt?: bigint;
                         /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
                         hash?: string;
                     }[];
@@ -8528,7 +8528,7 @@ export class Api<SecurityDataType extends unknown> {
                     /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
                     account?: string;
                     /** @format int64 */
-                    lt?: BigInt;
+                    lt?: bigint;
                     /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
                     hash?: string;
                 }[];
@@ -8617,7 +8617,7 @@ export class Api<SecurityDataType extends unknown> {
                             config_proof: string;
                             signatures: {
                                 /** @format int64 */
-                                validator_set_hash: BigInt;
+                                validator_set_hash: bigint;
                                 /** @format int32 */
                                 catchain_seqno: number;
                                 signatures: {
@@ -8668,7 +8668,7 @@ export class Api<SecurityDataType extends unknown> {
                         config_proof: string;
                         signatures: {
                             /** @format int64 */
-                            validator_set_hash: BigInt;
+                            validator_set_hash: bigint;
                             /** @format int32 */
                             catchain_seqno: number;
                             signatures: {
