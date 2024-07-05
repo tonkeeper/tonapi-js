@@ -2496,10 +2496,7 @@ export interface StorageProvider {
 
 export interface FoundAccounts {
     addresses: {
-        /**
-         * @format address
-         * @example "0:010cеeac44fad23417a5c55e4071796868771082с9a61e8c195a8d57508b8471"
-         */
+        /** @format address */
         address: Address;
         /** @example "blah_blah.ton" */
         name: string;
@@ -3573,7 +3570,7 @@ const components = {
         required: ['type'],
         properties: {
             type: { type: 'string', enum: ['cell', 'num', 'nan', 'null', 'tuple'] },
-            cell: { type: 'string', format: 'cell-base64' },
+            cell: { type: 'string', format: 'cell' },
             slice: { type: 'string', format: 'cell' },
             num: { type: 'string' },
             tuple: { type: 'array', items: { $ref: '#/components/schemas/TvmStackRecord' } }
