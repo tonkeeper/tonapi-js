@@ -2639,6 +2639,7 @@ export type RequestParams = Omit<FullRequestParams, 'body' | 'method' | 'query' 
 
 export interface ApiConfig<SecurityDataType = unknown> {
     baseUrl?: string;
+    apiKey?: string;
     baseApiParams?: Omit<RequestParams, 'baseUrl' | 'cancelToken' | 'signal'>;
     securityWorker?: (
         securityData: SecurityDataType | null
@@ -2664,7 +2665,7 @@ import { Address, Cell, TupleItem } from '@ton/core';
 import JSONBigIntWrapper from 'json-bigint';
 const JSONBigInt = JSONBigIntWrapper({ useNativeBigInt: true });
 
-export class HttpClient<SecurityDataType = unknown> {
+export class TonApiClient<SecurityDataType = unknown> {
     public baseUrl: string = 'https://tonapi.io';
     private securityData: SecurityDataType | null = null;
     private securityWorker?: ApiConfig<SecurityDataType>['securityWorker'];
@@ -2679,6 +2680,17 @@ export class HttpClient<SecurityDataType = unknown> {
     };
 
     constructor(apiConfig: ApiConfig<SecurityDataType> = {}) {
+        if (apiConfig.apiKey) {
+            const baseApiParams = apiConfig.baseApiParams || {};
+            apiConfig.baseApiParams = {
+                ...baseApiParams,
+                headers: {
+                    ...baseApiParams.headers,
+                    Authorization: `Bearer ${apiConfig.apiKey}`
+                }
+            };
+        }
+
         Object.assign(this, apiConfig);
     }
 
@@ -5097,9 +5109,9 @@ function prepareRequestData(data: any, orSchema?: any): any {
  * Provide access to indexed TON blockchain
  */
 export class Api<SecurityDataType extends unknown> {
-    http: HttpClient<SecurityDataType>;
+    http: TonApiClient<SecurityDataType>;
 
-    constructor(http: HttpClient<SecurityDataType>) {
+    constructor(http: TonApiClient<SecurityDataType>) {
         this.http = http;
     }
 

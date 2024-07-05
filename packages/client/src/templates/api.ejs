@@ -96,12 +96,12 @@ const components =  <%~ componentsJson %>
 <% }) %>
 */
 <% } %>
-export class <%~ config.apiClassName %><SecurityDataType extends unknown><% if (!config.singleHttpClient) { %> extends HttpClient<SecurityDataType> <% } %> {
+export class <%~ config.apiClassName %><SecurityDataType extends unknown><% if (!config.singleHttpClient) { %> extends TonApiClient<SecurityDataType> <% } %> {
 
 <% if(config.singleHttpClient) { %>
-  http: HttpClient<SecurityDataType>;
+  http: TonApiClient<SecurityDataType>;
 
-  constructor (http: HttpClient<SecurityDataType>) {
+  constructor (http: TonApiClient<SecurityDataType>) {
     this.http = http;
   }
 <% } %>

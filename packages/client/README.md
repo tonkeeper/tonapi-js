@@ -15,26 +15,29 @@ npm install @ton-api/client
 yarn add @ton-api/client
 ```
 
+Install the required peer dependencies:
+
+```sh
+npm install @ton/core
+# or
+yarn add @ton/core
+```
+
 ## Usage
 
 Below is an example of how to use the SDK in your JavaScript project:
 
 ```js
-import { HttpClient, Api } from '@ton-api/client';
+import { TonApiClient, Api } from '@ton-api/client';
 
 // Configure the HTTP client with your host and token
-const httpClient = new HttpClient({
+const http = new TonApiClient({
     baseUrl: 'https://tonapi.io',
-    baseApiParams: {
-        headers: {
-            Authorization: `Bearer ${YOUR_TOKEN}`,
-            'Content-type': 'application/json'
-        }
-    }
+    apiKey: YOUR_TOKEN
 });
 
 // Initialize the API client
-const client = new Api(httpClient);
+const client = new Api(http);
 
 // Fetch a typed array of account events
 const events = await client.accounts.getAccountEvents(address, { limit: 50 });
