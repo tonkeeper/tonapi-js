@@ -23,6 +23,10 @@ function onCreateComponent(component: SchemaComponent) {
     if (Array.isArray(object)) {
       return object.map(camelCaseProperties);
     } else if (typeof object === "object" && object !== null) {
+      if (object['x-tonjs-format']) {
+        object.format = object['x-js-format']
+      }
+
       if (object.properties) {
         object.properties = camelCaseProperties(object.properties);
       }
@@ -79,7 +83,6 @@ generateApi({
     ...struct,
     integer: {
       $default: "number",
-      int64: 'bigint',
     },
     string: {
       $default: "string",
