@@ -1,8 +1,10 @@
 {
   "name": "@ton-api/ton-adapter",
-  "version": "0.0.1-beta.5",
+  "version": "0.1.0-alpha.0",
   "description": "TonApi adapter for @ton/ton",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -15,7 +17,8 @@
     }
   },
   "scripts": {
-    "build": "tsup && npx rimraf ./dist/index.d.mts"
+    "build": "tsup && npx rimraf ./dist/index.d.mts",
+    "test": "jest --runInBand"
   },
   "license": "GPL-3.0",
   "bugs": {
@@ -43,12 +46,15 @@
     }
   ],
   "peerDependencies": {
-    "@ton/core": ">=0.54.0",
-    "@ton-api/client": ">=0.0.1-beta.0"
+    "@ton-api/client": "^0.1.0-alpha.0",
+    "@ton/core": ">=0.56.0"
   },
   "devDependencies": {
-    "@ton/core": "^0.54.0",
+    "@ton-api/client": "^0.1.0-alpha.0",
+    "@ton/core": "^0.56.0",
+    "@ton/ton": "^13.11.2",
     "@types/node": "^20.11.16",
-    "@ton-api/client": "*"
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.5"
   }
 }

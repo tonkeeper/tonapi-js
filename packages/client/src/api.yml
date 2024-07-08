@@ -3059,6 +3059,7 @@ components:
                       type: integer
                       format: int64
                       example: 10000000000
+                      x-js-format: bigint
     InternalMessages:
       description: bag-of-cells serialized to hex
       required: true
@@ -3799,6 +3800,7 @@ components:
           type: integer
           format: int64
           example: 25713146000001
+          x-js-format: bigint
         transaction_type:
           $ref: '#/components/schemas/TransactionType'
         state_update_old:
@@ -4376,6 +4378,7 @@ components:
           type: integer
           format: int64
           example: 123456789
+          x-js-format: bigint
         extra_balance:
           type: object
           additionalProperties:
@@ -6704,7 +6707,7 @@ components:
                 $ref: '#/components/schemas/AccountAddress'
               balance:
                 type: string
-                example: 1000000000
+                example: 1000000000 # need fix or type or example
         total:
           type: integer
           format: int64

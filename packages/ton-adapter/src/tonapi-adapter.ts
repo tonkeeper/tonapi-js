@@ -6,15 +6,28 @@ import {
     Contract,
     ContractProvider,
     ContractState,
+    CurrencyCollection,
+    HashUpdate,
+    TransactionDescription,
     external,
     openContract,
     OpenedContract,
     storeMessage,
     toNano,
+    Dictionary,
+    Transaction,
+    AccountStatus,
+    Message,
     TupleItem,
     TupleReader
 } from '@ton/core';
-import { AccountStatus, Api, BlockchainRawAccount } from '../../client/src/client';
+import {
+    AccountStatus as TonApiAccountStatus,
+    Api,
+    BlockchainRawAccount,
+    Transaction as TonApiTransaction,
+    Message as TonApiMessage
+} from '../../client/src/client';
 import { Buffer } from 'buffer';
 
 export class ContractAdapter {
@@ -46,7 +59,7 @@ function createProvider(
     tonapi: Api<unknown>,
     address: Address,
     init: { code?: Cell | null; data?: Cell | null } | null
-): Partial<ContractProvider> {
+): ContractProvider {
     return {
         async getState(): Promise<ContractState> {
             // Load state
@@ -157,9 +170,80 @@ function createProvider(
                 init: neededInit,
                 body
             });
+        },
+        open<T extends Contract>(contract: T): OpenedContract<T> {
+            return openContract(contract, params =>
+                createProvider(tonapi, params.address, params.init)
+            );
+        },
+        // TODO: many questions
+        async getTransactions(
+            address: Address,
+            lt: bigint,
+            hash: Buffer, // TODO what is hash?
+            limit?: number
+        ): Promise<Transaction[]> {
+            console.info('hash param in getTransactions action ignored, beacause not supported');
+            // TODO: use  unused params
+            return await tonapi.blockchain
+                .getBlockchainAccountTransactions(address, {
+                    after_lt: lt,
+                    limit
+                })
+                .then(data => data.transactions.map(TonapiTransactionToTonCoreTransaction));
         }
     };
 }
+
+function TonapiTransactionToTonCoreTransaction(transaction: TonApiTransaction): Transaction {
+    try {
+        return {
+            address: BigInt(transaction.account.address.toString()), // TODO: Why bigint?
+            lt: transaction.lt,
+            prevTransactionHash: BigInt(transaction.prevTransHash!), // TODO: why not optional? How convert HEX to BigInt?
+            prevTransactionLt: transaction.prevTransLt!, // TODO: why not optoinal?
+            now: new Date().getTime(), // TODO: check estimated data
+            outMessagesCount: transaction.outMsgs.length, // TODO: need remove field from Transaction in ton/core
+            oldStatus: TonapiAccountStatusToTonCoreAccountStatus(transaction.origStatus),
+            endStatus: TonapiAccountStatusToTonCoreAccountStatus(transaction.endStatus),
+            inMessage: transaction.inMsg ? TonapiMessageToTonCoreMessage(transaction.inMsg) : null,
+            outMessages: TonapiMessagesToTonCoreDisctionaryMessages(transaction.outMsgs),
+            totalFees: {
+                coins: transaction.totalFees
+            } as CurrencyCollection, // TODO: need return full CurrencyCollection
+            stateUpdate: TonapiTransactionToTonCoreHashUpdate(transaction),
+            description: TonApiTransactionToTonCoreTransactionDescription(transaction), // TODO: check source for data
+            raw: transaction.raw,
+            hash: () => Buffer.from(transaction.hash, 'base64')
+        };
+    } catch (error) {
+        throw new Error(
+            "Can't convert TonApi Transaction fo @ton/core type, please upgrade package to new version"
+        );
+    }
+}
+
+function TonApiTransactionToTonCoreTransactionDescription(
+    transaction: TonApiTransaction
+): TransactionDescription {}
+
+function TonapiTransactionToTonCoreHashUpdate({
+    stateUpdateOld,
+    stateUpdateNew
+}: TonApiTransaction): HashUpdate {
+    return {
+        oldHash: Buffer.from(stateUpdateOld, 'hex'),
+        newHash: Buffer.from(stateUpdateNew, 'hex')
+    };
+}
+
+function TonapiMessageToTonCoreMessage(message: TonApiMessage): Message {}
+
+function TonapiMessagesToTonCoreDisctionaryMessages(
+    messages: TonApiMessage[]
+): Dictionary<number, Message> {}
+
+function TonapiAccountStatusToTonCoreAccountStatus(status: TonApiAccountStatus): AccountStatus {}
 
 function TupleItemToTonapiString(item: TupleItem): string {
     switch (item.type) {
