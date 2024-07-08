@@ -5436,16 +5436,16 @@ export class Api<SecurityDataType extends unknown> {
             query?: {
                 /**
                  * omit this parameter to get last transactions
-                 * @format int64
+                 * @format bigint
                  * @example 39787624000003
                  */
-                after_lt?: number;
+                after_lt?: bigint;
                 /**
                  * omit this parameter to get last transactions
-                 * @format int64
+                 * @format bigint
                  * @example 39787624000003
                  */
-                before_lt?: number;
+                before_lt?: bigint;
                 /**
                  * @format int32
                  * @min 1
@@ -6034,10 +6034,10 @@ export class Api<SecurityDataType extends unknown> {
             query: {
                 /**
                  * omit this parameter to get last events
-                 * @format int64
+                 * @format bigint
                  * @example 25758317000002
                  */
-                before_lt?: number;
+                before_lt?: bigint;
                 /**
                  * @min 1
                  * @max 1000
@@ -6084,10 +6084,10 @@ export class Api<SecurityDataType extends unknown> {
             query: {
                 /**
                  * omit this parameter to get last events
-                 * @format int64
+                 * @format bigint
                  * @example 25758317000002
                  */
-                before_lt?: number;
+                before_lt?: bigint;
                 /**
                  * @min 1
                  * @max 1000
@@ -6194,10 +6194,10 @@ export class Api<SecurityDataType extends unknown> {
                 subject_only?: boolean;
                 /**
                  * omit this parameter to get last events
-                 * @format int64
+                 * @format bigint
                  * @example 25758317000002
                  */
-                before_lt?: number;
+                before_lt?: bigint;
                 /**
                  * @min 1
                  * @max 100
@@ -6276,10 +6276,10 @@ export class Api<SecurityDataType extends unknown> {
             query?: {
                 /**
                  * omit this parameter to get last events
-                 * @format int64
+                 * @format bigint
                  * @example 25758317000002
                  */
-                before_lt?: number;
+                before_lt?: bigint;
                 /**
                  * @min 1
                  * @max 1000
@@ -6522,10 +6522,10 @@ export class Api<SecurityDataType extends unknown> {
             query: {
                 /**
                  * omit this parameter to get last events
-                 * @format int64
+                 * @format bigint
                  * @example 25758317000002
                  */
-                before_lt?: number;
+                before_lt?: bigint;
                 /**
                  * @min 1
                  * @max 1000
@@ -6717,10 +6717,10 @@ export class Api<SecurityDataType extends unknown> {
             query: {
                 /**
                  * omit this parameter to get last events
-                 * @format int64
+                 * @format bigint
                  * @example 25758317000002
                  */
-                before_lt?: number;
+                before_lt?: bigint;
                 /**
                  * @min 1
                  * @max 1000
@@ -6930,10 +6930,10 @@ export class Api<SecurityDataType extends unknown> {
             query?: {
                 /**
                  * omit this parameter to get last events
-                 * @format int64
+                 * @format bigint
                  * @example 25758317000002
                  */
-                before_lt?: number;
+                before_lt?: bigint;
                 /**
                  * @min 1
                  * @max 1000
@@ -6971,10 +6971,10 @@ export class Api<SecurityDataType extends unknown> {
             query?: {
                 /**
                  * omit this parameter to get last events
-                 * @format int64
+                 * @format bigint
                  * @example 25758317000002
                  */
-                before_lt?: number;
+                before_lt?: bigint;
                 /**
                  * @min 1
                  * @max 1000

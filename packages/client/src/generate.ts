@@ -23,10 +23,6 @@ function onCreateComponent(component: SchemaComponent) {
     if (Array.isArray(object)) {
       return object.map(camelCaseProperties);
     } else if (typeof object === "object" && object !== null) {
-      if (object['x-js-format']) {
-        object.format = object['x-js-format']
-      }
-
       if (object.properties) {
         object.properties = camelCaseProperties(object.properties);
       }
@@ -97,6 +93,12 @@ generateApi({
     onCreateComponent,
     onFormatTypeName: (typeName, rawTypeName, schemaType) => {
       return typeName === 'TvmStackRecord' ? 'TupleItem' : typeName;
+    },
+    onPreParseSchema(originalSchema, typeName, schemaType) {
+      return {
+        ...originalSchema,
+        format: originalSchema['x-js-format'] ?? originalSchema.format
+      }
     },
   },
 });
