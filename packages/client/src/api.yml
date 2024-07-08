@@ -2456,6 +2456,7 @@ paths:
                         lt:
                           type: integer
                           format: int64
+                          x-js-format: bigint
                         hash:
                           type: string
                           example: 131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85
@@ -3744,6 +3745,7 @@ components:
           type: integer
           format: int64
           example: 1000
+          x-js-format: bigint
         result_code_description:
           type: string
     Transaction:
@@ -3774,6 +3776,7 @@ components:
           type: integer
           format: int64
           example: 25713146000001
+          x-js-format: bigint
         account:
           $ref: '#/components/schemas/AccountAddress'
         success:
@@ -3791,6 +3794,7 @@ components:
           type: integer
           format: int64
           example: 25713146000001
+          x-js-format: bigint
         end_balance:
           type: integer
           format: int64
@@ -6077,6 +6081,7 @@ components:
           type: integer
           format: int64
           example: 25713146000001
+          x-js-format: bigint
         in_progress:
           type: boolean
           example: false
@@ -6562,6 +6567,7 @@ components:
           type: integer
           format: int64
           example: 25713146000001
+          x-js-format: bigint
         in_progress:
           type: boolean
           example: false

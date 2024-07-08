@@ -402,10 +402,10 @@ export interface ActionPhase {
      */
     fwdFees: number;
     /**
-     * @format int64
+     * @format bigint
      * @example 1000
      */
-    totalFees: number;
+    totalFees: bigint;
     resultCodeDescription?: string;
 }
 
@@ -413,10 +413,10 @@ export interface Transaction {
     /** @example "55e8809519cd3c49098c9ee45afdafcea7a894a74d0f628d94a115a50e045122" */
     hash: string;
     /**
-     * @format int64
+     * @format bigint
      * @example 25713146000001
      */
-    lt: number;
+    lt: bigint;
     account: AccountAddress;
     /** @example true */
     success: boolean;
@@ -428,10 +428,10 @@ export interface Transaction {
     origStatus: AccountStatus;
     endStatus: AccountStatus;
     /**
-     * @format int64
+     * @format bigint
      * @example 25713146000001
      */
-    totalFees: number;
+    totalFees: bigint;
     /**
      * @format int64
      * @example 25713146000001
@@ -1936,10 +1936,10 @@ export interface AccountEvent {
      */
     isScam: boolean;
     /**
-     * @format int64
+     * @format bigint
      * @example 25713146000001
      */
-    lt: number;
+    lt: bigint;
     /**
      * Event is not finished yet. Transactions still happening
      * @example false
@@ -2271,10 +2271,10 @@ export interface Event {
      */
     isScam: boolean;
     /**
-     * @format int64
+     * @format bigint
      * @example 25713146000001
      */
-    lt: number;
+    lt: bigint;
     /**
      * Event is not finished yet. Transactions still happening
      * @example false
@@ -3151,7 +3151,7 @@ const components = {
             total_actions: { type: 'integer', format: 'int32' },
             skipped_actions: { type: 'integer', format: 'int32' },
             fwd_fees: { type: 'integer', format: 'int64' },
-            total_fees: { type: 'integer', format: 'int64' },
+            total_fees: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             result_code_description: { type: 'string' }
         }
     },
@@ -3178,13 +3178,13 @@ const components = {
         ],
         properties: {
             hash: { type: 'string' },
-            lt: { type: 'integer', format: 'int64' },
+            lt: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             account: { $ref: '#/components/schemas/AccountAddress' },
             success: { type: 'boolean' },
             utime: { type: 'integer', format: 'int64' },
             orig_status: { $ref: '#/components/schemas/AccountStatus' },
             end_status: { $ref: '#/components/schemas/AccountStatus' },
-            total_fees: { type: 'integer', format: 'int64' },
+            total_fees: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             end_balance: { type: 'integer', format: 'int64' },
             transaction_type: { $ref: '#/components/schemas/TransactionType' },
             state_update_old: { type: 'string' },
@@ -4409,7 +4409,7 @@ const components = {
             timestamp: { type: 'integer', format: 'int64' },
             actions: { type: 'array', items: { $ref: '#/components/schemas/Action' } },
             is_scam: { type: 'boolean' },
-            lt: { type: 'integer', format: 'int64' },
+            lt: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             in_progress: { type: 'boolean' },
             extra: { type: 'integer', format: 'int64' }
         }
@@ -4678,7 +4678,7 @@ const components = {
             actions: { type: 'array', items: { $ref: '#/components/schemas/Action' } },
             value_flow: { type: 'array', items: { $ref: '#/components/schemas/ValueFlow' } },
             is_scam: { type: 'boolean' },
-            lt: { type: 'integer', format: 'int64' },
+            lt: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             in_progress: { type: 'boolean' }
         }
     },
@@ -8490,8 +8490,8 @@ export class Api<SecurityDataType extends unknown> {
                         mode: number;
                         /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
                         account?: string;
-                        /** @format int64 */
-                        lt?: number;
+                        /** @format bigint */
+                        lt?: bigint;
                         /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
                         hash?: string;
                     }[];
@@ -8527,8 +8527,8 @@ export class Api<SecurityDataType extends unknown> {
                     mode: number;
                     /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
                     account?: string;
-                    /** @format int64 */
-                    lt?: number;
+                    /** @format bigint */
+                    lt?: bigint;
                     /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
                     hash?: string;
                 }[];
@@ -8549,7 +8549,7 @@ export class Api<SecurityDataType extends unknown> {
                             properties: {
                                 mode: { type: 'integer', format: 'int32' },
                                 account: { type: 'string' },
-                                lt: { type: 'integer', format: 'int64' },
+                                lt: { type: 'integer', format: 'bigint', 'x-js-format': 'bigint' },
                                 hash: { type: 'string' }
                             }
                         }
