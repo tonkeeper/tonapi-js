@@ -146,15 +146,15 @@ export interface BlockchainBlock {
      */
     genUtime: number;
     /**
-     * @format int64
+     * @format bigint
      * @example 23814011000000
      */
-    startLt: number;
+    startLt: bigint;
     /**
-     * @format int64
+     * @format bigint
      * @example 23814011000001
      */
-    endLt: number;
+    endLt: bigint;
     /**
      * @format int32
      * @example 0
@@ -237,10 +237,10 @@ export interface Message {
     /** @example "int_msg" */
     msgType: 'int_msg' | 'ext_in_msg' | 'ext_out_msg';
     /**
-     * @format int64
+     * @format bigint
      * @example 25713146000001
      */
-    createdLt: number;
+    createdLt: bigint;
     /** @example true */
     ihrDisabled: boolean;
     /** @example true */
@@ -449,10 +449,10 @@ export interface Transaction {
     /** @example "55e8809519cd3c49098c9ee45afdafcea7a894a74d0f628d94a115a50e045122" */
     prevTransHash?: string;
     /**
-     * @format int64
+     * @format bigint
      * @example 25713146000001
      */
-    prevTransLt?: number;
+    prevTransLt?: bigint;
     computePhase?: ComputePhase;
     storagePhase?: StoragePhase;
     creditPhase?: CreditPhase;
@@ -880,10 +880,10 @@ export interface BlockchainRawAccount {
      */
     data?: Cell;
     /**
-     * @format int64
+     * @format bigint
      * @example 123456789
      */
-    lastTransactionLt: number;
+    lastTransactionLt: bigint;
     /** @example "088b436a846d92281734236967970612f87fbd64a2cd3573107948379e8e4161" */
     lastTransactionHash?: string;
     /** @example "088b436a846d92281734236967970612f87fbd64a2cd3573107948379e8e4161" */
@@ -905,10 +905,10 @@ export interface Account {
      */
     address: Address;
     /**
-     * @format int64
+     * @format bigint
      * @example 123456789
      */
-    balance: number;
+    balance: bigint;
     /**
      * {'USD': 1, 'IDR': 1000}
      * @example {}
@@ -2988,8 +2988,8 @@ const components = {
             want_merge: { type: 'boolean' },
             key_block: { type: 'boolean' },
             gen_utime: { type: 'integer', format: 'int64' },
-            start_lt: { type: 'integer', format: 'int64' },
-            end_lt: { type: 'integer', format: 'int64' },
+            start_lt: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            end_lt: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             vert_seqno: { type: 'integer', format: 'int32' },
             gen_catchain_seqno: { type: 'integer', format: 'int32' },
             min_ref_mc_seqno: { type: 'integer', format: 'int32' },
@@ -3061,7 +3061,7 @@ const components = {
         ],
         properties: {
             msg_type: { type: 'string', enum: ['int_msg', 'ext_in_msg', 'ext_out_msg'] },
-            created_lt: { type: 'integer', format: 'int64' },
+            created_lt: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             ihr_disabled: { type: 'boolean' },
             bounce: { type: 'boolean' },
             bounced: { type: 'boolean' },
@@ -3193,7 +3193,7 @@ const components = {
             out_msgs: { type: 'array', items: { $ref: '#/components/schemas/Message' } },
             block: { type: 'string' },
             prev_trans_hash: { type: 'string' },
-            prev_trans_lt: { type: 'integer', format: 'int64' },
+            prev_trans_lt: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             compute_phase: { $ref: '#/components/schemas/ComputePhase' },
             storage_phase: { $ref: '#/components/schemas/StoragePhase' },
             credit_phase: { $ref: '#/components/schemas/CreditPhase' },
@@ -3488,7 +3488,7 @@ const components = {
             extra_balance: { type: 'object', additionalProperties: { type: 'string' } },
             code: { type: 'string', format: 'cell' },
             data: { type: 'string', format: 'cell' },
-            last_transaction_lt: { type: 'integer', format: 'int64' },
+            last_transaction_lt: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             last_transaction_hash: { type: 'string' },
             frozen_hash: { type: 'string' },
             status: { $ref: '#/components/schemas/AccountStatus' },
@@ -3511,7 +3511,7 @@ const components = {
         required: ['address', 'balance', 'status', 'last_activity', 'get_methods', 'is_wallet'],
         properties: {
             address: { type: 'string', format: 'address' },
-            balance: { type: 'integer', format: 'int64' },
+            balance: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             currencies_balance: { type: 'object', additionalProperties: true },
             last_activity: { type: 'integer', format: 'int64' },
             status: { $ref: '#/components/schemas/AccountStatus' },
@@ -4994,7 +4994,7 @@ function prepareResponseData<U>(obj: any, orSchema?: any): U {
         }
 
         if (schema.type === 'integer') {
-            if (schema.format === 'int64') {
+            if (schema['x-js-format'] === 'bigint') {
                 return BigInt(obj as number) as U;
             }
 

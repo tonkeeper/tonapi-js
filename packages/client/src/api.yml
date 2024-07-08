@@ -259,6 +259,7 @@ paths:
             type: integer
             format: int64
             example: 39787624000003
+            x-js-format: bigint
         - name: before_lt
           in: query
           description: "omit this parameter to get last transactions"
@@ -266,6 +267,7 @@ paths:
             type: integer
             format: int64
             example: 39787624000003
+            x-js-format: bigint
         - name: limit
           in: query
           schema:
@@ -657,6 +659,7 @@ paths:
             type: integer
             format: int64
             example: 25758317000002
+            x-js-format: bigint
         - name: limit
           in: query
           required: true
@@ -706,6 +709,7 @@ paths:
             type: integer
             format: int64
             example: 25758317000002
+            x-js-format: bigint
         - name: limit
           in: query
           required: true
@@ -781,6 +785,7 @@ paths:
             type: integer
             format: int64
             example: 25758317000002
+            x-js-format: bigint
         - name: limit
           in: query
           required: true
@@ -837,6 +842,7 @@ paths:
             type: integer
             format: int64
             example: 25758317000002
+            x-js-format: bigint
         - name: limit
           in: query
           required: true
@@ -910,6 +916,7 @@ paths:
             type: integer
             format: int64
             example: 25758317000002
+            x-js-format: bigint
         - name: limit
           in: query
           schema:
@@ -1267,6 +1274,7 @@ paths:
             type: integer
             format: int64
             example: 25758317000002
+            x-js-format: bigint
         - name: limit
           in: query
           required: true
@@ -1371,6 +1379,7 @@ paths:
             type: integer
             format: int64
             example: 25758317000002
+            x-js-format: bigint
         - name: limit
           in: query
           required: false
@@ -1412,6 +1421,7 @@ paths:
             type: integer
             format: int64
             example: 25758317000002
+            x-js-format: bigint
         - name: limit
           in: query
           required: false
@@ -3427,10 +3437,12 @@ components:
           type: integer
           format: int64
           example: 23814011000000
+          x-js-format: bigint
         end_lt:
           type: integer
           format: int64
           example: 23814011000001
+          x-js-format: bigint
         vert_seqno:
           type: integer
           example: 0
@@ -3555,6 +3567,7 @@ components:
           type: integer
           format: int64
           example: 25713146000001
+          x-js-format: bigint
         ihr_disabled:
           type: boolean
           example: true
@@ -3806,6 +3819,7 @@ components:
           type: integer
           format: int64
           example: 25713146000001
+          x-js-format: bigint
         compute_phase:
           $ref: '#/components/schemas/ComputePhase'
         storage_phase:
@@ -4374,6 +4388,7 @@ components:
           type: integer
           format: int64
           example: 123456789
+          x-js-format: bigint
         last_transaction_hash:
           type: string
           example: 088b436a846d92281734236967970612f87fbd64a2cd3573107948379e8e4161
@@ -4416,6 +4431,7 @@ components:
           type: integer
           format: int64
           example: 123456789
+          x-js-format: bigint
         currencies_balance:
           description: "{'USD': 1, 'IDR': 1000}"
           type: object

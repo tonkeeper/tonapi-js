@@ -53,7 +53,7 @@ function prepareResponseData<U>(obj: any, orSchema?: any): U {
     }
 
     if (schema.type === "integer") {
-      if (schema.format === "int64") {
+      if (schema['x-js-format'] === "bigint") {
         return BigInt(obj as number) as U;
       }
 
