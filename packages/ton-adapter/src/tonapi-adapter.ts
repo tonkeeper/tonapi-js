@@ -8,16 +8,17 @@ import {
     ContractState,
     external,
     openContract,
+    OpenedContract,
     storeMessage,
     toNano,
     TupleItem,
     TupleReader
 } from '@ton/core';
-import { Api, TvmStackRecord } from '@tonapi/client';
+import { AccountStatus, Api, BlockchainRawAccount } from '../../client/src/client';
 import { Buffer } from 'buffer';
 
 export class ContractAdapter {
-    constructor(private readonly tonapi: Api) {}
+    constructor(private readonly tonapi: Api<unknown>) {}
 
     /**
      * Open smart contract
@@ -42,67 +43,48 @@ export class ContractAdapter {
 }
 
 function createProvider(
-    tonapi: Api,
+    tonapi: Api<unknown>,
     address: Address,
     init: { code?: Cell | null; data?: Cell | null } | null
-): ContractProvider {
+): Partial<ContractProvider> {
     return {
         async getState(): Promise<ContractState> {
             // Load state
-            const account = await tonapi.blockchain.getBlockchainRawAccount(address.toRawString());
+            const account = await tonapi.blockchain.getBlockchainRawAccount(address);
 
             // Convert state
             const last =
-                account.last_transaction_lt !== undefined &&
-                account.last_transaction_hash !== undefined
+                account.lastTransactionLt !== undefined && account.lastTransactionHash !== undefined
                     ? {
-                          lt: BigInt(account.last_transaction_lt),
-                          hash: Buffer.from(account.last_transaction_hash, 'base64')
+                          lt: BigInt(account.lastTransactionLt),
+                          hash: Buffer.from(account.lastTransactionHash, 'base64')
                       }
                     : null;
 
-            let storage:
-                | {
-                      type: 'uninit';
-                  }
-                | {
-                      type: 'active';
-                      code: Buffer | null;
-                      data: Buffer | null;
-                  }
-                | {
-                      type: 'frozen';
-                      stateHash: Buffer;
-                  };
-            switch (account.status) {
-                case 'active':
-                    storage = {
-                        type: 'active',
-                        code: account.code ? Buffer.from(account.code, 'base64') : null,
-                        data: account.data ? Buffer.from(account.data, 'base64') : null
-                    };
-                    break;
-                case 'uninit':
-                case 'nonexist':
-                    storage = {
-                        type: 'uninit'
-                    };
-                    break;
-                case 'frozen':
+            const stateGetters: Record<
+                AccountStatus,
+                (account: BlockchainRawAccount) => ContractState['state']
+            > = {
+                active: account => ({
+                    type: 'active',
+                    code: account.code?.toBoc() ?? null,
+                    data: account.data?.toBoc() ?? null
+                }),
+                uninit: () => ({
+                    type: 'uninit'
+                }),
+                nonexist: () => ({
+                    type: 'uninit'
+                }),
+                frozen: () => {
                     throw new Error(`Frozen accounts are not supported by TonApi`);
-                /* storage = {
-                        type: 'frozen',
-                        stateHash: Buffer.from(account, 'base64') // TODO
-                    };
-                    break;*/
-                default:
-                    throw new Error(`Unsupported status ${(account as { status: string }).status}`);
-            }
+                }
+            };
 
             return {
-                balance: BigInt(account.balance),
+                balance: account.balance,
                 last: last,
-                state: storage
+                state: stateGetters[account.status](account)
             };
         },
         async get(name, args) {
@@ -111,23 +93,19 @@ function createProvider(
             }
 
             const result = await tonapi.blockchain.execGetMethodForBlockchainAccount(
-                address.toRawString(),
+                address,
                 name,
                 { args: args.map(TupleItemToTonapiString) }
             );
 
-            const tuple = result.stack.map(TvmStackRecordToTupleItem);
             return {
-                stack: new TupleReader(tuple)
+                stack: new TupleReader(result.stack)
             };
         },
         async external(message) {
             // Resolve init
             let neededInit: { code?: Cell | null; data?: Cell | null } | null = null;
-            if (
-                init &&
-                (await tonapi.accounts.getAccount(address.toRawString())).status !== 'active'
-            ) {
+            if (init && (await tonapi.accounts.getAccount(address)).status !== 'active') {
                 neededInit = init;
             }
 
@@ -137,17 +115,14 @@ function createProvider(
                 init: neededInit ? { code: neededInit.code, data: neededInit.data } : null,
                 body: message
             });
-            const boc = beginCell().store(storeMessage(ext)).endCell().toBoc().toString('base64');
+            const boc = beginCell().store(storeMessage(ext)).endCell();
 
             await tonapi.blockchain.sendBlockchainMessage({ boc });
         },
         async internal(via, message) {
             // Resolve init
             let neededInit: { code?: Cell | null; data?: Cell | null } | null = null;
-            if (
-                init &&
-                (await tonapi.accounts.getAccount(address.toRawString())).status !== 'active'
-            ) {
+            if (init && (await tonapi.accounts.getAccount(address)).status !== 'active') {
                 neededInit = init;
             }
 
@@ -184,31 +159,6 @@ function createProvider(
             });
         }
     };
-}
-
-function TvmStackRecordToTupleItem(record: TvmStackRecord): TupleItem {
-    switch (record.type) {
-        case 'num':
-            return { type: 'int', value: BigInt(record.num!) };
-        case 'nan':
-            return { type: 'nan' };
-        case 'cell':
-            try {
-                const cell = Cell.fromBase64(record.cell!);
-                return { type: 'cell', cell };
-            } catch (_) {
-                return {
-                    type: 'cell',
-                    cell: Cell.fromBase64(Buffer.from(record.cell!, 'hex').toString('base64'))
-                };
-            }
-        case 'null':
-            return { type: 'null' };
-        case 'tuple':
-            return { type: 'tuple', items: record.tuple!.map(TvmStackRecordToTupleItem) };
-        default:
-            throw new Error(`Unknown type ${record.type}`);
-    }
 }
 
 function TupleItemToTonapiString(item: TupleItem): string {
