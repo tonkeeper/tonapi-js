@@ -1,5 +1,5 @@
 import { Address } from '@ton/core';
-import { client } from './client.test';
+import { client } from './utils/client';
 import { getAccount } from './__mock__/bigint';
 import fetchMock from 'jest-fetch-mock';
 

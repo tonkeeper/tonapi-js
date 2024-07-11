@@ -1,6 +1,6 @@
 import { Address, Tuple, TupleItem } from '@ton/core';
 import { execGetMethodForBlockchainAccount } from './__mock__/tuple';
-import { client } from './client.test';
+import { client } from './utils/client';
 import fetchMock from 'jest-fetch-mock';
 
 function guardTuple(item: TupleItem): item is Tuple {

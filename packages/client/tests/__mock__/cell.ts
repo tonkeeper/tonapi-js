@@ -1,4 +1,4 @@
-import { JSONBig } from '../client.test';
+import { JSONBig } from '../utils/jsonbig';
 
 export const getBlockchainRawAccount = JSONBig.stringify({
     address: '0:84752f1d4cb8486d2952fe3f608674c92715f72c15660c7579bb78446b6bc523',

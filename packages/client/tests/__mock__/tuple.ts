@@ -1,4 +1,4 @@
-import { JSONBig } from '../client.test';
+import { JSONBig } from '../utils/jsonbig';
 
 export const execGetMethodForBlockchainAccount = JSONBig.stringify({
     success: true,

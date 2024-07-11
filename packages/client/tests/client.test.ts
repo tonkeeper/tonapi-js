@@ -1,16 +1,8 @@
 import { TonApiClient, Api, ApiConfig } from '../src/client';
-import JSONBigWrapper from 'json-bigint';
 import fetchMock from 'jest-fetch-mock';
-
-export const JSONBig = JSONBigWrapper({ useNativeBigInt: true });
-
-const config: ApiConfig = {
-    baseUrl: 'https://tonapi.io',
-    apiKey: 'TEST_API_KEY'
-};
-
-const http = new TonApiClient(config);
-export const client = new Api(http);
+// import { Address } from '@ton/core';
+import { client, clienWithApiKey } from './utils/client';
+import { JSONBig } from './utils/jsonbig';
 
 test('Client status test', async () => {
     fetchMock.enableMocks();
@@ -29,26 +21,58 @@ test('Client status test', async () => {
 });
 
 test('Client apiKey test', async () => {
-  fetchMock.enableMocks();
+    fetchMock.enableMocks();
 
-  fetchMock.mockResponseOnce(
-      JSONBig.stringify({
-          rest_online: true,
-          indexing_latency: 8
-      })
-  );
+    fetchMock.mockResponseOnce(
+        JSONBig.stringify({
+            rest_online: true,
+            indexing_latency: 8
+        })
+    );
 
-  const res = await client.blockchain.status();
-  expect(res).toBeDefined();
+    const res = await clienWithApiKey.blockchain.status();
+    expect(res).toBeDefined();
 
-  expect(fetchMock).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({
-          headers: expect.objectContaining({
-              Authorization: 'Bearer TEST_API_KEY'
-          })
-      })
-  );
+    expect(fetchMock).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+            headers: expect.objectContaining({
+                Authorization: 'Bearer TEST_API_KEY'
+            })
+        })
+    );
 
-  fetchMock.disableMocks();
+    fetchMock.disableMocks();
 });
+
+test('Client apiKey missing test', async () => {
+    fetchMock.enableMocks();
+
+    const config: ApiConfig = {
+        baseUrl: 'https://tonapi.io'
+    };
+
+    const http = new TonApiClient(config);
+    const client = new Api(http);
+    const res = await client.blockchain.status();
+    expect(res).toBeDefined();
+
+    expect(fetchMock).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+            headers: expect.not.objectContaining({
+                Authorization: expect.anything()
+            })
+        })
+    );
+
+    fetchMock.disableMocks();
+});
+
+// test('Client getBlockchainRawAccount test', async () => {
+//     const address = Address.parse('UQC62nZpm36EFzADVfXDVd_4OpbFyc1D3w3ZvCPHLni8Dst4');;
+//     const res = await client.blockchain.getBlockchainRawAccount(address);
+
+//     console.log(res);
+//     expect(res).toBeDefined();
+// });

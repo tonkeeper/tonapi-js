@@ -1,7 +1,7 @@
 import { Address, Cell, TupleItem, TupleItemCell } from '@ton/core';
 import fetchMock from 'jest-fetch-mock';
-import { client } from './client.test';
 import { execGetMethodForBlockchainAccount, getBlockchainRawAccount } from './__mock__/cell';
+import { client } from './utils/client';
 
 beforeEach(() => {
     fetchMock.enableMocks();
@@ -23,7 +23,6 @@ test('Cell hex in response test', async () => {
     expect(res.code).toBeDefined();
     expect(res.code).toBeInstanceOf(Cell);
 });
-
 
 // TODO: Fix this test (add valid message)
 test('Cell hex in request body test', async () => {
@@ -62,33 +61,32 @@ test('Cell hex in request body test', async () => {
 // });
 
 const guardCell = (item: TupleItem): item is TupleItemCell => {
-  return item.type === 'cell';
-}
+    return item.type === 'cell';
+};
 
-// TODO: This test was supposed to be about base64, but the expected response was in hex 
-test("Cell base64 in response test", async () => {
+// TODO: This test was supposed to be about base64, but the expected response was in hex
+test('Cell base64 in response test', async () => {
+    fetchMock.mockResponseOnce(execGetMethodForBlockchainAccount);
 
-  fetchMock.mockResponseOnce(execGetMethodForBlockchainAccount);
+    const addressString = 'EQDW6q4sRqQwNCmW4qwUpeFSU1Xhd6l3xwJ6jjknBPzxKNtT';
+    const addressObject = Address.parse(addressString);
+    const res = await client.blockchain.execGetMethodForBlockchainAccount(
+        addressObject,
+        'royalty_params'
+    );
 
-  const addressString = 'EQDW6q4sRqQwNCmW4qwUpeFSU1Xhd6l3xwJ6jjknBPzxKNtT';
-  const addressObject = Address.parse(addressString);
-  const res = await client.blockchain.execGetMethodForBlockchainAccount(
-      addressObject,
-      'royalty_params'
-  );
+    const cellTupleItem = res.stack[2];
 
-  const cellTupleItem = res.stack[2];
+    expect(res).toBeDefined();
+    expect(res.success).toBeDefined();
+    expect(cellTupleItem).toBeDefined();
+    expect(cellTupleItem.type).toBeDefined();
+    expect(cellTupleItem.type).toBe('cell');
 
-  expect(res).toBeDefined();
-  expect(res.success).toBeDefined();
-  expect(cellTupleItem).toBeDefined();
-  expect(cellTupleItem.type).toBeDefined();
-  expect(cellTupleItem.type).toBe('cell');
-
-  if (guardCell(cellTupleItem)) {
-      expect(cellTupleItem.cell).toBeDefined();
-      expect(cellTupleItem.cell).toBeInstanceOf(Cell);
-  } else {
-      throw new Error('Cell guard failed');
-  }
+    if (guardCell(cellTupleItem)) {
+        expect(cellTupleItem.cell).toBeDefined();
+        expect(cellTupleItem.cell).toBeInstanceOf(Cell);
+    } else {
+        throw new Error('Cell guard failed');
+    }
 });
