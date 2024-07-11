@@ -433,10 +433,10 @@ export interface Transaction {
      */
     totalFees: bigint;
     /**
-     * @format int64
+     * @format bigint
      * @example 25713146000001
      */
-    endBalance: number;
+    endBalance: bigint;
     transactionType: TransactionType;
     /** @example "55e8809519cd3c49098c9ee45afdafcea7a894a74d0f628d94a115a50e045122" */
     stateUpdateOld: string;
@@ -864,10 +864,10 @@ export interface BlockchainRawAccount {
      */
     address: Address;
     /**
-     * @format int64
+     * @format bigint
      * @example 123456789
      */
-    balance: number;
+    balance: bigint;
     extraBalance?: Record<string, string>;
     /**
      * @format cell
@@ -3185,7 +3185,7 @@ const components = {
             orig_status: { $ref: '#/components/schemas/AccountStatus' },
             end_status: { $ref: '#/components/schemas/AccountStatus' },
             total_fees: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            end_balance: { type: 'integer', format: 'int64' },
+            end_balance: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             transaction_type: { $ref: '#/components/schemas/TransactionType' },
             state_update_old: { type: 'string' },
             state_update_new: { type: 'string' },
@@ -3484,7 +3484,7 @@ const components = {
         required: ['address', 'balance', 'status', 'last_transaction_lt', 'storage'],
         properties: {
             address: { type: 'string', format: 'address' },
-            balance: { type: 'integer', format: 'int64' },
+            balance: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             extra_balance: { type: 'object', additionalProperties: { type: 'string' } },
             code: { type: 'string', format: 'cell' },
             data: { type: 'string', format: 'cell' },
@@ -5733,10 +5733,10 @@ export class Api<SecurityDataType extends unknown> {
                      */
                     address: Address;
                     /**
-                     * @format int64
+                     * @format bigint
                      * @example 10000000000
                      */
-                    balance?: number;
+                    balance?: bigint;
                 }[];
             },
             params: RequestParams = {}
@@ -5756,7 +5756,11 @@ export class Api<SecurityDataType extends unknown> {
                                 required: ['address'],
                                 properties: {
                                     address: { type: 'string', format: 'address' },
-                                    balance: { type: 'integer', format: 'int64' }
+                                    balance: {
+                                        type: 'integer',
+                                        format: 'bigint',
+                                        'x-js-format': 'bigint'
+                                    }
                                 }
                             }
                         }

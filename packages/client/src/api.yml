@@ -6707,7 +6707,7 @@ components:
                 $ref: '#/components/schemas/AccountAddress'
               balance:
                 type: string
-                example: 1000000000 # need fix or type or example
+                example: 1000000000 # need fix type or example
         total:
           type: integer
           format: int64
