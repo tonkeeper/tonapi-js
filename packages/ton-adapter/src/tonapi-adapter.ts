@@ -60,9 +60,9 @@ function createProvider(
 
             // Convert state
             const last =
-                account.lastTransactionLt !== undefined && account.lastTransactionHash !== undefined
+                account.lastTransactionHash !== undefined
                     ? {
-                          lt: BigInt(account.lastTransactionLt),
+                          lt: account.lastTransactionLt,
                           hash: Buffer.from(account.lastTransactionHash, 'base64')
                       }
                     : null;
