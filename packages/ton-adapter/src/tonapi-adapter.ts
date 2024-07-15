@@ -19,7 +19,8 @@ import {
 import {
     AccountStatus as TonApiAccountStatus,
     Api,
-    BlockchainRawAccount
+    BlockchainRawAccount,
+    AccountStatus
 } from '../../client/src/client';
 import { Buffer } from 'buffer';
 
@@ -47,6 +48,7 @@ export class ContractAdapter {
         return createProvider(this.tonapi, address, init ? init : null);
     }
 }
+type LoclaBlockchainRawAccount = Partial<Pick<BlockchainRawAccount, 'lastTransactionLt'>> & Omit<BlockchainRawAccount, 'lastTransactionLt'>;
 
 function createProvider(
     tonapi: Api<unknown>,
@@ -56,11 +58,33 @@ function createProvider(
     return {
         async getState(): Promise<ContractState> {
             // Load state
-            const account = await tonapi.blockchain.getBlockchainRawAccount(address);
+            const account: LoclaBlockchainRawAccount = await tonapi.blockchain.getBlockchainRawAccount(address).catch(async (error: Response) => {
+                const body = await error.json();
+
+                if (body.error === "entity not found") {
+                    const mockResult: LoclaBlockchainRawAccount= {
+                        address: address,
+                        balance: 0n,
+                        lastTransactionLt: undefined,
+                        status: AccountStatus.Uninit,
+                        storage: {
+                          usedCells: 1,
+                          usedBits: 95,
+                          usedPublicCells: 0,
+                          lastPaid: Math.floor(new Date().getTime() / 1000),
+                          duePayment: 0
+                        }
+                      };
+
+                      return mockResult;
+                }
+
+                throw new Error('Account request failed: ' + body.error);
+            })
 
             // Convert state
             const last =
-                account.lastTransactionHash !== undefined
+                account.lastTransactionHash !== undefined && account.lastTransactionLt !== undefined
                     ? {
                           lt: account.lastTransactionLt,
                           hash: Buffer.from(account.lastTransactionHash, 'base64')
@@ -69,7 +93,7 @@ function createProvider(
 
             const stateGetters: Record<
                 TonApiAccountStatus,
-                (account: BlockchainRawAccount) => ContractState['state']
+                (account: LoclaBlockchainRawAccount) => ContractState['state']
             > = {
                 active: account => ({
                     type: 'active',
