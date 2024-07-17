@@ -21,7 +21,7 @@ import {
     Api,
     BlockchainRawAccount,
     AccountStatus
-} from '../../client/src/client';
+} from '@ton-api/client';
 import { Buffer } from 'buffer';
 
 export class ContractAdapter {
@@ -48,7 +48,8 @@ export class ContractAdapter {
         return createProvider(this.tonapi, address, init ? init : null);
     }
 }
-type LoclaBlockchainRawAccount = Partial<Pick<BlockchainRawAccount, 'lastTransactionLt'>> & Omit<BlockchainRawAccount, 'lastTransactionLt'>;
+type LoclaBlockchainRawAccount = Partial<Pick<BlockchainRawAccount, 'lastTransactionLt'>> &
+    Omit<BlockchainRawAccount, 'lastTransactionLt'>;
 
 function createProvider(
     tonapi: Api<unknown>,
@@ -58,29 +59,31 @@ function createProvider(
     return {
         async getState(): Promise<ContractState> {
             // Load state
-            const account: LoclaBlockchainRawAccount = await tonapi.blockchain.getBlockchainRawAccount(address).catch(async (error: Response) => {
-                const body = await error.json();
+            const account: LoclaBlockchainRawAccount = await tonapi.blockchain
+                .getBlockchainRawAccount(address)
+                .catch(async (error: Response) => {
+                    const body = await error.json();
 
-                if (body.error === "entity not found") {
-                    const mockResult: LoclaBlockchainRawAccount= {
-                        address: address,
-                        balance: 0n,
-                        lastTransactionLt: undefined,
-                        status: AccountStatus.Uninit,
-                        storage: {
-                          usedCells: 1,
-                          usedBits: 95,
-                          usedPublicCells: 0,
-                          lastPaid: Math.floor(new Date().getTime() / 1000),
-                          duePayment: 0
-                        }
-                      };
+                    if (body.error === 'entity not found') {
+                        const mockResult: LoclaBlockchainRawAccount = {
+                            address: address,
+                            balance: 0n,
+                            lastTransactionLt: undefined,
+                            status: AccountStatus.Uninit,
+                            storage: {
+                                usedCells: 1,
+                                usedBits: 95,
+                                usedPublicCells: 0,
+                                lastPaid: Math.floor(new Date().getTime() / 1000),
+                                duePayment: 0n
+                            }
+                        };
 
-                      return mockResult;
-                }
+                        return mockResult;
+                    }
 
-                throw new Error('Account request failed: ' + body.error);
-            })
+                    throw new Error('Account request failed: ' + body.error);
+                });
 
             // Convert state
             const last =

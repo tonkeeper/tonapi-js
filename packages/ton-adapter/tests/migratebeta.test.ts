@@ -9,7 +9,7 @@ import {
 } from '@ton/ton';
 import { mnemonicNew, mnemonicToPrivateKey, KeyPair } from '@ton/crypto';
 import { ContractAdapter } from '../src/tonapi-adapter';
-import { Api, TonApiClient } from '../../client/src/client';
+import { Api, TonApiClient } from '@ton-api/client';
 
 const httpClient = new TonApiClient({
     baseUrl: 'https://tonapi.io'

@@ -1,6 +1,6 @@
 import { Address, Contract, ContractProvider } from "@ton/core";
 import { WalletContractV4 } from "@ton/ton";
-import { Api, TonApiClient } from "../../../client/src/client";
+import { Api, TonApiClient } from "@ton-api/client";
 
 const httpClient = new TonApiClient({
     baseUrl: 'https://tonapi.io'
