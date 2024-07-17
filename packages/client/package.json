@@ -15,15 +15,15 @@
             "name": "mois-ilya"
         }
     ],
-    "main": "dist/client.js",
-    "module": "dist/client.mjs",
-    "types": "./dist/client.d.ts",
+    "main": "./dist/index.js",
+    "module": "./dist/index.mjs",
+    "types": "./dist/index.d.ts",
     "exports": {
         ".": {
-            "types": "./dist/client.d.ts",
-            "require": "./dist/client.js",
-            "import": "./dist/client.mjs",
-            "default": "./dist/client.js"
+        "types": "./dist/index.d.ts",
+        "require": "./dist/index.js",
+        "import": "./dist/index.mjs",
+        "default": "./dist/index.js"
         }
     },
     "files": [
