@@ -38,10 +38,10 @@ export interface AccountAddress {
 
 export interface BlockCurrencyCollection {
     /**
-     * @format int64
+     * @format bigint
      * @example 10000000000
      */
-    grams: number;
+    grams: bigint;
     other: {
         /**
          * @format int64
@@ -96,6 +96,7 @@ export interface ReducedBlock {
      */
     utime: number;
     shardsBlocks: string[];
+    parent: string[];
 }
 
 export interface BlockchainBlock {
@@ -229,8 +230,12 @@ export enum AccountStatus {
 }
 
 export interface StateInit {
-    /** @format cell */
+    /**
+     * @format cell
+     * @example "b5ee9c72010106010044000114ff00f4a413f4bcf2c80b01020120020302014804050004f2300038d06c21d31f30ed44d0d33f3001c00197a4c8cb3fc9ed549330f206e20011a13431da89a1a67e61"
+     */
     boc: Cell;
+    interfaces: string[];
 }
 
 export interface Message {
@@ -248,27 +253,27 @@ export interface Message {
     /** @example true */
     bounced: boolean;
     /**
-     * @format int64
+     * @format bigint
      * @example 60000000
      */
-    value: number;
+    value: bigint;
     /**
-     * @format int64
+     * @format bigint
      * @example 5681002
      */
-    fwdFee: number;
+    fwdFee: bigint;
     /**
-     * @format int64
+     * @format bigint
      * @example 5681002
      */
-    ihrFee: number;
+    ihrFee: bigint;
     destination?: AccountAddress;
     source?: AccountAddress;
     /**
-     * @format int64
+     * @format bigint
      * @example 5681002
      */
-    importFee: number;
+    importFee: bigint;
     /**
      * @format int64
      * @example 5681002
@@ -329,15 +334,15 @@ export interface ComputePhase {
     /** @example true */
     success?: boolean;
     /**
-     * @format int64
+     * @format bigint
      * @example 1000
      */
-    gasFees?: number;
+    gasFees?: bigint;
     /**
-     * @format int64
+     * @format bigint
      * @example 10000
      */
-    gasUsed?: number;
+    gasUsed?: bigint;
     /**
      * @format int32
      * @example 5
@@ -353,29 +358,29 @@ export interface ComputePhase {
 
 export interface StoragePhase {
     /**
-     * @format int64
+     * @format bigint
      * @example 25713146000001
      */
-    feesCollected: number;
+    feesCollected: bigint;
     /**
-     * @format int64
+     * @format bigint
      * @example 25713146000001
      */
-    feesDue?: number;
+    feesDue?: bigint;
     statusChange: AccStatusChange;
 }
 
 export interface CreditPhase {
     /**
-     * @format int64
+     * @format bigint
      * @example 100
      */
-    feesCollected: number;
+    feesCollected: bigint;
     /**
-     * @format int64
+     * @format bigint
      * @example 1000
      */
-    credit: number;
+    credit: bigint;
 }
 
 export interface ActionPhase {
@@ -397,10 +402,10 @@ export interface ActionPhase {
      */
     skippedActions: number;
     /**
-     * @format int64
+     * @format bigint
      * @example 1000
      */
-    fwdFees: number;
+    fwdFees: bigint;
     /**
      * @format bigint
      * @example 1000
@@ -732,8 +737,8 @@ export interface ValidatorsSet {
     totalWeight?: string;
     list: {
         publicKey: string;
-        /** @format int64 */
-        weight: number;
+        /** @format bigint */
+        weight: bigint;
         adnlAddr?: string;
     }[];
 }
@@ -794,10 +799,10 @@ export interface Validator {
     /** @example "10C1073837B93FDAAD594284CE8B8EFF7B9CF25427440EB2FC682762E1471365" */
     adnlAddress: string;
     /**
-     * @format int64
+     * @format bigint
      * @example 123456789
      */
-    stake: number;
+    stake: bigint;
     /**
      * @format int64
      * @example 123456789
@@ -817,15 +822,15 @@ export interface Validators {
      */
     electClose: number;
     /**
-     * @format int64
+     * @format bigint
      * @example 123456789
      */
-    minStake: number;
+    minStake: bigint;
     /**
-     * @format int64
+     * @format bigint
      * @example 123456789
      */
-    totalStake: number;
+    totalStake: bigint;
     validators: Validator[];
 }
 
@@ -846,15 +851,16 @@ export interface AccountStorageInfo {
      */
     usedPublicCells: number;
     /**
+     * time of the last payment
      * @format int64
-     * @example 567
+     * @example 1720860269
      */
     lastPaid: number;
     /**
-     * @format int64
+     * @format bigint
      * @example 567
      */
-    duePayment: number;
+    duePayment: bigint;
 }
 
 export interface BlockchainRawAccount {
@@ -917,7 +923,7 @@ export interface Account {
     /**
      * unix timestamp
      * @format int64
-     * @example 123456789
+     * @example 1720860269
      */
     lastActivity: number;
     status: AccountStatus;
@@ -1415,7 +1421,7 @@ export interface JettonsBalances {
 }
 
 export interface Price {
-    /** @example 123000000000 */
+    /** @example "123000000000" */
     value: string;
     /** @example "TON" */
     tokenName: string;
@@ -1544,23 +1550,23 @@ export interface Refund {
 export interface ValueFlow {
     account: AccountAddress;
     /**
-     * @format int64
+     * @format bigint
      * @example 80
      */
-    ton: number;
+    ton: bigint;
     /**
-     * @format int64
+     * @format bigint
      * @example 10
      */
-    fees: number;
+    fees: bigint;
     jettons?: {
         account: AccountAddress;
         jetton: JettonPreview;
         /**
-         * @format int64
+         * @format bigint
          * @example 10
          */
-        quantity: number;
+        quantity: bigint;
     }[];
 }
 
@@ -1623,10 +1629,10 @@ export interface TonTransferAction {
     recipient: AccountAddress;
     /**
      * amount in nanotons
-     * @format int64
+     * @format bigint
      * @example 123456789
      */
-    amount: number;
+    amount: bigint;
     /**
      * @example "Hi! This is your salary.
      * From accounting with love."
@@ -1641,10 +1647,10 @@ export interface SmartContractAction {
     contract: AccountAddress;
     /**
      * amount in nanotons
-     * @format int64
+     * @format bigint
      * @example 123456789
      */
-    tonAttached: number;
+    tonAttached: bigint;
     /** @example "NftTransfer or 0x35d95a12" */
     operation: string;
     payload?: string;
@@ -1794,10 +1800,10 @@ export interface SubscriptionAction {
     subscription: Address;
     beneficiary: AccountAddress;
     /**
-     * @format int64
+     * @format bigint
      * @example 1000000000
      */
-    amount: number;
+    amount: bigint;
     /** @example false */
     initial: boolean;
 }
@@ -1823,10 +1829,10 @@ export interface AuctionBidAction {
 /** validator's participation in elections */
 export interface DepositStakeAction {
     /**
-     * @format int64
+     * @format bigint
      * @example 1660050553
      */
-    amount: number;
+    amount: bigint;
     staker: AccountAddress;
     pool: AccountAddress;
     implementation: PoolImplementationType;
@@ -1835,10 +1841,10 @@ export interface DepositStakeAction {
 /** validator's participation in elections */
 export interface WithdrawStakeAction {
     /**
-     * @format int64
+     * @format bigint
      * @example 1660050553
      */
-    amount: number;
+    amount: bigint;
     staker: AccountAddress;
     pool: AccountAddress;
     implementation: PoolImplementationType;
@@ -1847,10 +1853,10 @@ export interface WithdrawStakeAction {
 /** validator's participation in elections */
 export interface WithdrawStakeRequestAction {
     /**
-     * @format int64
+     * @format bigint
      * @example 1660050553
      */
-    amount?: number;
+    amount?: bigint;
     staker: AccountAddress;
     pool: AccountAddress;
     implementation: PoolImplementationType;
@@ -1858,19 +1864,19 @@ export interface WithdrawStakeRequestAction {
 
 export interface ElectionsRecoverStakeAction {
     /**
-     * @format int64
+     * @format bigint
      * @example 1660050553
      */
-    amount: number;
+    amount: bigint;
     staker: AccountAddress;
 }
 
 export interface ElectionsDepositStakeAction {
     /**
-     * @format int64
+     * @format bigint
      * @example 1660050553
      */
-    amount: number;
+    amount: bigint;
     staker: AccountAddress;
 }
 
@@ -1881,15 +1887,15 @@ export interface JettonSwapAction {
     /** @example "1660050553" */
     amountOut: string;
     /**
-     * @format int64
+     * @format bigint
      * @example 1000000000
      */
-    tonIn?: number;
+    tonIn?: bigint;
     /**
-     * @format int64
+     * @format bigint
      * @example 2000000000
      */
-    tonOut?: number;
+    tonOut?: bigint;
     userWallet: AccountAddress;
     router: AccountAddress;
     jettonMasterIn?: JettonPreview;
@@ -2052,15 +2058,15 @@ export interface Auction {
      */
     owner: Address;
     /**
-     * @format int64
+     * @format bigint
      * @example 1660050553
      */
-    price: number;
+    price: bigint;
     /**
-     * @format int64
+     * @format bigint
      * @example 1660050553
      */
-    bids: number;
+    bids: bigint;
     /**
      * @format int64
      * @example 1660050553
@@ -2167,16 +2173,16 @@ export interface Risk {
      */
     transferAllRemainingBalance: boolean;
     /**
-     * @format int64
+     * @format bigint
      * @example 500
      */
-    ton: number;
+    ton: bigint;
     jettons: JettonQuantity[];
     nfts: NftItem[];
 }
 
 export interface JettonQuantity {
-    /** @example 597968399 */
+    /** @example "597968399" */
     quantity: string;
     walletAddress: AccountAddress;
     jetton: JettonPreview;
@@ -2325,7 +2331,7 @@ export interface Jettons {
 export interface JettonInfo {
     /** @example true */
     mintable: boolean;
-    /** @example 311500000000000 */
+    /** @example "5887105890579978" */
     totalSupply: string;
     admin?: AccountAddress;
     metadata: JettonMetadata;
@@ -2345,10 +2351,14 @@ export interface JettonHolders {
          */
         address: Address;
         owner: AccountAddress;
-        /** @example 1000000000 */
+        /**
+         * balance in the smallest jetton's units
+         * @example "168856200518084"
+         */
         balance: string;
     }[];
     /**
+     * total number of holders
      * @format int64
      * @example 2000
      */
@@ -2363,25 +2373,25 @@ export interface AccountStakingInfo {
     /** @example "EQBI-wGVp_x0VFEjd7m9cEUD3tJ_bnxMSp0Tb9qz757ATEAM" */
     pool: string;
     /**
-     * @format int64
+     * @format bigint
      * @example 10050000000000
      */
-    amount: number;
+    amount: bigint;
     /**
-     * @format int64
+     * @format bigint
      * @example 500000000000
      */
-    pendingDeposit: number;
+    pendingDeposit: bigint;
     /**
-     * @format int64
+     * @format bigint
      * @example 500000000000
      */
-    pendingWithdraw: number;
+    pendingWithdraw: bigint;
     /**
-     * @format int64
+     * @format bigint
      * @example 500000000000
      */
-    readyWithdraw: number;
+    readyWithdraw: bigint;
 }
 
 export interface PoolInfo {
@@ -2392,8 +2402,8 @@ export interface PoolInfo {
     address: Address;
     /** @example "Tonkeeper pool" */
     name: string;
-    /** @format int64 */
-    totalAmount: number;
+    /** @format bigint */
+    totalAmount: bigint;
     implementation: PoolImplementationType;
     /**
      * APY in percent
@@ -2401,10 +2411,10 @@ export interface PoolInfo {
      */
     apy: number;
     /**
-     * @format int64
+     * @format bigint
      * @example 5000000000
      */
-    minStake: number;
+    minStake: bigint;
     /**
      * current nomination cycle beginning timestamp
      * @format int64
@@ -2440,16 +2450,16 @@ export interface PoolInfo {
     liquidJettonMaster?: Address;
     /**
      * total stake of all nominators
-     * @format int64
+     * @format bigint
      * @example 5000000000
      */
-    nominatorsStake: number;
+    nominatorsStake: bigint;
     /**
      * stake of validator
-     * @format int64
+     * @format bigint
      * @example 5000000000
      */
-    validatorStake: number;
+    validatorStake: bigint;
     /** @format int64 */
     cycleLength?: number;
 }
@@ -2473,10 +2483,10 @@ export interface StorageProvider {
     /** @example true */
     acceptNewContracts: boolean;
     /**
-     * @format int64
+     * @format bigint
      * @example 50000000
      */
-    ratePerMbDay: number;
+    ratePerMbDay: bigint;
     /**
      * @format int64
      * @example 604800
@@ -2509,7 +2519,7 @@ export interface DnsExpiring {
     items: {
         /**
          * @format int64
-         * @example "1678275313"
+         * @example 1678275313
          */
         expiringAt: number;
         /** @example "blah_blah.ton" */
@@ -2879,7 +2889,7 @@ const components = {
         type: 'object',
         required: ['grams', 'other'],
         properties: {
-            grams: { type: 'integer', format: 'int64' },
+            grams: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             other: {
                 type: 'array',
                 items: {
@@ -2929,7 +2939,15 @@ const components = {
     },
     '#/components/schemas/ReducedBlock': {
         type: 'object',
-        required: ['workchain_id', 'shard', 'seqno', 'tx_quantity', 'utime', 'shards_blocks'],
+        required: [
+            'workchain_id',
+            'shard',
+            'seqno',
+            'tx_quantity',
+            'utime',
+            'shards_blocks',
+            'parent'
+        ],
         properties: {
             workchain_id: { type: 'integer', format: 'int32' },
             shard: { type: 'string' },
@@ -2937,7 +2955,8 @@ const components = {
             master_ref: { type: 'string' },
             tx_quantity: { type: 'integer' },
             utime: { type: 'integer', format: 'int64' },
-            shards_blocks: { type: 'array', items: { type: 'string' } }
+            shards_blocks: { type: 'array', items: { type: 'string' } },
+            parent: { type: 'array', items: { type: 'string' } }
         }
     },
     '#/components/schemas/BlockchainBlock': {
@@ -3041,8 +3060,11 @@ const components = {
     },
     '#/components/schemas/StateInit': {
         type: 'object',
-        required: ['boc'],
-        properties: { boc: { type: 'string', format: 'cell' } }
+        required: ['boc', 'interfaces'],
+        properties: {
+            boc: { type: 'string', format: 'cell' },
+            interfaces: { type: 'array', items: { type: 'string' } }
+        }
     },
     '#/components/schemas/Message': {
         type: 'object',
@@ -3065,12 +3087,12 @@ const components = {
             ihr_disabled: { type: 'boolean' },
             bounce: { type: 'boolean' },
             bounced: { type: 'boolean' },
-            value: { type: 'integer', format: 'int64' },
-            fwd_fee: { type: 'integer', format: 'int64' },
-            ihr_fee: { type: 'integer', format: 'int64' },
+            value: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            fwd_fee: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            ihr_fee: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             destination: { $ref: '#/components/schemas/AccountAddress' },
             source: { $ref: '#/components/schemas/AccountAddress' },
-            import_fee: { type: 'integer', format: 'int64' },
+            import_fee: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             created_at: { type: 'integer', format: 'int64' },
             op_code: { type: 'string' },
             init: { $ref: '#/components/schemas/StateInit' },
@@ -3111,8 +3133,8 @@ const components = {
             skipped: { type: 'boolean' },
             skip_reason: { $ref: '#/components/schemas/ComputeSkipReason' },
             success: { type: 'boolean' },
-            gas_fees: { type: 'integer', format: 'int64' },
-            gas_used: { type: 'integer', format: 'int64' },
+            gas_fees: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            gas_used: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             vm_steps: { type: 'integer', format: 'int32' },
             exit_code: { type: 'integer', format: 'int32' },
             exit_code_description: { type: 'string' }
@@ -3122,8 +3144,8 @@ const components = {
         type: 'object',
         required: ['fees_collected', 'status_change'],
         properties: {
-            fees_collected: { type: 'integer', format: 'int64' },
-            fees_due: { type: 'integer', format: 'int64' },
+            fees_collected: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            fees_due: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             status_change: { $ref: '#/components/schemas/AccStatusChange' }
         }
     },
@@ -3131,8 +3153,8 @@ const components = {
         type: 'object',
         required: ['fees_collected', 'credit'],
         properties: {
-            fees_collected: { type: 'integer', format: 'int64' },
-            credit: { type: 'integer', format: 'int64' }
+            fees_collected: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            credit: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' }
         }
     },
     '#/components/schemas/ActionPhase': {
@@ -3150,7 +3172,7 @@ const components = {
             result_code: { type: 'integer', format: 'int32' },
             total_actions: { type: 'integer', format: 'int32' },
             skipped_actions: { type: 'integer', format: 'int32' },
-            fwd_fees: { type: 'integer', format: 'int64' },
+            fwd_fees: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             total_fees: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             result_code_description: { type: 'string' }
         }
@@ -3390,7 +3412,7 @@ const components = {
                     required: ['public_key', 'weight'],
                     properties: {
                         public_key: { type: 'string' },
-                        weight: { type: 'integer', format: 'int64' },
+                        weight: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
                         adnl_addr: { type: 'string' }
                     }
                 }
@@ -3453,7 +3475,7 @@ const components = {
         properties: {
             address: { type: 'string', format: 'address' },
             adnl_address: { type: 'string' },
-            stake: { type: 'integer', format: 'int64' },
+            stake: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             max_factor: { type: 'integer', format: 'int64' }
         }
     },
@@ -3463,8 +3485,8 @@ const components = {
         properties: {
             elect_at: { type: 'integer', format: 'int64' },
             elect_close: { type: 'integer', format: 'int64' },
-            min_stake: { type: 'integer', format: 'int64' },
-            total_stake: { type: 'integer', format: 'int64' },
+            min_stake: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            total_stake: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             validators: { type: 'array', items: { $ref: '#/components/schemas/Validator' } }
         }
     },
@@ -3476,7 +3498,7 @@ const components = {
             used_bits: { type: 'integer', format: 'int64' },
             used_public_cells: { type: 'integer', format: 'int64' },
             last_paid: { type: 'integer', format: 'int64' },
-            due_payment: { type: 'integer', format: 'int64' }
+            due_payment: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' }
         }
     },
     '#/components/schemas/BlockchainRawAccount': {
@@ -4092,8 +4114,8 @@ const components = {
         required: ['account', 'ton', 'fees'],
         properties: {
             account: { $ref: '#/components/schemas/AccountAddress' },
-            ton: { type: 'integer', format: 'int64' },
-            fees: { type: 'integer', format: 'int64' },
+            ton: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            fees: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             jettons: {
                 type: 'array',
                 items: {
@@ -4102,7 +4124,7 @@ const components = {
                     properties: {
                         account: { $ref: '#/components/schemas/AccountAddress' },
                         jetton: { $ref: '#/components/schemas/JettonPreview' },
-                        quantity: { type: 'integer', format: 'int64' }
+                        quantity: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' }
                     }
                 }
             }
@@ -4169,7 +4191,7 @@ const components = {
         properties: {
             sender: { $ref: '#/components/schemas/AccountAddress' },
             recipient: { $ref: '#/components/schemas/AccountAddress' },
-            amount: { type: 'integer', format: 'int64' },
+            amount: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             comment: { type: 'string' },
             encrypted_comment: { $ref: '#/components/schemas/EncryptedComment' },
             refund: { $ref: '#/components/schemas/Refund' }
@@ -4181,7 +4203,7 @@ const components = {
         properties: {
             executor: { $ref: '#/components/schemas/AccountAddress' },
             contract: { $ref: '#/components/schemas/AccountAddress' },
-            ton_attached: { type: 'integer', format: 'int64' },
+            ton_attached: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             operation: { type: 'string' },
             payload: { type: 'string' },
             refund: { $ref: '#/components/schemas/Refund' }
@@ -4283,7 +4305,7 @@ const components = {
             subscriber: { $ref: '#/components/schemas/AccountAddress' },
             subscription: { type: 'string', format: 'address' },
             beneficiary: { $ref: '#/components/schemas/AccountAddress' },
-            amount: { type: 'integer', format: 'int64' },
+            amount: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             initial: { type: 'boolean' }
         }
     },
@@ -4311,7 +4333,7 @@ const components = {
         type: 'object',
         required: ['amount', 'staker', 'pool', 'implementation'],
         properties: {
-            amount: { type: 'integer', format: 'int64' },
+            amount: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             staker: { $ref: '#/components/schemas/AccountAddress' },
             pool: { $ref: '#/components/schemas/AccountAddress' },
             implementation: { $ref: '#/components/schemas/PoolImplementationType' }
@@ -4321,7 +4343,7 @@ const components = {
         type: 'object',
         required: ['amount', 'staker', 'pool', 'implementation'],
         properties: {
-            amount: { type: 'integer', format: 'int64' },
+            amount: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             staker: { $ref: '#/components/schemas/AccountAddress' },
             pool: { $ref: '#/components/schemas/AccountAddress' },
             implementation: { $ref: '#/components/schemas/PoolImplementationType' }
@@ -4331,7 +4353,7 @@ const components = {
         type: 'object',
         required: ['staker', 'pool', 'implementation'],
         properties: {
-            amount: { type: 'integer', format: 'int64' },
+            amount: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             staker: { $ref: '#/components/schemas/AccountAddress' },
             pool: { $ref: '#/components/schemas/AccountAddress' },
             implementation: { $ref: '#/components/schemas/PoolImplementationType' }
@@ -4341,7 +4363,7 @@ const components = {
         type: 'object',
         required: ['amount', 'staker'],
         properties: {
-            amount: { type: 'integer', format: 'int64' },
+            amount: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             staker: { $ref: '#/components/schemas/AccountAddress' }
         }
     },
@@ -4349,7 +4371,7 @@ const components = {
         type: 'object',
         required: ['amount', 'staker'],
         properties: {
-            amount: { type: 'integer', format: 'int64' },
+            amount: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             staker: { $ref: '#/components/schemas/AccountAddress' }
         }
     },
@@ -4360,8 +4382,8 @@ const components = {
             dex: { type: 'string', enum: ['stonfi', 'dedust', 'megatonfi'] },
             amount_in: { type: 'string' },
             amount_out: { type: 'string' },
-            ton_in: { type: 'integer', format: 'int64' },
-            ton_out: { type: 'integer', format: 'int64' },
+            ton_in: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            ton_out: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             user_wallet: { $ref: '#/components/schemas/AccountAddress' },
             router: { $ref: '#/components/schemas/AccountAddress' },
             jetton_master_in: { $ref: '#/components/schemas/JettonPreview' },
@@ -4479,8 +4501,8 @@ const components = {
         properties: {
             domain: { type: 'string' },
             owner: { type: 'string', format: 'address' },
-            price: { type: 'integer', format: 'int64' },
-            bids: { type: 'integer', format: 'int64' },
+            price: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            bids: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             date: { type: 'integer', format: 'int64' }
         }
     },
@@ -4577,7 +4599,7 @@ const components = {
         required: ['transfer_all_remaining_balance', 'ton', 'jettons', 'nfts'],
         properties: {
             transfer_all_remaining_balance: { type: 'boolean' },
-            ton: { type: 'integer', format: 'int64' },
+            ton: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             jettons: { type: 'array', items: { $ref: '#/components/schemas/JettonQuantity' } },
             nfts: { type: 'array', items: { $ref: '#/components/schemas/NftItem' } }
         }
@@ -4666,7 +4688,6 @@ const components = {
             'event_id',
             'timestamp',
             'actions',
-            'fees',
             'value_flow',
             'is_scam',
             'lt',
@@ -4767,10 +4788,10 @@ const components = {
         required: ['pool', 'amount', 'pending_deposit', 'pending_withdraw', 'ready_withdraw'],
         properties: {
             pool: { type: 'string' },
-            amount: { type: 'integer', format: 'int64' },
-            pending_deposit: { type: 'integer', format: 'int64' },
-            pending_withdraw: { type: 'integer', format: 'int64' },
-            ready_withdraw: { type: 'integer', format: 'int64' }
+            amount: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            pending_deposit: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            pending_withdraw: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            ready_withdraw: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' }
         }
     },
     '#/components/schemas/PoolInfo': {
@@ -4793,18 +4814,18 @@ const components = {
         properties: {
             address: { type: 'string', format: 'address' },
             name: { type: 'string' },
-            total_amount: { type: 'integer', format: 'int64' },
+            total_amount: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             implementation: { $ref: '#/components/schemas/PoolImplementationType' },
             apy: { type: 'number' },
-            min_stake: { type: 'integer', format: 'int64' },
+            min_stake: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             cycle_start: { type: 'integer', format: 'int64' },
             cycle_end: { type: 'integer', format: 'int64' },
             verified: { type: 'boolean' },
             current_nominators: { type: 'integer' },
             max_nominators: { type: 'integer' },
             liquid_jetton_master: { type: 'string', format: 'address' },
-            nominators_stake: { type: 'integer', format: 'int64' },
-            validator_stake: { type: 'integer', format: 'int64' },
+            nominators_stake: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            validator_stake: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             cycle_length: { type: 'integer', format: 'int64' }
         }
     },
@@ -4831,7 +4852,7 @@ const components = {
         properties: {
             address: { type: 'string', format: 'address' },
             accept_new_contracts: { type: 'boolean' },
-            rate_per_mb_day: { type: 'integer', format: 'int64' },
+            rate_per_mb_day: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             max_span: { type: 'integer', format: 'int64' },
             minimal_file_size: { type: 'integer', format: 'int64' },
             maximal_file_size: { type: 'integer', format: 'int64' }
