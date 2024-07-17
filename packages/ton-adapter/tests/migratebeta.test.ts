@@ -1,12 +1,4 @@
-import {
-    Address,
-    Contract,
-    ContractProvider,
-    OpenedContract,
-    TonClient,
-    internal,
-    ContractState
-} from '@ton/ton';
+import { Address, Contract, ContractProvider, OpenedContract } from '@ton/ton';
 import { mnemonicNew, mnemonicToPrivateKey, KeyPair } from '@ton/crypto';
 import { ContractAdapter } from '../src/tonapi-adapter';
 import { Api, TonApiClient } from '@ton-api/client';
@@ -40,13 +32,12 @@ const client = new Api(httpClient);
 
 // Create an adapter
 const contractAdapter = new ContractAdapter(client);
-let keyPair: KeyPair;
+let keyPair: KeyPair; // eslint-disable-line
 let contract: OpenedContract<NftItem>;
 
 beforeAll(async () => {
     // Create wallet contract
     const mnemonics = await mnemonicNew();
-    const workchain = 0;
 
     keyPair = await mnemonicToPrivateKey(mnemonics);
     // const customPublickKey = 'bada76699b7e8417300355f5c355dff83a96c5c9cd43df0dd9bc23c72e78bc0e';
@@ -66,7 +57,7 @@ test('Wallet contract', async () => {
     // expect(typeof balance === 'bigint').toBe(true);
 
     // get transactions
-    const data = await contract.getData();
+    const data = await contract.getData(); // eslint-disable-line
     // console.log(data);
 
     // Create a transfer

@@ -46,11 +46,11 @@
     }
   ],
   "peerDependencies": {
-    "@ton-api/client": "^0.1.0-alpha.1",
+    "@ton-api/client": "^0.1.0-alpha.2",
     "@ton/core": ">=0.56.0"
   },
   "devDependencies": {
-    "@ton-api/client": "^0.1.0-alpha.1",
+    "@ton-api/client": "^0.1.0-alpha.2",
     "@ton/core": "^0.56.0",
     "@ton/ton": "^13.11.2",
     "@types/node": "^20.11.16",
