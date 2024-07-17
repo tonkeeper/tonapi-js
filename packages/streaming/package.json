@@ -20,7 +20,7 @@
     "build": "tsup && npx rimraf ./dist/index.d.mts",
     "test": "jest"
   },
-  "license": "GPL-3.0",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/tonkeeper/tonapi-js/issues"
   },

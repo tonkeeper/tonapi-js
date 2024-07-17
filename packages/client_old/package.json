@@ -18,7 +18,7 @@
     "build": "npx rimraf dist && npm run generate && npx tsup && npx rimraf src && node ./scripts/patch_otuput.js",
     "generate": "node ./scripts/swagger.js"
   },
-  "license": "GPL-3.0",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/tonkeeper/tonapi-js/issues"
   },
