@@ -19,19 +19,15 @@ yarn add @ton-api/ton-adapter @ton-api/client
 Create a tonapi client first to use the adapter. You can `open` any wrapper of `@ton/ton` of `@ton/core`-compatible smart contract using the adapter.
 It means that you don't need additional rpc provider for the contracts-wrappers, you can work with the, using tonapi.
 
-```js
+```typescript
 import { TonClient, WalletContractV4, internal } from "@ton/ton";
 import { mnemonicNew, mnemonicToPrivateKey } from "@ton/crypto";
+import { Api, TonApiClient } from '@ton-api/client';
 import { ContractAdapter } from "@ton-api/ton-adapter";
 
-const httpClient = new HttpClient({
+const httpClient = new TonApiClient({
     baseUrl: 'https://tonapi.io',
-    baseApiParams: {
-        headers: {
-            Authorization: `Bearer ${YOUR_TOKEN}`,
-            'Content-type': 'application/json'
-        }
-    }
+    apiKey: YOUR_TOKEN
 });
 
 // Initialize the ton API client
