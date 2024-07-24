@@ -85,6 +85,7 @@ generateApi({
       $default: "string",
       address: "Address",
       cell: "Cell",
+      boc: "Cell",
       "cell-base64": "Cell",
       "tuple-item": "TupleItem",
     },
