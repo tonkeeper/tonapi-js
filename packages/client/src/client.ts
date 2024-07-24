@@ -5099,6 +5099,10 @@ function prepareRequestData(data: any, orSchema?: any): any {
                 return (data as Cell).hash().toString('hex');
             }
 
+            if (schema.format === 'boc') {
+                return (data as Cell).toBoc().toString('hex');
+            }
+
             if (schema.format === 'cell-base64') {
                 return (data as Cell).hash().toString('base64');
             }
@@ -7781,9 +7785,10 @@ export class Api<SecurityDataType extends unknown> {
             data: {
                 /** @format address */
                 walletAddress: Address;
+                /** hex encoded public key */
                 walletPublicKey: string;
                 messages: {
-                    /** @format cell */
+                    /** @format boc */
                     boc: Cell;
                 }[];
             },
@@ -7804,7 +7809,7 @@ export class Api<SecurityDataType extends unknown> {
                             items: {
                                 type: 'object',
                                 required: ['boc'],
-                                properties: { boc: { type: 'string', format: 'cell' } }
+                                properties: { boc: { type: 'string', format: 'boc' } }
                             }
                         }
                     }

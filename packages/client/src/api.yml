@@ -3077,6 +3077,7 @@ components:
                 format: address
               wallet_public_key:
                 type: string
+                description: hex encoded public key
               messages:
                 type: array
                 items:
@@ -3086,7 +3087,7 @@ components:
                   properties:
                     boc:
                       type: string
-                      format: cell
+                      format: boc
     GaslessSend:
       description: bag-of-cells serialized to hex
       required: true
