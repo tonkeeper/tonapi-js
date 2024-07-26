@@ -50,7 +50,7 @@ function makeJettonTransferPayload(createJettonTransferPayloadParams: CreateJett
 }
 
 // Amount for jetton transfer. Usually 0.1 TON is enough for most jetton transfers without forwardBody
-const BASE_JETTON_SEND_AMOUNT = toNano(0.1);
+const BASE_JETTON_SEND_AMOUNT = toNano(0.05);
 
 const main = async () => {
     const mnemonic = 'around front fatigue cabin december maximum coconut music pride animal series course comic adjust inject swift high wage maid myself grass act bicycle credit'; // replace with a correct your mnemonic phrase
