@@ -1,6 +1,6 @@
 import { Api, TonApiClient } from '@ton-api/client';
-import { WalletContractV5R1 } from "@ton/ton";
-import { Address, SendMode, beginCell, internal, Cell, toNano, storeMessage, external } from '@ton/core';
+import {storeMessageRelaxed, WalletContractV5R1} from "@ton/ton";
+import {Address, beginCell, internal, Cell, toNano } from '@ton/core';
 import {mnemonicToPrivateKey, sign} from '@ton/crypto';
 import { ContractAdapter } from '@ton-api/ton-adapter';
 
@@ -60,7 +60,6 @@ const main = async () => {
     const keyPair = await mnemonicToPrivateKey(mnemonic.split(' '));
     const workChain = 0;
     const wallet = WalletContractV5R1.create({ workChain, publicKey: keyPair.publicKey });
-    const contract = provider.open(wallet);
 
     const address = wallet.address;
     const jettonWalletAddressResult = await client.blockchain.execGetMethodForBlockchainAccount(
@@ -81,58 +80,28 @@ const main = async () => {
         receiverAddress: destination,
     });
 
-    const relayerTransferMock = makeJettonTransferPayload({
-        queryId: 0,
-        jettonAmount: BigInt(1),
-        forwardAmount: 0,
-        excessesAddress: relayerAddress,
-        receiverAddress: relayerAddress,
-        forwardBody: beginCell().storeUint(OP_CODES.TK_RELAYER_FEE, 32).endCell()
-    });
-
-    const seqno = await contract.getSeqno();
-    const transfer = wallet.createTransfer({
-        // For gasless we should build and sign ext in transfer
-        authType: 'internal',
-        timeout: Math.floor(Date.now() / 1e3) + 300,
-        // A valid secret key is not necessary for emulation. You can just pass a random buffer
-        secretKey: keyPair.secretKey,
-        sendMode: SendMode.PAY_GAS_SEPARATELY + SendMode.IGNORE_ERRORS,
-        seqno: seqno,
-        messages: [
+    const messageToEstimate = beginCell()
+      .storeWritable(
+        storeMessageRelaxed(
           internal({
             to: jettonWallet,
             bounce: true,
             value: BASE_JETTON_SEND_AMOUNT,
             body: tetherTransferPayload
           }),
-          internal({
-            to: jettonWallet,
-            bounce: true,
-            value: BASE_JETTON_SEND_AMOUNT,
-            body: relayerTransferMock
-          })],
-    });
-
-    const ext =  beginCell()
-      .storeWritable(
-        storeMessage(
-          external({
-            to: contract.address,
-            init: seqno === 0 ? contract.init : undefined,
-            body: transfer,
-          }),
         ),
       )
-      .endCell();
-    
-    const params = await client.gasless.gaslessEstimate(usdtMaster, {
+      .endCell()
+
+  const params = await client.gasless.gaslessEstimate(usdtMaster, {
         walletAddress: address,
         walletPublicKey: keyPair.publicKey.toString('hex'),
         messages: [{
-            boc: ext,
+          boc: messageToEstimate
         }]
     }).catch(async (res) => console.log(await res.json()));
+
+  console.log(params);
 };
 
 async function printConfigAndReturnRelayAddress(): Promise<Address> {
