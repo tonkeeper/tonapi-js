@@ -7784,7 +7784,6 @@ export class Api<SecurityDataType extends unknown> {
             data: {
                 /** @format address */
                 walletAddress: Address;
-                /** hex encoded public key */
                 walletPublicKey: string;
                 messages: {
                     /** @format cell */
@@ -7833,7 +7832,7 @@ export class Api<SecurityDataType extends unknown> {
             data: {
                 /** hex encoded public key */
                 walletPublicKey: string;
-                /** @format cell-base64 */
+                /** @format cell */
                 boc: Cell;
             },
             params: RequestParams = {}
@@ -7846,7 +7845,7 @@ export class Api<SecurityDataType extends unknown> {
                     required: ['boc', 'walletPublicKey'],
                     properties: {
                         walletPublicKey: { type: 'string' },
-                        boc: { type: 'string', format: 'cell-base64' }
+                        boc: { type: 'string', format: 'cell' }
                     }
                 }),
                 ...params

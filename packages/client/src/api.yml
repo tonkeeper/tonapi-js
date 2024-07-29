@@ -3077,7 +3077,6 @@ components:
                 format: address
               wallet_public_key:
                 type: string
-                description: hex encoded public key
               messages:
                 type: array
                 items:
@@ -3104,7 +3103,7 @@ components:
                 description: hex encoded public key
               boc:
                 type: string
-                format: cell-base64
+                format: cell
     Boc:
       description: bag-of-cells serialized to hex
       required: true

@@ -1,4 +1,5 @@
 import {
+  GenerateApiParams,
   PrimitiveTypeStruct,
   SchemaComponent,
   generateApi,
@@ -6,6 +7,28 @@ import {
 } from "swagger-typescript-api";
 
 import path from "path";
+import * as fs from 'fs';
+import * as https from 'https';
+
+const openapiPath = path.resolve(process.cwd(), "src/api.yml");
+const openapiUrl = "https://raw.githubusercontent.com/tonkeeper/opentonapi/master/api/openapi.yml";
+
+function downloadSchema(url: string, outputPath: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+        const file = fs.createWriteStream(outputPath);
+        https.get(url, (response) => {
+            response.pipe(file);
+            file.on('finish', () => {
+                file.close();
+                console.log('Schema downloaded');
+                resolve();
+            });
+        }).on('error', (err) => {
+            console.error('Error downloading schema');
+            reject(err);
+        });
+    });
+}
 
 function snakeToCamel(snakeCaseString: string): string {
   return snakeCaseString.replace(/(_\w)/g, (match) => match[1]?.toUpperCase() ?? '');
@@ -62,12 +85,10 @@ function onCreateComponent(component: SchemaComponent) {
   return component;
 }
 
-/* NOTE: all fields are optional expect one of `input`, `url`, `spec` */
-generateApi({
+const generateApiParams: GenerateApiParams = {
   name: "src/client.ts",
   output: path.resolve(process.cwd(), "./"),
-  //   url: "https://raw.githubusercontent.com/tonkeeper/opentonapi/master/api/openapi.yml",
-  input: path.resolve(process.cwd(), "src/api.yml"),
+  input: openapiPath,
   templates: path.resolve(process.cwd(), "src/templates"),
   httpClientType: "fetch",
   unwrapResponseData: true,
@@ -85,24 +106,30 @@ generateApi({
       $default: "string",
       address: "Address",
       cell: "Cell",
-      boc: "Cell",
       "cell-base64": "Cell",
       "tuple-item": "TupleItem",
     },
   }),
   hooks: {
     onCreateComponent,
-    onFormatTypeName: (typeName, rawTypeName, schemaType) => {
+    onFormatTypeName: (typeName) => {
       return typeName === 'TvmStackRecord' ? 'TupleItem' : typeName;
     },
-    onPreParseSchema(originalSchema, typeName, schemaType) {
+    onPreParseSchema(originalSchema) {
       return {
         ...originalSchema,
         format: originalSchema['x-js-format'] ?? originalSchema.format
       }
     },
   },
-});
+};
+
+async function main() {
+  await downloadSchema(openapiUrl, openapiPath);
+  generateApi(generateApiParams);
+}
+
+main();
 
 // generateTemplates({
 //   cleanOutput: false,
