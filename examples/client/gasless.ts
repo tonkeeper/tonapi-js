@@ -1,6 +1,6 @@
-import { Api, SignRawMessage, TonApiClient } from '@ton-api/client';
-import { storeMessageRelaxed, WalletContractV5R1 } from '@ton/ton';
-import { Address, beginCell, internal, Cell, toNano, SendMode, MessageRelaxed } from '@ton/core';
+import { Api, TonApiClient } from '@ton-api/client';
+import {loadStateInit, storeMessageRelaxed, WalletContractV5R1} from '@ton/ton';
+import {Address, beginCell, internal, Cell, toNano, SendMode, storeMessage, external} from '@ton/core';
 import { mnemonicToPrivateKey, sign } from '@ton/crypto';
 import { ContractAdapter } from '@ton-api/ton-adapter';
 
@@ -104,19 +104,35 @@ const main = async () => {
     const tetherTransferForSend = wallet.createTransfer({
         seqno,
         authType: 'internal',
+        timeout: Math.ceil(Date.now() / 1000) + 5 * 60,
         secretKey: keyPair.secretKey,
         sendMode: SendMode.PAY_GAS_SEPARATELY + SendMode.IGNORE_ERRORS,
         messages: params.messages.map(message => internal({
             to: message.address,
             value: BigInt(message.amount),
-            body: message.payload
+            body: message.payload,
+            init: message.stateInit && loadStateInit(message.stateInit.asSlice()),
         }))
     });
+
+    const extMessage = beginCell()
+      .storeWritable(
+        storeMessage(
+          external(
+            {
+                to: contract.address,
+                init: seqno === 0 ? contract.init : undefined,
+                body: tetherTransferForSend,
+            }
+          )
+        )
+      )
+      .endCell();
 
     client.gasless
         .gaslessSend({
             walletPublicKey: keyPair.publicKey.toString('hex'),
-            boc: tetherTransferForSend
+            boc: extMessage
         })
         .catch(res => res.json().then(console.error));
 };
