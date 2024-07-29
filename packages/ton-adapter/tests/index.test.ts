@@ -59,14 +59,19 @@ test('Uninit address with balance', async () => {
 test('Uninit address without balance', async () => {
     // const address = Address.parse('EQAta6RYppvVkEavFszcZKFx9q1yobABP3vY5RE36DQxv6eO');
     // const rawAddress = '0:2d6ba458a69bd59046af16ccdc64a171f6ad72a1b0013f7bd8e51137e83431bf';
-    const publicKey =
-        103331518834641293154200435092860708617866223941720484731223285872059976834397n;
+    const mnemonics = await mnemonicNew();
+    const keyPair = await mnemonicToPrivateKey(mnemonics);
 
-    // create wallet contract
-    const wallet = WalletContractV4.create({
-        workchain: 0,
-        publicKey: Buffer.from(publicKey.toString(16), 'hex')
-    });
+    const wallet = WalletContractV4.create({ workchain: 0, publicKey: keyPair.publicKey });
+
+    // const publicKey =
+    //     103331518834641293154200435092860708617866223941720484731223285872059976834397n;
+
+    // // create wallet contract
+    // const wallet = WalletContractV4.create({
+    //     workchain: 0,
+    //     publicKey: Buffer.from(publicKey.toString(16), 'hex')
+    // });
     const contract = client.open(wallet);
 
     // Get balance
