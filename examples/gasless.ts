@@ -4,14 +4,7 @@ import { Address, beginCell, internal, toNano, SendMode, external, storeMessage 
 import { mnemonicToPrivateKey } from '@ton/crypto';
 import { ContractAdapter } from '@ton-api/ton-adapter';
 
-const http = new TonApiClient({
-    baseUrl: 'https://tonapi.io',
-    baseApiParams: {
-        headers: {
-            'Content-type': 'application/json'
-        }
-    }
-});
+const http = new TonApiClient({ baseUrl: 'https://tonapi.io' });
 const client = new Api(http);
 const provider = new ContractAdapter(client);
 

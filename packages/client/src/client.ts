@@ -2816,7 +2816,8 @@ export class TonApiClient<SecurityDataType = unknown> {
             {};
         const requestParams = this.mergeRequestParams(params, secureParams);
         const queryString = query && this.toQueryString(query);
-        const payloadFormatter = this.contentFormatters[type || ContentType.Json];
+        const contentType = type ?? ContentType.Json;
+        const payloadFormatter = this.contentFormatters[contentType];
         const responseFormat = format || requestParams.format;
 
         return this.customFetch(
@@ -2825,7 +2826,9 @@ export class TonApiClient<SecurityDataType = unknown> {
                 ...requestParams,
                 headers: {
                     ...(requestParams.headers || {}),
-                    ...(type && type !== ContentType.FormData ? { 'Content-Type': type } : {})
+                    ...(contentType && contentType !== ContentType.FormData
+                        ? { 'Content-Type': contentType }
+                        : {})
                 },
                 signal:
                     (cancelToken ? this.createAbortSignal(cancelToken) : requestParams.signal) ||
@@ -5100,7 +5103,6 @@ function prepareRequestData(data: any, orSchema?: any): any {
             }
 
             if (schema.format === 'cell-base64') {
-                return (data as Cell).toBoc().toString('base64');
                 return (data as Cell).toBoc().toString('base64');
             }
         }
