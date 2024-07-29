@@ -136,10 +136,6 @@ function prepareRequestData(data: any, orSchema?: any): any {
               return (data as Cell).toBoc().toString('hex');
           }
 
-          if (schema.format === 'boc') {
-            return (data as Cell).toBoc().toString('hex');
-          }
-
           if (schema.format === 'cell-base64') {
               return (data as Cell).toBoc().toString('base64');
           }

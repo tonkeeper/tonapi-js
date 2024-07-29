@@ -3087,7 +3087,7 @@ components:
                   properties:
                     boc:
                       type: string
-                      format: boc
+                      format: cell
     GaslessSend:
       description: bag-of-cells serialized to hex
       required: true
@@ -3104,7 +3104,7 @@ components:
                 description: hex encoded public key
               boc:
                 type: string
-                format: cell
+                format: cell-base64
     Boc:
       description: bag-of-cells serialized to hex
       required: true
