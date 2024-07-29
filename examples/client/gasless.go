@@ -184,6 +184,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	
+	// CreateSignedMessage creates a signed message.
 	m, err = ton.CreateExternalMessage(wallet.GetAddress(), body, nextMsgParams.Init, tlb.VarUInteger16{})
 	if err != nil {
 		panic(err)

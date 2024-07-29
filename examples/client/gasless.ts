@@ -1,6 +1,6 @@
-import { Api, TonApiClient } from '@ton-api/client';
+import { Api, SignRawMessage, TonApiClient } from '@ton-api/client';
 import { storeMessageRelaxed, WalletContractV5R1 } from '@ton/ton';
-import { Address, beginCell, internal, Cell, toNano } from '@ton/core';
+import { Address, beginCell, internal, Cell, toNano, SendMode, MessageRelaxed } from '@ton/core';
 import { mnemonicToPrivateKey, sign } from '@ton/crypto';
 import { ContractAdapter } from '@ton-api/ton-adapter';
 
@@ -33,35 +33,25 @@ export interface CreateJettonTransferPayloadParams {
     queryId?: number | bigint;
 }
 
-function makeJettonTransferPayload(
-    createJettonTransferPayloadParams: CreateJettonTransferPayloadParams
-) {
-    return beginCell()
-        .storeUint(OP_CODES.JETTON_TRANSFER, 32)
-        .storeUint(createJettonTransferPayloadParams.queryId ?? 0, 64)
-        .storeCoins(createJettonTransferPayloadParams.jettonAmount)
-        .storeAddress(createJettonTransferPayloadParams.receiverAddress)
-        .storeAddress(createJettonTransferPayloadParams.excessesAddress)
-        .storeBit(false) // null custom_payload
-        .storeCoins(createJettonTransferPayloadParams.forwardAmount ?? BigInt(1))
-        .storeMaybeRef(createJettonTransferPayloadParams.forwardBody)
-        .endCell();
-}
-
 // Amount for jetton transfer. Usually 0.1 TON is enough for most jetton transfers without forwardBody
 const BASE_JETTON_SEND_AMOUNT = toNano(0.05);
 
 const main = async () => {
     const mnemonic =
         'around front fatigue cabin december maximum coconut music pride animal series course comic adjust inject swift high wage maid myself grass act bicycle credit'; // replace with a correct your mnemonic phrase
-    const destination = Address.parse('EQAta6RYppvVkEavFszcZKFx9q1yobABP3vY5RE36DQxv6eO'); // replace with a correct recipient address
+    const destination = Address.parse('UQBt_5uz9k8ZeDIQLmFyzhdcifbgHcT7jQIL0rPRrNn9caxt'); // replace with a correct recipient address
     const usdtMaster = Address.parse('EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs'); // USDt jetton master.
+
+    // TODO replace with a correct amount
+    const jettonAmount = 100_000n; // amount in nanocoins. 1 USDt.
 
     const keyPair = await mnemonicToPrivateKey(mnemonic.split(' '));
     const workChain = 0;
     const wallet = WalletContractV5R1.create({ workChain, publicKey: keyPair.publicKey });
+    const contract = provider.open(wallet);
 
     const address = wallet.address;
+    console.log(address);
     const jettonWalletAddressResult = await client.blockchain.execGetMethodForBlockchainAccount(
         usdtMaster,
         'get_wallet_address',
@@ -73,12 +63,16 @@ const main = async () => {
 
     const relayerAddress = await printConfigAndReturnRelayAddress();
 
-    const tetherTransferPayload = makeJettonTransferPayload({
-        queryId: 0,
-        jettonAmount: BigInt(1),
-        excessesAddress: relayerAddress,
-        receiverAddress: destination
-    });
+    const tetherTransferPayload = beginCell()
+        .storeUint(OP_CODES.JETTON_TRANSFER, 32)
+        .storeUint(0, 64)
+        .storeCoins(jettonAmount) // 1 USDT
+        .storeAddress(destination) // address for receiver
+        .storeAddress(relayerAddress) // address for excesses
+        .storeBit(false) // null custom_payload
+        .storeCoins(1n) // count of forward transfers in nanoton
+        .storeMaybeRef(undefined)
+        .endCell();
 
     const messageToEstimate = beginCell()
         .storeWritable(
@@ -93,19 +87,38 @@ const main = async () => {
         )
         .endCell();
 
-    const params = await client.gasless
-        .gaslessEstimate(usdtMaster, {
-            walletAddress: address,
-            walletPublicKey: keyPair.publicKey.toString('hex'),
-            messages: [
-                {
-                    boc: messageToEstimate
-                }
-            ]
-        })
-        .catch(async res => res.json().then(console.log));
+    const params = await client.gasless.gaslessEstimate(usdtMaster, {
+        walletAddress: address,
+        walletPublicKey: keyPair.publicKey.toString('hex'),
+        messages: [
+            {
+                boc: messageToEstimate
+            }
+        ]
+    }); // .catch(res => res.json().then(console.error));;
 
     console.log(params);
+
+    const seqno = await contract.getSeqno();
+
+    const tetherTransferForSend = wallet.createTransfer({
+        seqno,
+        authType: 'internal',
+        secretKey: keyPair.secretKey,
+        sendMode: SendMode.PAY_GAS_SEPARATELY + SendMode.IGNORE_ERRORS,
+        messages: params.messages.map(message => internal({
+            to: message.address,
+            value: BigInt(message.amount),
+            body: message.payload
+        }))
+    });
+
+    client.gasless
+        .gaslessSend({
+            walletPublicKey: keyPair.publicKey.toString('hex'),
+            boc: tetherTransferForSend
+        })
+        .catch(res => res.json().then(console.error));
 };
 
 async function printConfigAndReturnRelayAddress(): Promise<Address> {
