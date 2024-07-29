@@ -5101,6 +5101,7 @@ function prepareRequestData(data: any, orSchema?: any): any {
 
             if (schema.format === 'cell-base64') {
                 return (data as Cell).toBoc().toString('base64');
+                return (data as Cell).toBoc().toString('base64');
             }
         }
     }
@@ -7781,6 +7782,7 @@ export class Api<SecurityDataType extends unknown> {
             data: {
                 /** @format address */
                 walletAddress: Address;
+                /** hex encoded public key */
                 walletPublicKey: string;
                 messages: {
                     /** @format cell */
@@ -7829,7 +7831,7 @@ export class Api<SecurityDataType extends unknown> {
             data: {
                 /** hex encoded public key */
                 walletPublicKey: string;
-                /** @format cell */
+                /** @format cell-base64 */
                 boc: Cell;
             },
             params: RequestParams = {}
@@ -7842,7 +7844,7 @@ export class Api<SecurityDataType extends unknown> {
                     required: ['boc', 'walletPublicKey'],
                     properties: {
                         walletPublicKey: { type: 'string' },
-                        boc: { type: 'string', format: 'cell' }
+                        boc: { type: 'string', format: 'cell-base64' }
                     }
                 }),
                 ...params
