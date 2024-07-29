@@ -2,10 +2,13 @@ import { TonClient } from '@ton/ton';
 import { ContractAdapter } from '../../src/tonapi-adapter';
 import { Api, TonApiClient } from '@ton-api/client';
 
-require('dotenv').config()
+require('dotenv').config();
 
+const httpClient = new TonApiClient({
+    baseUrl: 'https://tonapi.io',
+    baseApiParams: { headers: { 'Content-type': 'application/json' } }
+});
 
-const httpClient = new TonApiClient({ baseUrl: 'https://tonapi.io' });
 const tonApiClient = new Api(httpClient); // Initialize the ton API client
 export const clientTonApi = new ContractAdapter(tonApiClient); // Create an adapter
 
@@ -18,4 +21,4 @@ export const getTonCenterClient = () => {
         endpoint: 'https://toncenter.com/api/v2/jsonRPC',
         apiKey: process.env.TONCENTER_API_KEY
     });
-}
+};

@@ -68,11 +68,3 @@ test('Client apiKey missing test', async () => {
 
     fetchMock.disableMocks();
 });
-
-// test('Client getBlockchainRawAccount test', async () => {
-//     const address = Address.parse('UQC62nZpm36EFzADVfXDVd_4OpbFyc1D3w3ZvCPHLni8Dst4');;
-//     const res = await client.blockchain.getBlockchainRawAccount(address);
-
-//     console.log(res);
-//     expect(res).toBeDefined();
-// });
