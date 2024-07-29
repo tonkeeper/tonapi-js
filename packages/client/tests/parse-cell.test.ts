@@ -42,7 +42,7 @@ test('Cell hex in request body test', async () => {
         expect.objectContaining({
             method: 'POST',
             body: JSON.stringify({
-                boc: cell.hash().toString('hex')
+                boc: cell.toBoc().toString('hex')
             })
         })
     );

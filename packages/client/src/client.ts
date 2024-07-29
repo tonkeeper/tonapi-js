@@ -5096,11 +5096,11 @@ function prepareRequestData(data: any, orSchema?: any): any {
             }
 
             if (schema.format === 'cell') {
-                return (data as Cell).hash().toString('hex');
+                return (data as Cell).toBoc().toString('hex');
             }
 
             if (schema.format === 'cell-base64') {
-                return (data as Cell).hash().toString('base64');
+                return (data as Cell).toBoc().toString('base64');
             }
         }
     }
