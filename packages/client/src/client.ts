@@ -4993,6 +4993,10 @@ function cellParse(src: string): Cell {
     return Cell.fromBase64(Buffer.from(src, 'hex').toString('base64'));
 }
 
+function parseHexToBigInt(str: string) {
+    return str.startsWith('-') ? BigInt(str.slice(1)) * -1n : BigInt(str);
+}
+
 function prepareResponseData<U>(obj: any, orSchema?: any): U {
     const ref = (orSchema && orSchema.$ref) as ComponentRef | undefined;
     const schema = ref ? components[ref] : orSchema;
@@ -5039,7 +5043,7 @@ function prepareResponseData<U>(obj: any, orSchema?: any): U {
                     case 'num':
                         return {
                             type: 'int',
-                            value: BigInt(obj.num)
+                            value: parseHexToBigInt(obj.num)
                         } as U;
                     case 'cell':
                         return {
