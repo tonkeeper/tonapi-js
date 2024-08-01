@@ -1,6 +1,6 @@
-import { Address, Contract, ContractProvider } from "@ton/core";
-import { WalletContractV4 } from "@ton/ton";
-import { Api, TonApiClient } from "@ton-api/client";
+import { Address, Contract, ContractProvider } from '@ton/core';
+import { WalletContractV4 } from '@ton/ton';
+import { Api, TonApiClient } from '@ton-api/client';
 
 const httpClient = new TonApiClient({
     baseUrl: 'https://tonapi.io'
@@ -48,10 +48,10 @@ export class WalletItem implements Contract {
         const publicKey = BigInt(accountData.decoded.publicKey);
         const bufferPublicKey = Buffer.from(publicKey.toString(16), 'hex');
 
-        return (new WalletItem(address, workchain, bufferPublicKey)).walletContract;
+        return new WalletItem(address, workchain, bufferPublicKey).walletContract;
     }
 
     public getBalance(provider: ContractProvider) {
-        return this.walletContract.getBalance(provider)
+        return this.walletContract.getBalance(provider);
     }
 }

@@ -6,7 +6,7 @@ require('dotenv').config();
 
 const httpClient = new TonApiClient({
     baseUrl: 'https://tonapi.io',
-    baseApiParams: { headers: { 'Content-type': 'application/json' } }
+    apiKey: process.env.TONAPI_API_KEY
 });
 
 const tonApiClient = new Api(httpClient); // Initialize the ton API client
@@ -22,3 +22,5 @@ export const getTonCenterClient = () => {
         apiKey: process.env.TONCENTER_API_KEY
     });
 };
+
+export const client = process.env.CLIENT === 'toncenter' ? getTonCenterClient() : clientTonApi;

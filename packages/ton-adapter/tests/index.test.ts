@@ -1,9 +1,7 @@
 import { Address, WalletContractV4, internal } from '@ton/ton';
 import { mnemonicNew, mnemonicToPrivateKey } from '@ton/crypto';
 import { WalletItem } from './utils/contract';
-import { clientTonApi, getTonCenterClient } from './utils/clients';
-
-const client = process.env.CLIENT === 'toncenter' ? getTonCenterClient() : clientTonApi;
+import { client } from './utils/clients';
 
 test('Exists wallet contract', async () => {
     // create wallet contract
@@ -20,7 +18,6 @@ test('Exists wallet contract', async () => {
     expect(balance).toBe(471698230n);
 });
 
-// TODO: with case with ofchain wallet aork only with toncenter
 test('Missing wallet contract', async () => {
     const workchain = 0;
     const mnemonics = await mnemonicNew();
@@ -81,6 +78,7 @@ test('Uninit address without balance', async () => {
     expect(balance).toBe(0n);
 });
 
+// TODO finish this test
 test('TON transfer test', async () => {
     const mnemonic =
         'around front fatigue cabin december maximum coconut music pride animal series course comic adjust inject swift high wage maid myself grass act bicycle credit'; // replace with a correct your mnemonic phrase

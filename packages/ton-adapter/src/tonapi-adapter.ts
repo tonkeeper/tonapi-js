@@ -82,7 +82,7 @@ function createProvider(
                         return mockResult;
                     }
 
-                    throw new Error('Account request failed: ' + body.error);
+                    throw new Error('Account request failed: ', body.error);
                 });
 
             // Convert state
@@ -104,7 +104,7 @@ function createProvider(
                     data: account.data?.toBoc() ?? null
                 }),
                 uninit: () => ({
-                    type: 'uninit' // TODO: check if it's correct
+                    type: 'uninit'
                 }),
                 nonexist: () => ({
                     type: 'uninit'
@@ -196,19 +196,17 @@ function createProvider(
                 createProvider(tonapi, params.address, params.init)
             );
         },
-        // TODO: many questions
-        async getTransactions(
+        getTransactions(
             address: Address,
             lt: bigint,
-            hash: Buffer, // TODO what is hash?
+            hash: Buffer,
             limit?: number
         ): Promise<Transaction[]> {
             console.info(
                 'hash param in getTransactions action ignored, beacause not supported',
                 hash.toString('hex')
             );
-            // TODO: use  unused params
-            return await tonapi.blockchain
+            return tonapi.blockchain
                 .getBlockchainAccountTransactions(address, {
                     before_lt: lt + 1n,
                     limit
