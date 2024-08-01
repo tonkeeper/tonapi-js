@@ -82,7 +82,7 @@ function prepareResponseData<U>(obj: any, orSchema?: any): U {
           case "cell":
             return {
               type: "cell",
-              cell: cellParse(obj.cell as string) // TODO: check if it is correct 
+              cell: cellParse(obj.cell as string)
             } as U;
           case "slice":
             return {

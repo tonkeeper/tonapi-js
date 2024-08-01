@@ -1405,6 +1405,8 @@ export interface JettonBalance {
     price?: TokenRates;
     walletAddress: AccountAddress;
     jetton: JettonPreview;
+    /** @example ["custom_payload","non_transferable"] */
+    extensions?: string[];
     lock?: {
         /** @example 597968399 */
         amount: string;
@@ -2363,6 +2365,19 @@ export interface JettonHolders {
      * @example 2000
      */
     total: number;
+}
+
+export interface JettonTransferPayload {
+    /**
+     * hex-encoded BoC
+     * @example "b5ee9c72410212010001b40009460395b521c9251151ae7987e03c544bd275d6cd42c2d157f840beb14d5454b96718000d012205817002020328480101fd7f6a648d4f771d7f0abc1707e4e806b19de1801f65eb8c133a4cfb0c33d847000b22012004052848010147da975b922d89192f4c9b68a640daa6764ec398c93cec025e17f0c1852a711a0009220120061122012007082848010170d9fb0423cbef6c2cf1f3811a2f640daf8c9a326b6f8816c1b993e90d88e2100006220120090a28480101f6df1d75f6b9e45f224b2cb4fc2286d927d47b468b6dbf1fedc4316290ec2ae900042201200b102201200c0f2201200d"
+     */
+    customPayload?: string;
+    /**
+     * hex-encoded BoC
+     * @example "b5ee9c72410212010001b40009460395b521c9251151ae7987e03c544bd275d6cd42c2d157f840beb14d5454b96718000d012205817002020328480101fd7f6a648d4f771d7f0abc1707e4e806b19de1801f65eb8c133a4cfb0c33d847000b22012004052848010147da975b922d89192f4c9b68a640daa6764ec398c93cec025e17f0c1852a711a0009220120061122012007082848010170d9fb0423cbef6c2cf1f3811a2f640daf8c9a326b6f8816c1b993e90d88e2100006220120090a28480101f6df1d75f6b9e45f224b2cb4fc2286d927d47b468b6dbf1fedc4316290ec2ae900042201200b102201200c0f2201200d"
+     */
+    stateInit?: string;
 }
 
 export interface AccountStaking {
@@ -3986,6 +4001,7 @@ const components = {
             price: { $ref: '#/components/schemas/TokenRates' },
             wallet_address: { $ref: '#/components/schemas/AccountAddress' },
             jetton: { $ref: '#/components/schemas/JettonPreview' },
+            extensions: { type: 'array', items: { type: 'string' } },
             lock: {
                 type: 'object',
                 required: ['amount', 'till'],
@@ -4779,6 +4795,11 @@ const components = {
             total: { type: 'integer', format: 'int64' }
         }
     },
+    '#/components/schemas/JettonTransferPayload': {
+        type: 'object',
+        required: ['payload'],
+        properties: { custom_payload: { type: 'string' }, state_init: { type: 'string' } }
+    },
     '#/components/schemas/AccountStaking': {
         type: 'object',
         required: ['pools'],
@@ -5048,7 +5069,7 @@ function prepareResponseData<U>(obj: any, orSchema?: any): U {
                     case 'cell':
                         return {
                             type: 'cell',
-                            cell: cellParse(obj.cell as string) // TODO: check if it is correct
+                            cell: cellParse(obj.cell as string)
                         } as U;
                     case 'slice':
                         return {
@@ -7178,6 +7199,32 @@ export class Api<SecurityDataType extends unknown> {
 
             return prepareResponseData<JettonHolders>(res, {
                 $ref: '#/components/schemas/JettonHolders'
+            });
+        },
+
+        /**
+         * @description Get jetton's custom payload and state init required for transfer
+         *
+         * @tags Jettons
+         * @name GetJettonTransferPayload
+         * @request GET:/v2/jettons/{jetton_id}/transfer/{account_id}/payload
+         */
+        getJettonTransferPayload: async (
+            accountId_Address: Address,
+            jettonId_Address: Address,
+            params: RequestParams = {}
+        ) => {
+            const accountId = accountId_Address.toRawString();
+            const jettonId = jettonId_Address.toRawString();
+            const res = await this.http.request<JettonTransferPayload, Error>({
+                path: `/v2/jettons/${jettonId}/transfer/${accountId}/payload`,
+                method: 'GET',
+                format: 'json',
+                ...params
+            });
+
+            return prepareResponseData<JettonTransferPayload>(res, {
+                $ref: '#/components/schemas/JettonTransferPayload'
             });
         },
 

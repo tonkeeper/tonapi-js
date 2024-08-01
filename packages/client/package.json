@@ -40,8 +40,8 @@
         "url": "git+https://github.com/tonkeeper/tonapi-js.git"
     },
     "scripts": {
-        "generate": "npm run clean && npx tsx ./src/generate.ts",
-        "prepublishOnly": "npm run generate && npx tsup && npm run test && npx tsc && npm run check-git-status",
+        "generate": "npm run clean && npx tsx ./src/generate.ts && npx tsup && npm run test && npx tsc ",
+        "prepublishOnly": "npm run generate && npm run check-git-status",
         "test": "jest --runInBand",
         "clean": "rimraf ./dist",
         "check-git-status": "bash -c '[ -z \"$(git status --porcelain)\" ] || (echo \"Error: Uncommitted changes detected.\" && exit 1)'"
