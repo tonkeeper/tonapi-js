@@ -71,6 +71,11 @@ export interface ServiceStatus {
     restOnline: boolean;
     /** @example 100 */
     indexingLatency: number;
+    /**
+     * @format int32
+     * @example 123456
+     */
+    lastKnownMasterchainSeqno: number;
 }
 
 export interface ReducedBlock {
@@ -2949,10 +2954,11 @@ const components = {
     },
     '#/components/schemas/ServiceStatus': {
         type: 'object',
-        required: ['indexing_latency', 'rest_online'],
+        required: ['indexing_latency', 'rest_online', 'last_known_masterchain_seqno'],
         properties: {
             rest_online: { type: 'boolean', default: true },
-            indexing_latency: { type: 'integer' }
+            indexing_latency: { type: 'integer' },
+            last_known_masterchain_seqno: { type: 'integer', format: 'int32' }
         }
     },
     '#/components/schemas/ReducedBlock': {
