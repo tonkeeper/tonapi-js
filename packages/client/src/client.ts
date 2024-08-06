@@ -2692,8 +2692,45 @@ export enum ContentType {
 }
 
 import { Address, Cell, TupleItem } from '@ton/core';
-import JSONBigIntWrapper from 'json-bigint';
-const JSONBigInt = JSONBigIntWrapper({ useNativeBigInt: true });
+
+// @ts-ignore
+import parse from 'core-js-pure/actual/json/parse';
+// @ts-ignore
+import rawJSON from 'core-js-pure/actual/json/raw-json';
+// @ts-ignore
+import stringify from 'core-js-pure/actual/json/stringify';
+
+const JSONParse = (source: string) =>
+    parse(
+        source,
+        // @ts-ignore JSON bigint support from core-js
+        (_: any, value: any, context: any): any => {
+            if (typeof value === 'number') {
+                const string = context.source as string;
+                return Number.isSafeInteger(value)
+                    ? value
+                    : /[\.eE]/.test(string)
+                      ? value
+                      : BigInt(string);
+            }
+
+            return value;
+        }
+    );
+
+const JSONStringify = (value: any) =>
+    stringify(
+        value,
+        // @ts-ignore JSON bigint support from core-js
+        (_: any, value: any): any => {
+            if (typeof value === 'bigint') {
+                // @ts-ignore JSON rawJSON support from core-js
+                return rawJSON(value.toString());
+            }
+
+            return value;
+        }
+    );
 
 export class TonApiClient<SecurityDataType = unknown> {
     public baseUrl: string = 'https://tonapi.io';
@@ -2762,10 +2799,10 @@ export class TonApiClient<SecurityDataType = unknown> {
     private contentFormatters: Record<ContentType, (input: any) => any> = {
         [ContentType.Json]: (input: any) =>
             input !== null && (typeof input === 'object' || typeof input === 'string')
-                ? JSON.stringify(input)
+                ? JSONStringify(input)
                 : input,
         [ContentType.Text]: (input: any) =>
-            input !== null && typeof input !== 'string' ? JSON.stringify(input) : input,
+            input !== null && typeof input !== 'string' ? JSONStringify(input) : input,
         [ContentType.FormData]: (input: any) =>
             Object.keys(input || {}).reduce((formData, key) => {
                 const property = input[key];
@@ -2774,7 +2811,7 @@ export class TonApiClient<SecurityDataType = unknown> {
                     property instanceof Blob
                         ? property
                         : typeof property === 'object' && property !== null
-                          ? JSON.stringify(property)
+                          ? JSONStringify(property)
                           : `${property}`
                 );
                 return formData;
@@ -2867,10 +2904,7 @@ export class TonApiClient<SecurityDataType = unknown> {
                 : await response[customResponseFormat!]()
                       .then(data => {
                           if (r.ok) {
-                              r.data =
-                                  responseFormat === 'json'
-                                      ? JSONBigInt.parse(data as string)
-                                      : data;
+                              r.data = responseFormat === 'json' ? JSONParse(data as string) : data;
                           } else {
                               r.error = data as E;
                           }
@@ -5005,7 +5039,6 @@ const components = {
         }
     }
 };
-
 type ComponentRef = keyof typeof components;
 
 function snakeToCamel(snakeCaseString: string): string {
