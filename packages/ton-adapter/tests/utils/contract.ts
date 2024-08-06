@@ -1,4 +1,4 @@
-import { Address, Contract, ContractProvider } from '@ton/core';
+import { Address, Contract, ContractProvider, TupleItem } from '@ton/core';
 import { WalletContractV4 } from '@ton/ton';
 import { Api, TonApiClient } from '@ton-api/client';
 
@@ -53,5 +53,22 @@ export class WalletItem implements Contract {
 
     public getBalance(provider: ContractProvider) {
         return this.walletContract.getBalance(provider);
+    }
+}
+
+export class ContractForTestNumberArgs implements Contract {
+    constructor(public readonly address: Address) {}
+
+    async getReferralItemAddr(provider: ContractProvider, args: TupleItem[]) {
+        return await provider
+            .get('get_referral_item_addr', args)
+            .catch(async res => await res.json());
+    }
+
+    async getTransactions(provider: ContractProvider) {
+        const state = await provider.getState();
+        const last = state.last!;
+
+        return await provider.getTransactions(this.address, last.lt, last.hash, 10);
     }
 }
