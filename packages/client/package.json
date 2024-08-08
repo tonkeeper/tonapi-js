@@ -67,6 +67,6 @@
         "@ton/core": ">=0.56.0"
     },
     "dependencies": {
-        "json-bigint": "github:sidorares/json-bigint#8208aa1352eba252b60756672ab7c17f300d6ccd"
+        "core-js-pure": "^3.38.0"
     }
 }

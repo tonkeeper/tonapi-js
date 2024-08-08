@@ -1,5 +1,5 @@
 import { TonClient } from '@ton/ton';
-import { ContractAdapter } from '../../src/tonapi-adapter';
+import { ContractAdapter } from '@ton-api/ton-adapter';
 import { Api, TonApiClient } from '@ton-api/client';
 
 require('dotenv').config();
