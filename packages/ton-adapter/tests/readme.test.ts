@@ -1,7 +1,7 @@
-import { WalletContractV4, internal } from '@ton/ton';
+import { SendMode, WalletContractV5R1, internal } from '@ton/ton';
 import { mnemonicNew, mnemonicToPrivateKey } from '@ton/crypto';
 import { Api, TonApiClient } from '@ton-api/client';
-import { ContractAdapter } from '@ton-api/ton-adapter'; // local import from the same package
+import { ContractAdapter } from '@ton-api/ton-adapter';
 
 // Initialize TonApi client
 const httpClient = new TonApiClient({
@@ -17,7 +17,7 @@ const adapter = new ContractAdapter(client);
 async function main() {
     const mnemonics = await mnemonicNew();
     const keyPair = await mnemonicToPrivateKey(mnemonics);
-    const wallet = WalletContractV4.create({ workchain: 0, publicKey: keyPair.publicKey });
+    const wallet = WalletContractV5R1.create({ workChain: 0, publicKey: keyPair.publicKey });
 
     // Open the contract using the adapter
     const contract = adapter.open(wallet);
@@ -32,6 +32,7 @@ async function main() {
         .sendTransfer({
             seqno,
             secretKey: keyPair.secretKey,
+            sendMode: SendMode.PAY_GAS_SEPARATELY + SendMode.IGNORE_ERRORS,
             messages: [
                 internal({
                     value: '0.001',

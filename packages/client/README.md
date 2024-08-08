@@ -88,4 +88,4 @@ api.jettons.getJettonInfo(jettonAddress)
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](../../LICENSE) file in the GitHub repository for the full license text.
+MIT
