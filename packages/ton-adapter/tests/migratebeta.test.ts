@@ -1,6 +1,6 @@
 import { Address, Contract, ContractProvider, OpenedContract } from '@ton/ton';
 import { mnemonicNew, mnemonicToPrivateKey, KeyPair } from '@ton/crypto';
-import { ContractAdapter } from '../src/tonapi-adapter';
+import { ContractAdapter } from '@ton-api/ton-adapter';
 import { Api, TonApiClient } from '@ton-api/client';
 
 const httpClient = new TonApiClient({

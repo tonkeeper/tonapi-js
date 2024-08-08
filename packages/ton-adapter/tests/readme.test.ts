@@ -1,7 +1,7 @@
 import { WalletContractV4, internal } from '@ton/ton';
 import { mnemonicNew, mnemonicToPrivateKey } from '@ton/crypto';
 import { Api, TonApiClient } from '@ton-api/client';
-import { ContractAdapter } from '../src/tonapi-adapter'; // local import from the same package
+import { ContractAdapter } from '@ton-api/ton-adapter'; // local import from the same package
 
 // Initialize TonApi client
 const httpClient = new TonApiClient({

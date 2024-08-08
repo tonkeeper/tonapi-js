@@ -2,13 +2,13 @@ import { TonApiClient, Api, ApiConfig } from '../src/client';
 import fetchMock from 'jest-fetch-mock';
 // import { Address } from '@ton/core';
 import { client, clienWithApiKey } from './utils/client';
-import { JSONBig } from './utils/jsonbig';
+import { JSONStringify } from './utils/jsonbig';
 
 test('Client status test', async () => {
     fetchMock.enableMocks();
 
     fetchMock.mockResponseOnce(
-        JSONBig.stringify({
+        JSONStringify({
             rest_online: true,
             indexing_latency: 8
         })
@@ -24,7 +24,7 @@ test('Client apiKey test', async () => {
     fetchMock.enableMocks();
 
     fetchMock.mockResponseOnce(
-        JSONBig.stringify({
+        JSONStringify({
             rest_online: true,
             indexing_latency: 8
         })

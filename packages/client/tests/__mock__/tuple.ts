@@ -1,6 +1,6 @@
-import { JSONBig } from '../utils/jsonbig';
+import { JSONStringify } from '../utils/jsonbig';
 
-export const execGetMethodForBlockchainAccount = JSONBig.stringify({
+export const execGetMethodForBlockchainAccount = JSONStringify({
     success: true,
     exit_code: 0,
     stack: [

@@ -1,6 +1,6 @@
-import { JSONBig } from '../utils/jsonbig';
+import { JSONStringify } from '../utils/jsonbig';
 
-export const getAccount = JSONBig.stringify({
+export const getAccount = JSONStringify({
     accounts: [
         {
             address: '0:009d03ddede8c2620a72f999d03d5888102250a214bf574a29ff64df80162168',
