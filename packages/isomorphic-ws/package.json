@@ -21,7 +21,7 @@
       "default": "./index.js"
     }
   },
-  "license": "GPL-3.0",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/tonkeeper/tonapi-js/issues"
   },

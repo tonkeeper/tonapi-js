@@ -1,8 +1,10 @@
 {
   "name": "@ton-api/ton-adapter",
-  "version": "0.0.1-beta.5",
+  "version": "0.1.0-beta.1",
   "description": "TonApi adapter for @ton/ton",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -15,9 +17,10 @@
     }
   },
   "scripts": {
-    "build": "tsup && npx rimraf ./dist/index.d.mts"
+    "build": "tsup && npx rimraf ./dist/index.d.mts",
+    "test": "jest --runInBand"
   },
-  "license": "GPL-3.0",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/tonkeeper/tonapi-js/issues"
   },
@@ -40,15 +43,25 @@
     },
     {
       "name": "siandreev"
+    },
+    {
+      "name": "mois-ilya"
     }
   ],
   "peerDependencies": {
-    "@ton/core": ">=0.54.0",
-    "@ton-api/client": ">=0.0.1-beta.0"
+    "@ton-api/client": "^0.1.0-beta.2",
+    "@ton/core": ">=0.56.0"
   },
   "devDependencies": {
-    "@ton/core": "^0.54.0",
+    "@ton-api/client": "^0.1.0-beta.2",
+    "@ton/core": "^0.56.0",
+    "@ton/ton": "^14.0.0",
     "@types/node": "^20.11.16",
-    "@ton-api/client": "*"
+    "dotenv": "^16.4.5",
+    "jest": "^29.7.0",
+    "jest-fetch-mock": "^3.0.3",
+    "ts-jest": "^29.1.5",
+    "tsup": "^8.2.1",
+    "typescript": "^5.5.3"
   }
 }

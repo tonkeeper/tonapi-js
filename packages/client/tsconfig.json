@@ -4,9 +4,9 @@
     "sourceMap": false,
     "outDir": "dist",
     "rootDir": "./src",
-    "baseUrl": "./"
+    "baseUrl": "./",
+    "noUncheckedIndexedAccess": false
   },
-  "include": [
-    "src/**/*"
-  ]
+  "include": ["src/client.ts"],
+  "exclude": ["node_modules/**", "**/*.test.ts"]
 }

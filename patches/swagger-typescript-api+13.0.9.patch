@@ -1,0 +1,13 @@
+diff --git a/node_modules/swagger-typescript-api/src/code-gen-process.js b/node_modules/swagger-typescript-api/src/code-gen-process.js
+index 712fe25..f1f6f18 100644
+--- a/node_modules/swagger-typescript-api/src/code-gen-process.js
++++ b/node_modules/swagger-typescript-api/src/code-gen-process.js
+@@ -214,7 +214,7 @@ class CodeGenProcess {
+         pascalCase: pascalCase,
+         getInlineParseContent: this.schemaParserFabric.getInlineParseContent,
+         getParseContent: this.schemaParserFabric.getParseContent,
+-        getComponentByRef: this.schemaComponentsMap.get,
++        getComponentByRef: (value) => this.schemaComponentsMap.get(value),
+         parseSchema: this.schemaParserFabric.parseSchema,
+         checkAndAddNull: this.schemaParserFabric.schemaUtils.safeAddNullToType,
+         safeAddNullToType:
