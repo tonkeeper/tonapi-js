@@ -6067,6 +6067,11 @@ export class Api<SecurityDataType extends unknown> {
                  * @example ["ton","usd","rub"]
                  */
                 currencies?: string[];
+                /**
+                 * comma separated list supported extensions
+                 * @example ["custom_payload"]
+                 */
+                supported_extensions?: string[];
             },
             params: RequestParams = {}
         ) => {
