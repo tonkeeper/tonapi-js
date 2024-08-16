@@ -1,7 +1,5 @@
 # @ton-api/ton-adapter
 
-⚠️ **Note**: This package is currently in public beta.
-
 ## Overview
 
 `@ton-api/ton-adapter` is an adapter that enables integration between
