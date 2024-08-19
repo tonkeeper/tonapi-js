@@ -1,4 +1,5 @@
 import {
+  GenerateApiConfiguration,
   GenerateApiParams,
   PrimitiveTypeStruct,
   SchemaComponent,
@@ -85,6 +86,20 @@ function onCreateComponent(component: SchemaComponent) {
   return component;
 }
 
+function addRouteToModuleByOperationId(operationId: string, moduleName: string, config: GenerateApiConfiguration) {
+  const route = config.routes.combined?.find((route) => route.routes.find((route) => route.routeName.usage === operationId))?.routes.find((route) => route.routeName.usage === operationId);
+
+  if (route) {
+    const newRoute = {
+      ...route,
+      raw: {
+        ...route.raw,
+        deprecated: true,
+      }
+    }
+    config.routes.combined?.find((route) => route.moduleName === moduleName)?.routes.push(newRoute);}
+}
+
 const generateApiParams: GenerateApiParams = {
   name: "src/client.ts",
   output: path.resolve(process.cwd(), "./"),
@@ -121,6 +136,13 @@ const generateApiParams: GenerateApiParams = {
         format: originalSchema['x-js-format'] ?? originalSchema.format
       }
     },
+    onPrepareConfig(config) {
+      // Fall back to previous version of the schema
+      addRouteToModuleByOperationId('addressParse', 'accounts', config);
+      addRouteToModuleByOperationId('status', 'blockchain', config);
+
+      return config;
+    }
   },
 };
 
