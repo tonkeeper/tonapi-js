@@ -7755,67 +7755,6 @@ export class Api<SecurityDataType extends unknown> {
             });
 
             return prepareResponseData<Accounts>(res, { $ref: '#/components/schemas/Accounts' });
-        },
-
-        /**
-         * @description Emulate sending message to blockchain
-         *
-         * @tags Wallet, Emulation
-         * @name EmulateMessageToWallet
-         * @request POST:/v2/wallet/emulate
-         */
-        emulateMessageToWallet: async (
-            data: {
-                /** @format cell */
-                boc: Cell;
-                /** additional per account configuration */
-                params?: {
-                    /**
-                     * @format address
-                     * @example "0:97146a46acc2654y27947f14c4a4b14273e954f78bc017790b41208b0043200b"
-                     */
-                    address: Address;
-                    /**
-                     * @format bigint
-                     * @example 10000000000
-                     */
-                    balance?: bigint;
-                }[];
-            },
-            params: RequestParams = {}
-        ) => {
-            const res = await this.http.request<MessageConsequences, Error>({
-                path: `/v2/wallet/emulate`,
-                method: 'POST',
-                body: prepareRequestData(data, {
-                    type: 'object',
-                    required: ['boc'],
-                    properties: {
-                        boc: { type: 'string', format: 'cell' },
-                        params: {
-                            type: 'array',
-                            items: {
-                                type: 'object',
-                                required: ['address'],
-                                properties: {
-                                    address: { type: 'string', format: 'address' },
-                                    balance: {
-                                        type: 'integer',
-                                        format: 'bigint',
-                                        'x-js-format': 'bigint'
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }),
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponseData<MessageConsequences>(res, {
-                $ref: '#/components/schemas/MessageConsequences'
-            });
         }
     };
     gasless = {
@@ -9150,6 +9089,67 @@ export class Api<SecurityDataType extends unknown> {
             });
 
             return prepareResponseData<Trace>(res, { $ref: '#/components/schemas/Trace' });
+        },
+
+        /**
+         * @description Emulate sending message to blockchain
+         *
+         * @tags Emulation, Wallet
+         * @name EmulateMessageToWallet
+         * @request POST:/v2/wallet/emulate
+         */
+        emulateMessageToWallet: async (
+            data: {
+                /** @format cell */
+                boc: Cell;
+                /** additional per account configuration */
+                params?: {
+                    /**
+                     * @format address
+                     * @example "0:97146a46acc2654y27947f14c4a4b14273e954f78bc017790b41208b0043200b"
+                     */
+                    address: Address;
+                    /**
+                     * @format bigint
+                     * @example 10000000000
+                     */
+                    balance?: bigint;
+                }[];
+            },
+            params: RequestParams = {}
+        ) => {
+            const res = await this.http.request<MessageConsequences, Error>({
+                path: `/v2/wallet/emulate`,
+                method: 'POST',
+                body: prepareRequestData(data, {
+                    type: 'object',
+                    required: ['boc'],
+                    properties: {
+                        boc: { type: 'string', format: 'cell' },
+                        params: {
+                            type: 'array',
+                            items: {
+                                type: 'object',
+                                required: ['address'],
+                                properties: {
+                                    address: { type: 'string', format: 'address' },
+                                    balance: {
+                                        type: 'integer',
+                                        format: 'bigint',
+                                        'x-js-format': 'bigint'
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }),
+                format: 'json',
+                ...params
+            });
+
+            return prepareResponseData<MessageConsequences>(res, {
+                $ref: '#/components/schemas/MessageConsequences'
+            });
         },
 
         /**
