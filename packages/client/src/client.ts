@@ -2316,6 +2316,8 @@ export interface JettonMetadata {
     social?: string[];
     websites?: string[];
     catalogs?: string[];
+    /** @example "https://claim-api.tonapi.io/jettons/TESTMINT" */
+    customPayloadApiUri?: string;
 }
 
 export interface InscriptionBalances {
@@ -4778,7 +4780,8 @@ const components = {
             description: { type: 'string' },
             social: { type: 'array', items: { type: 'string' } },
             websites: { type: 'array', items: { type: 'string' } },
-            catalogs: { type: 'array', items: { type: 'string' } }
+            catalogs: { type: 'array', items: { type: 'string' } },
+            custom_payload_api_uri: { type: 'string' }
         }
     },
     '#/components/schemas/InscriptionBalances': {
@@ -6105,6 +6108,11 @@ export class Api<SecurityDataType extends unknown> {
                  * @example ["ton","usd","rub"]
                  */
                 currencies?: string[];
+                /**
+                 * comma separated list supported extensions
+                 * @example ["custom_payload"]
+                 */
+                supported_extensions?: string[];
             },
             params: RequestParams = {}
         ) => {
@@ -7479,7 +7487,7 @@ export class Api<SecurityDataType extends unknown> {
     };
     rates = {
         /**
-         * @description Get the token price to the currency
+         * @description Get the token price in the chosen currency for display only. Don’t use this for financial transactions.
          *
          * @tags Rates
          * @name GetRates
