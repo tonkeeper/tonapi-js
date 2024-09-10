@@ -4,7 +4,13 @@ import { Address, beginCell, internal, toNano, SendMode, external, storeMessage 
 import { mnemonicToPrivateKey } from '@ton/crypto';
 import { ContractAdapter } from '@ton-api/ton-adapter';
 
-const http = new TonApiClient({ baseUrl: 'https://tonapi.io' });
+// if you need to send lots of requests in parallel,
+// make sure you use a tonapi token.
+const http = new TonApiClient({
+    baseUrl: 'https://tonapi.io',
+    // apiKey: 'YOUR API KEY'
+});
+
 const client = new Api(http);
 const provider = new ContractAdapter(client);
 
@@ -17,14 +23,20 @@ const OP_CODES = {
 const BASE_JETTON_SEND_AMOUNT = toNano(0.05);
 
 const main = async () => {
-    const mnemonic =
-        'around front fatigue cabin december maximum coconut music pride animal series course comic adjust inject swift high wage maid myself grass act bicycle credit'; // replace with a correct your mnemonic phrase
-    const destination = Address.parse('UQBt_5uz9k8ZeDIQLmFyzhdcifbgHcT7jQIL0rPRrNn9caxt'); // replace with a correct recipient address
+    
+    // this is a simple example of how to send a gasless transfer.
+	// you only need to specify your seed and a destination address.
+ 
+	// the seed is not sent to the network, it is used to sign messages locally.
+
+    const seed =
+        '..!!! REPLACE THIS WITH YOUR SEED !!! ..'; // wallet seed `word1 word2 word3 ... word24`
+    const destination = Address.parse('..!!! REPLACE THIS WITH A CORRECT DESTINATION !!!..'); // replace with a correct recipient address
     const usdtMaster = Address.parse('EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs'); // USDt jetton master.
 
-    const jettonAmount = 1_000_000n; // amount in nanocoins. 1 USDt.
+    const jettonAmount = 1_000_000n; // amount in the smallest jetton units. This is 1 USDt.
 
-    const keyPair = await mnemonicToPrivateKey(mnemonic.split(' '));
+    const keyPair = await mnemonicToPrivateKey(seed.split(' '));
     const workChain = 0;
     const wallet = WalletContractV5R1.create({ workChain, publicKey: keyPair.publicKey });
     const contract = provider.open(wallet);
@@ -40,6 +52,9 @@ const main = async () => {
     );
     const jettonWallet = Address.parse(jettonWalletAddressResult.decoded.jettonWalletAddress);
 
+    // we use USDt in this example,
+	// so we just print all supported gas jettons and get the relay address.
+	// we have to send excess to the relay address in order to make a transfer cheaper.
     const relayerAddress = await printConfigAndReturnRelayAddress();
 
     // Create payload for jetton transfer
@@ -67,6 +82,9 @@ const main = async () => {
         )
         .endCell();
 
+    // we send a single message containing a transfer from our wallet to a desired destination.
+	// as a result of estimation, TonAPI returns a list of messages that we need to sign.
+	// the first message is a fee transfer to the relay address, the second message is our original transfer.
     const params = await client.gasless.gaslessEstimate(usdtMaster, {
         walletAddress: wallet.address,
         walletPublicKey: keyPair.publicKey.toString('hex'),
@@ -81,6 +99,7 @@ const main = async () => {
 
     const seqno = await contract.getSeqno();
 
+    // params is the same structure as params in tonconnect
     const tetherTransferForSend = wallet.createTransfer({
         seqno,
         authType: 'internal',
