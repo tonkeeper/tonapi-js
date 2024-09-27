@@ -14,7 +14,7 @@ test('Client status test', async () => {
         })
     );
 
-    const res = await client.blockchain.status();
+    const res = await client.utilities.status();
     expect(res).toBeDefined();
 
     fetchMock.disableMocks();
@@ -30,7 +30,7 @@ test('Client apiKey test', async () => {
         })
     );
 
-    const res = await clienWithApiKey.blockchain.status();
+    const res = await clienWithApiKey.utilities.status();
     expect(res).toBeDefined();
 
     expect(fetchMock).toHaveBeenCalledWith(
@@ -46,6 +46,30 @@ test('Client apiKey test', async () => {
 });
 
 test('Client apiKey missing test', async () => {
+    fetchMock.enableMocks();
+
+    const config: ApiConfig = {
+        baseUrl: 'https://tonapi.io'
+    };
+
+    const http = new TonApiClient(config);
+    const client = new Api(http);
+    const res = await client.utilities.status();
+    expect(res).toBeDefined();
+
+    expect(fetchMock).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+            headers: expect.not.objectContaining({
+                Authorization: expect.anything()
+            })
+        })
+    );
+
+    fetchMock.disableMocks();
+});
+
+test('Client fallback test', async () => {
     fetchMock.enableMocks();
 
     const config: ApiConfig = {
