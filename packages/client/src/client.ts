@@ -1402,6 +1402,7 @@ export interface JettonPreview {
     /** @example "https://cache.tonapi.io/images/jetton.jpg" */
     image: string;
     verification: JettonVerificationType;
+    customPayloadApiUri?: string;
 }
 
 export interface JettonBalance {
@@ -1547,6 +1548,9 @@ export interface MultisigOrder {
     expirationDate: number;
     /** Risk specifies assets that could be lost if a message would be sent to a malicious smart contract. It makes sense to understand the risk BEFORE sending a message to the blockchain. */
     risk: Risk;
+    /** @format int64 */
+    creationDate: number;
+    signedBy: Address[];
 }
 
 export interface Refund {
@@ -4034,7 +4038,8 @@ const components = {
             symbol: { type: 'string' },
             decimals: { type: 'integer' },
             image: { type: 'string' },
-            verification: { $ref: '#/components/schemas/JettonVerificationType' }
+            verification: { $ref: '#/components/schemas/JettonVerificationType' },
+            custom_payload_api_uri: { type: 'string' }
         }
     },
     '#/components/schemas/JettonBalance': {
@@ -4153,7 +4158,9 @@ const components = {
             'signers',
             'approvals_num',
             'expiration_date',
-            'risk'
+            'risk',
+            'creation_date',
+            'signed_by'
         ],
         properties: {
             address: { type: 'string', format: 'address' },
@@ -4163,7 +4170,9 @@ const components = {
             signers: { type: 'array', items: { type: 'string', format: 'address' } },
             approvals_num: { type: 'integer', format: 'int32' },
             expiration_date: { type: 'integer', format: 'int64' },
-            risk: { $ref: '#/components/schemas/Risk' }
+            risk: { $ref: '#/components/schemas/Risk' },
+            creation_date: { type: 'integer', format: 'int64' },
+            signed_by: { type: 'array', items: { type: 'string', format: 'address' } }
         }
     },
     '#/components/schemas/Refund': {
@@ -5981,11 +5990,13 @@ export class Api<SecurityDataType extends unknown> {
                 limit: number;
                 /**
                  * @format int64
+                 * @max 2114380800
                  * @example 1668436763
                  */
                 start_date?: number;
                 /**
                  * @format int64
+                 * @max 2114380800
                  * @example 1668436763
                  */
                 end_date?: number;
@@ -6031,11 +6042,13 @@ export class Api<SecurityDataType extends unknown> {
                 limit: number;
                 /**
                  * @format int64
+                 * @max 2114380800
                  * @example 1668436763
                  */
                 start_date?: number;
                 /**
                  * @format int64
+                 * @max 2114380800
                  * @example 1668436763
                  */
                 end_date?: number;
@@ -6141,11 +6154,13 @@ export class Api<SecurityDataType extends unknown> {
                 limit: number;
                 /**
                  * @format int64
+                 * @max 2114380800
                  * @example 1668436763
                  */
                 start_date?: number;
                 /**
                  * @format int64
+                 * @max 2114380800
                  * @example 1668436763
                  */
                 end_date?: number;
@@ -6402,11 +6417,13 @@ export class Api<SecurityDataType extends unknown> {
             query: {
                 /**
                  * @format int64
+                 * @max 2114380800
                  * @example 1668436763
                  */
                 start_date: number;
                 /**
                  * @format int64
+                 * @max 2114380800
                  * @example 1668436763
                  */
                 end_date: number;
@@ -6542,11 +6559,13 @@ export class Api<SecurityDataType extends unknown> {
                 limit: number;
                 /**
                  * @format int64
+                 * @max 2114380800
                  * @example 1668436763
                  */
                 start_date?: number;
                 /**
                  * @format int64
+                 * @max 2114380800
                  * @example 1668436763
                  */
                 end_date?: number;
@@ -6737,11 +6756,13 @@ export class Api<SecurityDataType extends unknown> {
                 limit: number;
                 /**
                  * @format int64
+                 * @max 2114380800
                  * @example 1668436763
                  */
                 start_date?: number;
                 /**
                  * @format int64
+                 * @max 2114380800
                  * @example 1668436763
                  */
                 end_date?: number;
@@ -7451,11 +7472,13 @@ export class Api<SecurityDataType extends unknown> {
                 currency?: string;
                 /**
                  * @format int64
+                 * @max 2114380800
                  * @example 1668436763
                  */
                 start_date?: number;
                 /**
                  * @format int64
+                 * @max 2114380800
                  * @example 1668436763
                  */
                 end_date?: number;
