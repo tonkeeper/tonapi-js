@@ -1,4 +1,4 @@
-import { TonApiClient, Api, ApiConfig } from '../src/client';
+import { TonApiClient, ApiConfig } from '../src/client';
 import fetchMock from 'jest-fetch-mock';
 // import { Address } from '@ton/core';
 import { client, clienWithApiKey } from './utils/client';
@@ -52,8 +52,7 @@ test('Client apiKey missing test', async () => {
         baseUrl: 'https://tonapi.io'
     };
 
-    const http = new TonApiClient(config);
-    const client = new Api(http);
+    const client = new TonApiClient(config);
     const res = await client.utilities.status();
     expect(res).toBeDefined();
 
@@ -76,8 +75,7 @@ test('Client fallback test', async () => {
         baseUrl: 'https://tonapi.io'
     };
 
-    const http = new TonApiClient(config);
-    const client = new Api(http);
+    const client = new TonApiClient(config);
     const res = await client.blockchain.status();
     expect(res).toBeDefined();
 

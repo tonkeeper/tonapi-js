@@ -3,8 +3,6 @@
   "private": true,
   "version": "0.1.0-beta.0",
   "scripts": {
-    "build": "rm -rf dist && yarn generate && yarn tsc",
-    "generate": "swagger-typescript-api -p https://raw.githubusercontent.com/tonkeeper/opentonapi/master/api/openapi.yml --unwrap-response-data --module-name-first-tag --single-http-client -o ./src -n api-generated",
     "postinstall": "patch-package"
   },
   "license": "MIT",

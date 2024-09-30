@@ -2675,14 +2675,10 @@ export interface FullRequestParams extends Omit<RequestInit, 'body'> {
 
 export type RequestParams = Omit<FullRequestParams, 'body' | 'method' | 'query' | 'path'>;
 
-export interface ApiConfig<SecurityDataType = unknown> {
+export interface ApiConfig {
     baseUrl?: string;
     apiKey?: string;
     baseApiParams?: Omit<RequestParams, 'baseUrl' | 'cancelToken' | 'signal'>;
-    securityWorker?: (
-        securityData: SecurityDataType | null
-    ) => Promise<RequestParams | void> | RequestParams | void;
-    customFetch?: typeof fetch;
 }
 
 export interface HttpResponse<D extends unknown, E extends unknown = unknown> extends Response {
@@ -2740,10 +2736,8 @@ const JSONStringify = (value: any) =>
         }
     );
 
-export class TonApiClient<SecurityDataType = unknown> {
+class HttpClient {
     public baseUrl: string = 'https://tonapi.io';
-    private securityData: SecurityDataType | null = null;
-    private securityWorker?: ApiConfig<SecurityDataType>['securityWorker'];
     private abortControllers = new Map<CancelToken, AbortController>();
     private customFetch = (...fetchParams: Parameters<typeof fetch>) => fetch(...fetchParams);
 
@@ -2754,7 +2748,7 @@ export class TonApiClient<SecurityDataType = unknown> {
         referrerPolicy: 'no-referrer'
     };
 
-    constructor(apiConfig: ApiConfig<SecurityDataType> = {}) {
+    constructor(apiConfig: ApiConfig = {}) {
         if (apiConfig.apiKey) {
             const baseApiParams = apiConfig.baseApiParams || {};
             apiConfig.baseApiParams = {
@@ -2768,10 +2762,6 @@ export class TonApiClient<SecurityDataType = unknown> {
 
         Object.assign(this, apiConfig);
     }
-
-    public setSecurityData = (data: SecurityDataType | null) => {
-        this.securityData = data;
-    };
 
     protected encodeQueryParam(key: string, value: any) {
         const encodedKey = encodeURIComponent(key);
@@ -2874,12 +2864,7 @@ export class TonApiClient<SecurityDataType = unknown> {
         cancelToken,
         ...params
     }: FullRequestParams): Promise<T> => {
-        const secureParams =
-            ((typeof secure === 'boolean' ? secure : this.baseApiParams.secure) &&
-                this.securityWorker &&
-                (await this.securityWorker(this.securityData))) ||
-            {};
-        const requestParams = this.mergeRequestParams(params, secureParams);
+        const requestParams = this.mergeRequestParams(params);
         const queryString = query && this.toQueryString(query);
         const contentType = type ?? ContentType.Json;
         const payloadFormatter = this.contentFormatters[contentType];
@@ -5212,10 +5197,11 @@ function prepareRequestData(data: any, orSchema?: any): any {
  *
  * Provide access to indexed TON blockchain
  */
-export class Api<SecurityDataType extends unknown> {
-    http: TonApiClient<SecurityDataType>;
+export class TonApiClient {
+    http: HttpClient;
 
-    constructor(http: TonApiClient<SecurityDataType>) {
+    constructor(apiConfig: ApiConfig = {}) {
+        const http = new HttpClient(apiConfig);
         this.http = http;
     }
 
