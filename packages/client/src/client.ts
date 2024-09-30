@@ -5201,7 +5201,10 @@ export class TonApiClient {
     http: HttpClient;
 
     constructor(apiConfig: ApiConfig = {}) {
-        const http = new HttpClient(apiConfig);
+        const tonapi = typeof window !== 'undefined' && window && (window as any).tonapi;
+        const providedHttpClient =
+            tonapi && tonapi.getHttpClient && tonapi.getHttpClient(apiConfig);
+        const http = providedHttpClient || new HttpClient(apiConfig);
         this.http = http;
     }
 
