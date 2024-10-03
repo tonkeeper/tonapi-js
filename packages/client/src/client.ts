@@ -2761,6 +2761,7 @@ class HttpClient {
                 ...baseApiParams,
                 headers: {
                     ...baseApiParams.headers,
+                    ['x-tonapi-client']: `tonapi-js@$0.1.3`,
                     Authorization: `Bearer ${apiConfig.apiKey}`
                 }
             };

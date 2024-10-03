@@ -11,6 +11,8 @@ import path from 'path';
 import * as fs from 'fs';
 import * as https from 'https';
 
+const packageVersion = process.env.npm_package_version;
+
 const openapiPath = path.resolve(process.cwd(), 'src/api.yml');
 const openapiUrl = 'https://raw.githubusercontent.com/tonkeeper/opentonapi/master/api/openapi.yml';
 
@@ -150,7 +152,9 @@ const generateApiParams: GenerateApiParams = {
 
             return config;
         }
-    }
+    },
+    // @ts-ignore
+    packageVersion
 };
 
 async function main() {
