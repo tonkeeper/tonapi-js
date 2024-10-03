@@ -32,10 +32,10 @@
     },
     "scripts": {
         "generate": "npm run clean && npx tsx ./src/generate.ts && npm run test && npx tsc",
-        "prepublishOnly": "npm run generate && npm run check-git-status",
+        "patch": "npm run generate && git diff --quiet || npm version patch",
+        "prepublishOnly": "npm run generate && git diff --quiet || (echo 'Error: Uncommitted changes detected.' && exit 1)",
         "test": "jest --runInBand",
-        "clean": "rimraf ./dist",
-        "check-git-status": "bash -c '[ -z \"$(git status --porcelain)\" ] || (echo \"Error: Uncommitted changes detected.\" && exit 1)'"
+        "clean": "rimraf ./dist"
     },
     "devDependencies": {
         "@ton/core": "^0.56.0",
