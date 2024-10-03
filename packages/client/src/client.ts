@@ -2679,6 +2679,7 @@ export interface ApiConfig {
     baseUrl?: string;
     apiKey?: string;
     baseApiParams?: Omit<RequestParams, 'baseUrl' | 'cancelToken' | 'signal'>;
+    fetch?: typeof fetch;
 }
 
 export interface HttpResponse<D extends unknown, E extends unknown = unknown> extends Response {
@@ -2739,7 +2740,9 @@ const JSONStringify = (value: any) =>
 class HttpClient {
     public baseUrl: string = 'https://tonapi.io';
     private abortControllers = new Map<CancelToken, AbortController>();
-    private customFetch = (...fetchParams: Parameters<typeof fetch>) => fetch(...fetchParams);
+    private providedFetch: typeof fetch | null = null;
+    private customFetch = (...fetchParams: Parameters<typeof fetch>) =>
+        this.providedFetch ? this.providedFetch(...fetchParams) : fetch(...fetchParams);
 
     private baseApiParams: RequestParams = {
         credentials: 'same-origin',
@@ -2749,6 +2752,9 @@ class HttpClient {
     };
 
     constructor(apiConfig: ApiConfig = {}) {
+        const tonapi = typeof window !== 'undefined' && window && (window as any).tonapi;
+        const providedFetch = (tonapi && tonapi.fetch) ?? null;
+
         if (apiConfig.apiKey) {
             const baseApiParams = apiConfig.baseApiParams || {};
             apiConfig.baseApiParams = {
@@ -2760,7 +2766,7 @@ class HttpClient {
             };
         }
 
-        Object.assign(this, apiConfig);
+        Object.assign(this, apiConfig, { providedFetch });
     }
 
     protected encodeQueryParam(key: string, value: any) {
@@ -5201,11 +5207,7 @@ export class TonApiClient {
     http: HttpClient;
 
     constructor(apiConfig: ApiConfig = {}) {
-        const tonapi = typeof window !== 'undefined' && window && (window as any).tonapi;
-        const providedHttpClient =
-            tonapi && tonapi.getHttpClient && tonapi.getHttpClient(apiConfig);
-        const http = providedHttpClient || new HttpClient(apiConfig);
-        this.http = http;
+        this.http = new HttpClient(apiConfig);
     }
 
     utilities = {
