@@ -5082,6 +5082,10 @@ function prepareResponseData<U>(obj: any, orSchema?: any): U {
                 return obj && (cellParse(obj as string) as U);
             }
 
+            if (schema['x-js-format'] === 'bigint') {
+                return BigInt(obj as string) as U;
+            }
+
             // maybe not used
             if (schema.format === 'cell-base64') {
                 return obj && (Cell.fromBase64(obj as string) as U);
@@ -5175,6 +5179,10 @@ function prepareRequestData(data: any, orSchema?: any): any {
 
             if (schema.format === 'cell-base64') {
                 return (data as Cell).toBoc().toString('base64');
+            }
+
+            if (schema['x-js-format'] === 'bigint') {
+                return (data as bigint).toString();
             }
         }
     }

@@ -121,6 +121,7 @@ const generateApiParams: GenerateApiParams = {
       $default: "string",
       address: "Address",
       cell: "Cell",
+      bigint: 'bigint',
       "cell-base64": "Cell",
       "tuple-item": "TupleItem",
     },

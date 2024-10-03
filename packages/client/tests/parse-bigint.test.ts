@@ -1,6 +1,6 @@
 import { Address } from '@ton/core';
 import { client } from './utils/client';
-import { getAccount } from './__mock__/bigint';
+import { getAccount, getJettonInfo } from './__mock__/bigint';
 import fetchMock from 'jest-fetch-mock';
 
 beforeEach(() => {
@@ -12,7 +12,7 @@ afterAll(() => {
     fetchMock.disableMocks();
 });
 
-test('BigInt parse data test', async () => {
+test('BigInt parse data in number test', async () => {
     fetchMock.mockResponseOnce(getAccount);
 
     const addressStrings = [
@@ -29,4 +29,13 @@ test('BigInt parse data test', async () => {
     expect(typeof accounts[0].balance).toBe('bigint');
     expect(accounts[1].balance).toBe(47602800n);
     expect(typeof accounts[1].balance).toBe('bigint');
+});
+
+test.skip('BigInt parse data in string test', async () => {   // TODO: wait for swagger update
+    fetchMock.mockResponseOnce(getJettonInfo);
+    const usdtJettonAddress = Address.parse('EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs');
+    const res = await client.jettons.getJettonInfo(usdtJettonAddress);
+
+    expect(res).toBeDefined();
+    expect(typeof res.totalSupply).toBe('bigint');
 });
