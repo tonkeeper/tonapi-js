@@ -16,6 +16,16 @@ function parseHexToBigInt(str: string) {
   return str.startsWith('-') ? BigInt(str.slice(1)) * -1n : BigInt(str);
 }
 
+async function prepareResponse<U>(promise: Promise<any>, orSchema?: any): Promise<U> {
+  return await promise
+      .then(obj => prepareResponseData<U>(obj, orSchema))
+      .catch(async (error) => {
+          const errorJson = await error.json();
+          const errorMessage = typeof errorJson === 'string' ? errorJson : errorJson?.error as string;
+          throw new Error(errorMessage, { cause: error });
+      });
+}
+
 function prepareResponseData<U>(obj: any, orSchema?: any): U {
   const ref = (orSchema && orSchema.$ref) as ComponentRef | undefined;
   const schema = ref ? components[ref] : orSchema;

@@ -1,6 +1,6 @@
 import { TonApiClient } from '../../src/client';
 
-const baseUrl = 'https://test.tonapi.io';
+const baseUrl = 'https://tonapi.io';
 
 export const clienWithApiKey = new TonApiClient({
     baseUrl,

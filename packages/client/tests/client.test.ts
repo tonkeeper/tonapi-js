@@ -1,6 +1,6 @@
 import { TonApiClient, ApiConfig } from '../src/client';
 import fetchMock from 'jest-fetch-mock';
-// import { Address } from '@ton/core';
+import { Address } from '@ton/core';
 import { client, clienWithApiKey } from './utils/client';
 import { JSONStringify } from './utils/jsonbig';
 
@@ -89,4 +89,13 @@ test('Client fallback test', async () => {
     );
 
     fetchMock.disableMocks();
+});
+
+test('Client throw error test', async () => { // TODO: rewrite to use fetchMock
+    const req = client.accounts.getAccountJettonBalance(
+        Address.parse('0:97264395BD65A255A429B11326C84128B7D70FFED7949ABAE3036D506BA38621'),
+        Address.parse('0:97264395BD65A255A429B11326C84128B7D70FFED7949ABAE3036D506BA38621')
+    );
+
+    await expect(req).rejects.toThrow('entity not found');
 });

@@ -5065,6 +5065,17 @@ function parseHexToBigInt(str: string) {
     return str.startsWith('-') ? BigInt(str.slice(1)) * -1n : BigInt(str);
 }
 
+async function prepareResponse<U>(promise: Promise<any>, orSchema?: any): Promise<U> {
+    return await promise
+        .then(obj => prepareResponseData<U>(obj, orSchema))
+        .catch(async error => {
+            const errorJson = await error.json();
+            const errorMessage =
+                typeof errorJson === 'string' ? errorJson : (errorJson?.error as string);
+            throw new Error(errorMessage, { cause: error });
+        });
+}
+
 function prepareResponseData<U>(obj: any, orSchema?: any): U {
     const ref = (orSchema && orSchema.$ref) as ComponentRef | undefined;
     const schema = ref ? components[ref] : orSchema;
@@ -5227,15 +5238,15 @@ export class TonApiClient {
          * @name Status
          * @request GET:/v2/status
          */
-        status: async (params: RequestParams = {}) => {
-            const res = await this.http.request<ServiceStatus, Error>({
+        status: (params: RequestParams = {}) => {
+            const req = this.http.request<ServiceStatus, Error>({
                 path: `/v2/status`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponseData<ServiceStatus>(res, {
+            return prepareResponse<ServiceStatus>(req, {
                 $ref: '#/components/schemas/ServiceStatus'
             });
         },
@@ -5247,9 +5258,9 @@ export class TonApiClient {
          * @name AddressParse
          * @request GET:/v2/address/{account_id}/parse
          */
-        addressParse: async (accountId_Address: Address, params: RequestParams = {}) => {
+        addressParse: (accountId_Address: Address, params: RequestParams = {}) => {
             const accountId = accountId_Address.toRawString();
-            const res = await this.http.request<
+            const req = this.http.request<
                 {
                     /**
                      * @format address
@@ -5275,7 +5286,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<{
+            return prepareResponse<{
                 /**
                  * @format address
                  * @example "0:6e731f2e28b73539a7f85ac47ca104d5840b229351189977bb6151d36b5e3f5e"
@@ -5291,7 +5302,7 @@ export class TonApiClient {
                 };
                 given_type: string;
                 test_only: boolean;
-            }>(res, {
+            }>(req, {
                 type: 'object',
                 required: ['raw_form', 'bounceable', 'non_bounceable', 'given_type', 'test_only'],
                 properties: {
@@ -5320,7 +5331,7 @@ export class TonApiClient {
          * @name GetReducedBlockchainBlocks
          * @request GET:/v2/blockchain/reduced/blocks
          */
-        getReducedBlockchainBlocks: async (
+        getReducedBlockchainBlocks: (
             query: {
                 /** @format int64 */
                 from: number;
@@ -5329,7 +5340,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const res = await this.http.request<ReducedBlocks, Error>({
+            const req = this.http.request<ReducedBlocks, Error>({
                 path: `/v2/blockchain/reduced/blocks`,
                 method: 'GET',
                 query: query,
@@ -5337,7 +5348,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<ReducedBlocks>(res, {
+            return prepareResponse<ReducedBlocks>(req, {
                 $ref: '#/components/schemas/ReducedBlocks'
             });
         },
@@ -5349,15 +5360,15 @@ export class TonApiClient {
          * @name GetBlockchainBlock
          * @request GET:/v2/blockchain/blocks/{block_id}
          */
-        getBlockchainBlock: async (blockId: string, params: RequestParams = {}) => {
-            const res = await this.http.request<BlockchainBlock, Error>({
+        getBlockchainBlock: (blockId: string, params: RequestParams = {}) => {
+            const req = this.http.request<BlockchainBlock, Error>({
                 path: `/v2/blockchain/blocks/${blockId}`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponseData<BlockchainBlock>(res, {
+            return prepareResponse<BlockchainBlock>(req, {
                 $ref: '#/components/schemas/BlockchainBlock'
             });
         },
@@ -5369,18 +5380,15 @@ export class TonApiClient {
          * @name GetBlockchainMasterchainShards
          * @request GET:/v2/blockchain/masterchain/{masterchain_seqno}/shards
          */
-        getBlockchainMasterchainShards: async (
-            masterchainSeqno: number,
-            params: RequestParams = {}
-        ) => {
-            const res = await this.http.request<BlockchainBlockShards, Error>({
+        getBlockchainMasterchainShards: (masterchainSeqno: number, params: RequestParams = {}) => {
+            const req = this.http.request<BlockchainBlockShards, Error>({
                 path: `/v2/blockchain/masterchain/${masterchainSeqno}/shards`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponseData<BlockchainBlockShards>(res, {
+            return prepareResponse<BlockchainBlockShards>(req, {
                 $ref: '#/components/schemas/BlockchainBlockShards'
             });
         },
@@ -5392,18 +5400,15 @@ export class TonApiClient {
          * @name GetBlockchainMasterchainBlocks
          * @request GET:/v2/blockchain/masterchain/{masterchain_seqno}/blocks
          */
-        getBlockchainMasterchainBlocks: async (
-            masterchainSeqno: number,
-            params: RequestParams = {}
-        ) => {
-            const res = await this.http.request<BlockchainBlocks, Error>({
+        getBlockchainMasterchainBlocks: (masterchainSeqno: number, params: RequestParams = {}) => {
+            const req = this.http.request<BlockchainBlocks, Error>({
                 path: `/v2/blockchain/masterchain/${masterchainSeqno}/blocks`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponseData<BlockchainBlocks>(res, {
+            return prepareResponse<BlockchainBlocks>(req, {
                 $ref: '#/components/schemas/BlockchainBlocks'
             });
         },
@@ -5415,18 +5420,18 @@ export class TonApiClient {
          * @name GetBlockchainMasterchainTransactions
          * @request GET:/v2/blockchain/masterchain/{masterchain_seqno}/transactions
          */
-        getBlockchainMasterchainTransactions: async (
+        getBlockchainMasterchainTransactions: (
             masterchainSeqno: number,
             params: RequestParams = {}
         ) => {
-            const res = await this.http.request<Transactions, Error>({
+            const req = this.http.request<Transactions, Error>({
                 path: `/v2/blockchain/masterchain/${masterchainSeqno}/transactions`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponseData<Transactions>(res, {
+            return prepareResponse<Transactions>(req, {
                 $ref: '#/components/schemas/Transactions'
             });
         },
@@ -5438,18 +5443,15 @@ export class TonApiClient {
          * @name GetBlockchainConfigFromBlock
          * @request GET:/v2/blockchain/masterchain/{masterchain_seqno}/config
          */
-        getBlockchainConfigFromBlock: async (
-            masterchainSeqno: number,
-            params: RequestParams = {}
-        ) => {
-            const res = await this.http.request<BlockchainConfig, Error>({
+        getBlockchainConfigFromBlock: (masterchainSeqno: number, params: RequestParams = {}) => {
+            const req = this.http.request<BlockchainConfig, Error>({
                 path: `/v2/blockchain/masterchain/${masterchainSeqno}/config`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponseData<BlockchainConfig>(res, {
+            return prepareResponse<BlockchainConfig>(req, {
                 $ref: '#/components/schemas/BlockchainConfig'
             });
         },
@@ -5461,18 +5463,15 @@ export class TonApiClient {
          * @name GetRawBlockchainConfigFromBlock
          * @request GET:/v2/blockchain/masterchain/{masterchain_seqno}/config/raw
          */
-        getRawBlockchainConfigFromBlock: async (
-            masterchainSeqno: number,
-            params: RequestParams = {}
-        ) => {
-            const res = await this.http.request<RawBlockchainConfig, Error>({
+        getRawBlockchainConfigFromBlock: (masterchainSeqno: number, params: RequestParams = {}) => {
+            const req = this.http.request<RawBlockchainConfig, Error>({
                 path: `/v2/blockchain/masterchain/${masterchainSeqno}/config/raw`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponseData<RawBlockchainConfig>(res, {
+            return prepareResponse<RawBlockchainConfig>(req, {
                 $ref: '#/components/schemas/RawBlockchainConfig'
             });
         },
@@ -5484,15 +5483,15 @@ export class TonApiClient {
          * @name GetBlockchainBlockTransactions
          * @request GET:/v2/blockchain/blocks/{block_id}/transactions
          */
-        getBlockchainBlockTransactions: async (blockId: string, params: RequestParams = {}) => {
-            const res = await this.http.request<Transactions, Error>({
+        getBlockchainBlockTransactions: (blockId: string, params: RequestParams = {}) => {
+            const req = this.http.request<Transactions, Error>({
                 path: `/v2/blockchain/blocks/${blockId}/transactions`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponseData<Transactions>(res, {
+            return prepareResponse<Transactions>(req, {
                 $ref: '#/components/schemas/Transactions'
             });
         },
@@ -5504,17 +5503,15 @@ export class TonApiClient {
          * @name GetBlockchainTransaction
          * @request GET:/v2/blockchain/transactions/{transaction_id}
          */
-        getBlockchainTransaction: async (transactionId: string, params: RequestParams = {}) => {
-            const res = await this.http.request<Transaction, Error>({
+        getBlockchainTransaction: (transactionId: string, params: RequestParams = {}) => {
+            const req = this.http.request<Transaction, Error>({
                 path: `/v2/blockchain/transactions/${transactionId}`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponseData<Transaction>(res, {
-                $ref: '#/components/schemas/Transaction'
-            });
+            return prepareResponse<Transaction>(req, { $ref: '#/components/schemas/Transaction' });
         },
 
         /**
@@ -5524,20 +5521,15 @@ export class TonApiClient {
          * @name GetBlockchainTransactionByMessageHash
          * @request GET:/v2/blockchain/messages/{msg_id}/transaction
          */
-        getBlockchainTransactionByMessageHash: async (
-            msgId: string,
-            params: RequestParams = {}
-        ) => {
-            const res = await this.http.request<Transaction, Error>({
+        getBlockchainTransactionByMessageHash: (msgId: string, params: RequestParams = {}) => {
+            const req = this.http.request<Transaction, Error>({
                 path: `/v2/blockchain/messages/${msgId}/transaction`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponseData<Transaction>(res, {
-                $ref: '#/components/schemas/Transaction'
-            });
+            return prepareResponse<Transaction>(req, { $ref: '#/components/schemas/Transaction' });
         },
 
         /**
@@ -5547,17 +5539,15 @@ export class TonApiClient {
          * @name GetBlockchainValidators
          * @request GET:/v2/blockchain/validators
          */
-        getBlockchainValidators: async (params: RequestParams = {}) => {
-            const res = await this.http.request<Validators, Error>({
+        getBlockchainValidators: (params: RequestParams = {}) => {
+            const req = this.http.request<Validators, Error>({
                 path: `/v2/blockchain/validators`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponseData<Validators>(res, {
-                $ref: '#/components/schemas/Validators'
-            });
+            return prepareResponse<Validators>(req, { $ref: '#/components/schemas/Validators' });
         },
 
         /**
@@ -5567,15 +5557,15 @@ export class TonApiClient {
          * @name GetBlockchainMasterchainHead
          * @request GET:/v2/blockchain/masterchain-head
          */
-        getBlockchainMasterchainHead: async (params: RequestParams = {}) => {
-            const res = await this.http.request<BlockchainBlock, Error>({
+        getBlockchainMasterchainHead: (params: RequestParams = {}) => {
+            const req = this.http.request<BlockchainBlock, Error>({
                 path: `/v2/blockchain/masterchain-head`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponseData<BlockchainBlock>(res, {
+            return prepareResponse<BlockchainBlock>(req, {
                 $ref: '#/components/schemas/BlockchainBlock'
             });
         },
@@ -5587,16 +5577,16 @@ export class TonApiClient {
          * @name GetBlockchainRawAccount
          * @request GET:/v2/blockchain/accounts/{account_id}
          */
-        getBlockchainRawAccount: async (accountId_Address: Address, params: RequestParams = {}) => {
+        getBlockchainRawAccount: (accountId_Address: Address, params: RequestParams = {}) => {
             const accountId = accountId_Address.toRawString();
-            const res = await this.http.request<BlockchainRawAccount, Error>({
+            const req = this.http.request<BlockchainRawAccount, Error>({
                 path: `/v2/blockchain/accounts/${accountId}`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponseData<BlockchainRawAccount>(res, {
+            return prepareResponse<BlockchainRawAccount>(req, {
                 $ref: '#/components/schemas/BlockchainRawAccount'
             });
         },
@@ -5608,7 +5598,7 @@ export class TonApiClient {
          * @name GetBlockchainAccountTransactions
          * @request GET:/v2/blockchain/accounts/{account_id}/transactions
          */
-        getBlockchainAccountTransactions: async (
+        getBlockchainAccountTransactions: (
             accountId_Address: Address,
             query?: {
                 /**
@@ -5640,7 +5630,7 @@ export class TonApiClient {
             params: RequestParams = {}
         ) => {
             const accountId = accountId_Address.toRawString();
-            const res = await this.http.request<Transactions, Error>({
+            const req = this.http.request<Transactions, Error>({
                 path: `/v2/blockchain/accounts/${accountId}/transactions`,
                 method: 'GET',
                 query: query,
@@ -5648,7 +5638,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<Transactions>(res, {
+            return prepareResponse<Transactions>(req, {
                 $ref: '#/components/schemas/Transactions'
             });
         },
@@ -5660,7 +5650,7 @@ export class TonApiClient {
          * @name ExecGetMethodForBlockchainAccount
          * @request GET:/v2/blockchain/accounts/{account_id}/methods/{method_name}
          */
-        execGetMethodForBlockchainAccount: async (
+        execGetMethodForBlockchainAccount: (
             accountId_Address: Address,
             methodName: string,
             query?: {
@@ -5680,7 +5670,7 @@ export class TonApiClient {
             params: RequestParams = {}
         ) => {
             const accountId = accountId_Address.toRawString();
-            const res = await this.http.request<MethodExecutionResult, Error>({
+            const req = this.http.request<MethodExecutionResult, Error>({
                 path: `/v2/blockchain/accounts/${accountId}/methods/${methodName}`,
                 method: 'GET',
                 query: query,
@@ -5688,7 +5678,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<MethodExecutionResult>(res, {
+            return prepareResponse<MethodExecutionResult>(req, {
                 $ref: '#/components/schemas/MethodExecutionResult'
             });
         },
@@ -5700,7 +5690,7 @@ export class TonApiClient {
          * @name SendBlockchainMessage
          * @request POST:/v2/blockchain/message
          */
-        sendBlockchainMessage: async (
+        sendBlockchainMessage: (
             data: {
                 /** @format cell */
                 boc?: Cell;
@@ -5709,7 +5699,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const res = await this.http.request<void, Error>({
+            const req = this.http.request<void, Error>({
                 path: `/v2/blockchain/message`,
                 method: 'POST',
                 body: prepareRequestData(data, {
@@ -5726,7 +5716,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<void>(res);
+            return prepareResponse<void>(req);
         },
 
         /**
@@ -5736,15 +5726,15 @@ export class TonApiClient {
          * @name GetBlockchainConfig
          * @request GET:/v2/blockchain/config
          */
-        getBlockchainConfig: async (params: RequestParams = {}) => {
-            const res = await this.http.request<BlockchainConfig, Error>({
+        getBlockchainConfig: (params: RequestParams = {}) => {
+            const req = this.http.request<BlockchainConfig, Error>({
                 path: `/v2/blockchain/config`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponseData<BlockchainConfig>(res, {
+            return prepareResponse<BlockchainConfig>(req, {
                 $ref: '#/components/schemas/BlockchainConfig'
             });
         },
@@ -5756,15 +5746,15 @@ export class TonApiClient {
          * @name GetRawBlockchainConfig
          * @request GET:/v2/blockchain/config/raw
          */
-        getRawBlockchainConfig: async (params: RequestParams = {}) => {
-            const res = await this.http.request<RawBlockchainConfig, Error>({
+        getRawBlockchainConfig: (params: RequestParams = {}) => {
+            const req = this.http.request<RawBlockchainConfig, Error>({
                 path: `/v2/blockchain/config/raw`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponseData<RawBlockchainConfig>(res, {
+            return prepareResponse<RawBlockchainConfig>(req, {
                 $ref: '#/components/schemas/RawBlockchainConfig'
             });
         },
@@ -5776,19 +5766,16 @@ export class TonApiClient {
          * @name BlockchainAccountInspect
          * @request GET:/v2/blockchain/accounts/{account_id}/inspect
          */
-        blockchainAccountInspect: async (
-            accountId_Address: Address,
-            params: RequestParams = {}
-        ) => {
+        blockchainAccountInspect: (accountId_Address: Address, params: RequestParams = {}) => {
             const accountId = accountId_Address.toRawString();
-            const res = await this.http.request<BlockchainAccountInspect, Error>({
+            const req = this.http.request<BlockchainAccountInspect, Error>({
                 path: `/v2/blockchain/accounts/${accountId}/inspect`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponseData<BlockchainAccountInspect>(res, {
+            return prepareResponse<BlockchainAccountInspect>(req, {
                 $ref: '#/components/schemas/BlockchainAccountInspect'
             });
         },
@@ -5801,15 +5788,15 @@ export class TonApiClient {
          * @request GET:/v2/status
          * @deprecated
          */
-        status: async (requestParams: RequestParams = {}) => {
-            const res = await this.http.request<ServiceStatus, Error>({
+        status: (requestParams: RequestParams = {}) => {
+            const req = this.http.request<ServiceStatus, Error>({
                 path: `/v2/status`,
                 method: 'GET',
                 format: 'json',
                 ...requestParams
             });
 
-            return prepareResponseData<ServiceStatus>(res, {
+            return prepareResponse<ServiceStatus>(req, {
                 $ref: '#/components/schemas/ServiceStatus'
             });
         }
@@ -5822,7 +5809,7 @@ export class TonApiClient {
          * @name GetAccounts
          * @request POST:/v2/accounts/_bulk
          */
-        getAccounts: async (
+        getAccounts: (
             data: {
                 accountIds: Address[];
             },
@@ -5832,7 +5819,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const res = await this.http.request<Accounts, Error>({
+            const req = this.http.request<Accounts, Error>({
                 path: `/v2/accounts/_bulk`,
                 method: 'POST',
                 query: query,
@@ -5847,7 +5834,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<Accounts>(res, { $ref: '#/components/schemas/Accounts' });
+            return prepareResponse<Accounts>(req, { $ref: '#/components/schemas/Accounts' });
         },
 
         /**
@@ -5857,16 +5844,16 @@ export class TonApiClient {
          * @name GetAccount
          * @request GET:/v2/accounts/{account_id}
          */
-        getAccount: async (accountId_Address: Address, params: RequestParams = {}) => {
+        getAccount: (accountId_Address: Address, params: RequestParams = {}) => {
             const accountId = accountId_Address.toRawString();
-            const res = await this.http.request<Account, Error>({
+            const req = this.http.request<Account, Error>({
                 path: `/v2/accounts/${accountId}`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponseData<Account>(res, { $ref: '#/components/schemas/Account' });
+            return prepareResponse<Account>(req, { $ref: '#/components/schemas/Account' });
         },
 
         /**
@@ -5876,18 +5863,16 @@ export class TonApiClient {
          * @name AccountDnsBackResolve
          * @request GET:/v2/accounts/{account_id}/dns/backresolve
          */
-        accountDnsBackResolve: async (accountId_Address: Address, params: RequestParams = {}) => {
+        accountDnsBackResolve: (accountId_Address: Address, params: RequestParams = {}) => {
             const accountId = accountId_Address.toRawString();
-            const res = await this.http.request<DomainNames, Error>({
+            const req = this.http.request<DomainNames, Error>({
                 path: `/v2/accounts/${accountId}/dns/backresolve`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponseData<DomainNames>(res, {
-                $ref: '#/components/schemas/DomainNames'
-            });
+            return prepareResponse<DomainNames>(req, { $ref: '#/components/schemas/DomainNames' });
         },
 
         /**
@@ -5897,7 +5882,7 @@ export class TonApiClient {
          * @name GetAccountJettonsBalances
          * @request GET:/v2/accounts/{account_id}/jettons
          */
-        getAccountJettonsBalances: async (
+        getAccountJettonsBalances: (
             accountId_Address: Address,
             query?: {
                 /**
@@ -5914,7 +5899,7 @@ export class TonApiClient {
             params: RequestParams = {}
         ) => {
             const accountId = accountId_Address.toRawString();
-            const res = await this.http.request<JettonsBalances, Error>({
+            const req = this.http.request<JettonsBalances, Error>({
                 path: `/v2/accounts/${accountId}/jettons`,
                 method: 'GET',
                 query: query,
@@ -5922,7 +5907,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<JettonsBalances>(res, {
+            return prepareResponse<JettonsBalances>(req, {
                 $ref: '#/components/schemas/JettonsBalances'
             });
         },
@@ -5934,7 +5919,7 @@ export class TonApiClient {
          * @name GetAccountJettonBalance
          * @request GET:/v2/accounts/{account_id}/jettons/{jetton_id}
          */
-        getAccountJettonBalance: async (
+        getAccountJettonBalance: (
             accountId_Address: Address,
             jettonId_Address: Address,
             query?: {
@@ -5953,7 +5938,7 @@ export class TonApiClient {
         ) => {
             const accountId = accountId_Address.toRawString();
             const jettonId = jettonId_Address.toRawString();
-            const res = await this.http.request<JettonBalance, Error>({
+            const req = this.http.request<JettonBalance, Error>({
                 path: `/v2/accounts/${accountId}/jettons/${jettonId}`,
                 method: 'GET',
                 query: query,
@@ -5961,7 +5946,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<JettonBalance>(res, {
+            return prepareResponse<JettonBalance>(req, {
                 $ref: '#/components/schemas/JettonBalance'
             });
         },
@@ -5973,7 +5958,7 @@ export class TonApiClient {
          * @name GetAccountJettonsHistory
          * @request GET:/v2/accounts/{account_id}/jettons/history
          */
-        getAccountJettonsHistory: async (
+        getAccountJettonsHistory: (
             accountId_Address: Address,
             query: {
                 /**
@@ -6004,7 +5989,7 @@ export class TonApiClient {
             params: RequestParams = {}
         ) => {
             const accountId = accountId_Address.toRawString();
-            const res = await this.http.request<AccountEvents, Error>({
+            const req = this.http.request<AccountEvents, Error>({
                 path: `/v2/accounts/${accountId}/jettons/history`,
                 method: 'GET',
                 query: query,
@@ -6012,7 +5997,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<AccountEvents>(res, {
+            return prepareResponse<AccountEvents>(req, {
                 $ref: '#/components/schemas/AccountEvents'
             });
         },
@@ -6024,7 +6009,7 @@ export class TonApiClient {
          * @name GetAccountJettonHistoryById
          * @request GET:/v2/accounts/{account_id}/jettons/{jetton_id}/history
          */
-        getAccountJettonHistoryById: async (
+        getAccountJettonHistoryById: (
             accountId_Address: Address,
             jettonId_Address: Address,
             query: {
@@ -6057,7 +6042,7 @@ export class TonApiClient {
         ) => {
             const accountId = accountId_Address.toRawString();
             const jettonId = jettonId_Address.toRawString();
-            const res = await this.http.request<AccountEvents, Error>({
+            const req = this.http.request<AccountEvents, Error>({
                 path: `/v2/accounts/${accountId}/jettons/${jettonId}/history`,
                 method: 'GET',
                 query: query,
@@ -6065,7 +6050,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<AccountEvents>(res, {
+            return prepareResponse<AccountEvents>(req, {
                 $ref: '#/components/schemas/AccountEvents'
             });
         },
@@ -6077,7 +6062,7 @@ export class TonApiClient {
          * @name GetAccountNftItems
          * @request GET:/v2/accounts/{account_id}/nfts
          */
-        getAccountNftItems: async (
+        getAccountNftItems: (
             accountId_Address: Address,
             query?: {
                 /**
@@ -6106,7 +6091,7 @@ export class TonApiClient {
             params: RequestParams = {}
         ) => {
             const accountId = accountId_Address.toRawString();
-            const res = await this.http.request<NftItems, Error>({
+            const req = this.http.request<NftItems, Error>({
                 path: `/v2/accounts/${accountId}/nfts`,
                 method: 'GET',
                 query: query && {
@@ -6117,7 +6102,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<NftItems>(res, { $ref: '#/components/schemas/NftItems' });
+            return prepareResponse<NftItems>(req, { $ref: '#/components/schemas/NftItems' });
         },
 
         /**
@@ -6127,7 +6112,7 @@ export class TonApiClient {
          * @name GetAccountEvents
          * @request GET:/v2/accounts/{account_id}/events
          */
-        getAccountEvents: async (
+        getAccountEvents: (
             accountId_Address: Address,
             query: {
                 /**
@@ -6168,7 +6153,7 @@ export class TonApiClient {
             params: RequestParams = {}
         ) => {
             const accountId = accountId_Address.toRawString();
-            const res = await this.http.request<AccountEvents, Error>({
+            const req = this.http.request<AccountEvents, Error>({
                 path: `/v2/accounts/${accountId}/events`,
                 method: 'GET',
                 query: query,
@@ -6176,7 +6161,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<AccountEvents>(res, {
+            return prepareResponse<AccountEvents>(req, {
                 $ref: '#/components/schemas/AccountEvents'
             });
         },
@@ -6188,7 +6173,7 @@ export class TonApiClient {
          * @name GetAccountEvent
          * @request GET:/v2/accounts/{account_id}/events/{event_id}
          */
-        getAccountEvent: async (
+        getAccountEvent: (
             accountId_Address: Address,
             eventId: string,
             query?: {
@@ -6201,7 +6186,7 @@ export class TonApiClient {
             params: RequestParams = {}
         ) => {
             const accountId = accountId_Address.toRawString();
-            const res = await this.http.request<AccountEvent, Error>({
+            const req = this.http.request<AccountEvent, Error>({
                 path: `/v2/accounts/${accountId}/events/${eventId}`,
                 method: 'GET',
                 query: query,
@@ -6209,7 +6194,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<AccountEvent>(res, {
+            return prepareResponse<AccountEvent>(req, {
                 $ref: '#/components/schemas/AccountEvent'
             });
         },
@@ -6221,7 +6206,7 @@ export class TonApiClient {
          * @name GetAccountTraces
          * @request GET:/v2/accounts/{account_id}/traces
          */
-        getAccountTraces: async (
+        getAccountTraces: (
             accountId_Address: Address,
             query?: {
                 /**
@@ -6241,7 +6226,7 @@ export class TonApiClient {
             params: RequestParams = {}
         ) => {
             const accountId = accountId_Address.toRawString();
-            const res = await this.http.request<TraceIDs, Error>({
+            const req = this.http.request<TraceIDs, Error>({
                 path: `/v2/accounts/${accountId}/traces`,
                 method: 'GET',
                 query: query,
@@ -6249,7 +6234,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<TraceIDs>(res, { $ref: '#/components/schemas/TraceIDs' });
+            return prepareResponse<TraceIDs>(req, { $ref: '#/components/schemas/TraceIDs' });
         },
 
         /**
@@ -6259,16 +6244,16 @@ export class TonApiClient {
          * @name GetAccountSubscriptions
          * @request GET:/v2/accounts/{account_id}/subscriptions
          */
-        getAccountSubscriptions: async (accountId_Address: Address, params: RequestParams = {}) => {
+        getAccountSubscriptions: (accountId_Address: Address, params: RequestParams = {}) => {
             const accountId = accountId_Address.toRawString();
-            const res = await this.http.request<Subscriptions, Error>({
+            const req = this.http.request<Subscriptions, Error>({
                 path: `/v2/accounts/${accountId}/subscriptions`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponseData<Subscriptions>(res, {
+            return prepareResponse<Subscriptions>(req, {
                 $ref: '#/components/schemas/Subscriptions'
             });
         },
@@ -6280,15 +6265,15 @@ export class TonApiClient {
          * @name ReindexAccount
          * @request POST:/v2/accounts/{account_id}/reindex
          */
-        reindexAccount: async (accountId_Address: Address, params: RequestParams = {}) => {
+        reindexAccount: (accountId_Address: Address, params: RequestParams = {}) => {
             const accountId = accountId_Address.toRawString();
-            const res = await this.http.request<void, Error>({
+            const req = this.http.request<void, Error>({
                 path: `/v2/accounts/${accountId}/reindex`,
                 method: 'POST',
                 ...params
             });
 
-            return prepareResponseData<void>(res);
+            return prepareResponse<void>(req);
         },
 
         /**
@@ -6298,7 +6283,7 @@ export class TonApiClient {
          * @name SearchAccounts
          * @request GET:/v2/accounts/search
          */
-        searchAccounts: async (
+        searchAccounts: (
             query: {
                 /**
                  * @minLength 3
@@ -6308,7 +6293,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const res = await this.http.request<FoundAccounts, Error>({
+            const req = this.http.request<FoundAccounts, Error>({
                 path: `/v2/accounts/search`,
                 method: 'GET',
                 query: query,
@@ -6316,7 +6301,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<FoundAccounts>(res, {
+            return prepareResponse<FoundAccounts>(req, {
                 $ref: '#/components/schemas/FoundAccounts'
             });
         },
@@ -6328,7 +6313,7 @@ export class TonApiClient {
          * @name GetAccountDnsExpiring
          * @request GET:/v2/accounts/{account_id}/dns/expiring
          */
-        getAccountDnsExpiring: async (
+        getAccountDnsExpiring: (
             accountId_Address: Address,
             query?: {
                 /**
@@ -6341,7 +6326,7 @@ export class TonApiClient {
             params: RequestParams = {}
         ) => {
             const accountId = accountId_Address.toRawString();
-            const res = await this.http.request<DnsExpiring, Error>({
+            const req = this.http.request<DnsExpiring, Error>({
                 path: `/v2/accounts/${accountId}/dns/expiring`,
                 method: 'GET',
                 query: query,
@@ -6349,9 +6334,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<DnsExpiring>(res, {
-                $ref: '#/components/schemas/DnsExpiring'
-            });
+            return prepareResponse<DnsExpiring>(req, { $ref: '#/components/schemas/DnsExpiring' });
         },
 
         /**
@@ -6361,9 +6344,9 @@ export class TonApiClient {
          * @name GetAccountPublicKey
          * @request GET:/v2/accounts/{account_id}/publickey
          */
-        getAccountPublicKey: async (accountId_Address: Address, params: RequestParams = {}) => {
+        getAccountPublicKey: (accountId_Address: Address, params: RequestParams = {}) => {
             const accountId = accountId_Address.toRawString();
-            const res = await this.http.request<
+            const req = this.http.request<
                 {
                     /** @example "NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODQ3..." */
                     public_key: string;
@@ -6376,10 +6359,10 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<{
+            return prepareResponse<{
                 /** @example "NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODQ3..." */
                 public_key: string;
-            }>(res, {
+            }>(req, {
                 type: 'object',
                 required: ['public_key'],
                 properties: { public_key: { type: 'string' } }
@@ -6393,16 +6376,16 @@ export class TonApiClient {
          * @name GetAccountMultisigs
          * @request GET:/v2/accounts/{account_id}/multisigs
          */
-        getAccountMultisigs: async (accountId_Address: Address, params: RequestParams = {}) => {
+        getAccountMultisigs: (accountId_Address: Address, params: RequestParams = {}) => {
             const accountId = accountId_Address.toRawString();
-            const res = await this.http.request<Multisigs, Error>({
+            const req = this.http.request<Multisigs, Error>({
                 path: `/v2/accounts/${accountId}/multisigs`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponseData<Multisigs>(res, { $ref: '#/components/schemas/Multisigs' });
+            return prepareResponse<Multisigs>(req, { $ref: '#/components/schemas/Multisigs' });
         },
 
         /**
@@ -6412,7 +6395,7 @@ export class TonApiClient {
          * @name GetAccountDiff
          * @request GET:/v2/accounts/{account_id}/diff
          */
-        getAccountDiff: async (
+        getAccountDiff: (
             accountId_Address: Address,
             query: {
                 /**
@@ -6431,7 +6414,7 @@ export class TonApiClient {
             params: RequestParams = {}
         ) => {
             const accountId = accountId_Address.toRawString();
-            const res = await this.http.request<
+            const req = this.http.request<
                 {
                     /**
                      * @format int64
@@ -6448,13 +6431,13 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<{
+            return prepareResponse<{
                 /**
                  * @format int64
                  * @example 1000000000
                  */
                 balance_change: number;
-            }>(res, {
+            }>(req, {
                 type: 'object',
                 required: ['balance_change'],
                 properties: { balance_change: { type: 'integer', format: 'int64' } }
@@ -6469,9 +6452,9 @@ export class TonApiClient {
          * @request GET:/v2/address/{account_id}/parse
          * @deprecated
          */
-        addressParse: async (accountId_Address: Address, requestParams: RequestParams = {}) => {
+        addressParse: (accountId_Address: Address, requestParams: RequestParams = {}) => {
             const accountId = accountId_Address.toRawString();
-            const res = await this.http.request<
+            const req = this.http.request<
                 {
                     /**
                      * @format address
@@ -6497,7 +6480,7 @@ export class TonApiClient {
                 ...requestParams
             });
 
-            return prepareResponseData<{
+            return prepareResponse<{
                 /**
                  * @format address
                  * @example "0:6e731f2e28b73539a7f85ac47ca104d5840b229351189977bb6151d36b5e3f5e"
@@ -6513,7 +6496,7 @@ export class TonApiClient {
                 };
                 given_type: string;
                 test_only: boolean;
-            }>(res, {
+            }>(req, {
                 type: 'object',
                 required: ['raw_form', 'bounceable', 'non_bounceable', 'given_type', 'test_only'],
                 properties: {
@@ -6542,7 +6525,7 @@ export class TonApiClient {
          * @name GetAccountNftHistory
          * @request GET:/v2/accounts/{account_id}/nfts/history
          */
-        getAccountNftHistory: async (
+        getAccountNftHistory: (
             accountId_Address: Address,
             query: {
                 /**
@@ -6573,7 +6556,7 @@ export class TonApiClient {
             params: RequestParams = {}
         ) => {
             const accountId = accountId_Address.toRawString();
-            const res = await this.http.request<AccountEvents, Error>({
+            const req = this.http.request<AccountEvents, Error>({
                 path: `/v2/accounts/${accountId}/nfts/history`,
                 method: 'GET',
                 query: query,
@@ -6581,7 +6564,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<AccountEvents>(res, {
+            return prepareResponse<AccountEvents>(req, {
                 $ref: '#/components/schemas/AccountEvents'
             });
         },
@@ -6593,7 +6576,7 @@ export class TonApiClient {
          * @name GetNftCollections
          * @request GET:/v2/nfts/collections
          */
-        getNftCollections: async (
+        getNftCollections: (
             query?: {
                 /**
                  * @format int32
@@ -6613,7 +6596,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const res = await this.http.request<NftCollections, Error>({
+            const req = this.http.request<NftCollections, Error>({
                 path: `/v2/nfts/collections`,
                 method: 'GET',
                 query: query,
@@ -6621,7 +6604,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<NftCollections>(res, {
+            return prepareResponse<NftCollections>(req, {
                 $ref: '#/components/schemas/NftCollections'
             });
         },
@@ -6633,16 +6616,16 @@ export class TonApiClient {
          * @name GetNftCollection
          * @request GET:/v2/nfts/collections/{account_id}
          */
-        getNftCollection: async (accountId_Address: Address, params: RequestParams = {}) => {
+        getNftCollection: (accountId_Address: Address, params: RequestParams = {}) => {
             const accountId = accountId_Address.toRawString();
-            const res = await this.http.request<NftCollection, Error>({
+            const req = this.http.request<NftCollection, Error>({
                 path: `/v2/nfts/collections/${accountId}`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponseData<NftCollection>(res, {
+            return prepareResponse<NftCollection>(req, {
                 $ref: '#/components/schemas/NftCollection'
             });
         },
@@ -6654,7 +6637,7 @@ export class TonApiClient {
          * @name GetItemsFromCollection
          * @request GET:/v2/nfts/collections/{account_id}/items
          */
-        getItemsFromCollection: async (
+        getItemsFromCollection: (
             accountId_Address: Address,
             query?: {
                 /**
@@ -6672,7 +6655,7 @@ export class TonApiClient {
             params: RequestParams = {}
         ) => {
             const accountId = accountId_Address.toRawString();
-            const res = await this.http.request<NftItems, Error>({
+            const req = this.http.request<NftItems, Error>({
                 path: `/v2/nfts/collections/${accountId}/items`,
                 method: 'GET',
                 query: query,
@@ -6680,7 +6663,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<NftItems>(res, { $ref: '#/components/schemas/NftItems' });
+            return prepareResponse<NftItems>(req, { $ref: '#/components/schemas/NftItems' });
         },
 
         /**
@@ -6690,13 +6673,13 @@ export class TonApiClient {
          * @name GetNftItemsByAddresses
          * @request POST:/v2/nfts/_bulk
          */
-        getNftItemsByAddresses: async (
+        getNftItemsByAddresses: (
             data: {
                 accountIds: Address[];
             },
             params: RequestParams = {}
         ) => {
-            const res = await this.http.request<NftItems, Error>({
+            const req = this.http.request<NftItems, Error>({
                 path: `/v2/nfts/_bulk`,
                 method: 'POST',
                 body: prepareRequestData(data, {
@@ -6710,7 +6693,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<NftItems>(res, { $ref: '#/components/schemas/NftItems' });
+            return prepareResponse<NftItems>(req, { $ref: '#/components/schemas/NftItems' });
         },
 
         /**
@@ -6720,16 +6703,16 @@ export class TonApiClient {
          * @name GetNftItemByAddress
          * @request GET:/v2/nfts/{account_id}
          */
-        getNftItemByAddress: async (accountId_Address: Address, params: RequestParams = {}) => {
+        getNftItemByAddress: (accountId_Address: Address, params: RequestParams = {}) => {
             const accountId = accountId_Address.toRawString();
-            const res = await this.http.request<NftItem, Error>({
+            const req = this.http.request<NftItem, Error>({
                 path: `/v2/nfts/${accountId}`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponseData<NftItem>(res, { $ref: '#/components/schemas/NftItem' });
+            return prepareResponse<NftItem>(req, { $ref: '#/components/schemas/NftItem' });
         },
 
         /**
@@ -6739,7 +6722,7 @@ export class TonApiClient {
          * @name GetNftHistoryById
          * @request GET:/v2/nfts/{account_id}/history
          */
-        getNftHistoryById: async (
+        getNftHistoryById: (
             accountId_Address: Address,
             query: {
                 /**
@@ -6770,7 +6753,7 @@ export class TonApiClient {
             params: RequestParams = {}
         ) => {
             const accountId = accountId_Address.toRawString();
-            const res = await this.http.request<AccountEvents, Error>({
+            const req = this.http.request<AccountEvents, Error>({
                 path: `/v2/nfts/${accountId}/history`,
                 method: 'GET',
                 query: query,
@@ -6778,7 +6761,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<AccountEvents>(res, {
+            return prepareResponse<AccountEvents>(req, {
                 $ref: '#/components/schemas/AccountEvents'
             });
         }
@@ -6791,17 +6774,15 @@ export class TonApiClient {
          * @name GetDnsInfo
          * @request GET:/v2/dns/{domain_name}
          */
-        getDnsInfo: async (domainName: string, params: RequestParams = {}) => {
-            const res = await this.http.request<DomainInfo, Error>({
+        getDnsInfo: (domainName: string, params: RequestParams = {}) => {
+            const req = this.http.request<DomainInfo, Error>({
                 path: `/v2/dns/${domainName}`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponseData<DomainInfo>(res, {
-                $ref: '#/components/schemas/DomainInfo'
-            });
+            return prepareResponse<DomainInfo>(req, { $ref: '#/components/schemas/DomainInfo' });
         },
 
         /**
@@ -6811,15 +6792,15 @@ export class TonApiClient {
          * @name DnsResolve
          * @request GET:/v2/dns/{domain_name}/resolve
          */
-        dnsResolve: async (domainName: string, params: RequestParams = {}) => {
-            const res = await this.http.request<DnsRecord, Error>({
+        dnsResolve: (domainName: string, params: RequestParams = {}) => {
+            const req = this.http.request<DnsRecord, Error>({
                 path: `/v2/dns/${domainName}/resolve`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponseData<DnsRecord>(res, { $ref: '#/components/schemas/DnsRecord' });
+            return prepareResponse<DnsRecord>(req, { $ref: '#/components/schemas/DnsRecord' });
         },
 
         /**
@@ -6829,17 +6810,15 @@ export class TonApiClient {
          * @name GetDomainBids
          * @request GET:/v2/dns/{domain_name}/bids
          */
-        getDomainBids: async (domainName: string, params: RequestParams = {}) => {
-            const res = await this.http.request<DomainBids, Error>({
+        getDomainBids: (domainName: string, params: RequestParams = {}) => {
+            const req = this.http.request<DomainBids, Error>({
                 path: `/v2/dns/${domainName}/bids`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponseData<DomainBids>(res, {
-                $ref: '#/components/schemas/DomainBids'
-            });
+            return prepareResponse<DomainBids>(req, { $ref: '#/components/schemas/DomainBids' });
         },
 
         /**
@@ -6849,7 +6828,7 @@ export class TonApiClient {
          * @name GetAllAuctions
          * @request GET:/v2/dns/auctions
          */
-        getAllAuctions: async (
+        getAllAuctions: (
             query?: {
                 /**
                  * domain filter for current auctions "ton" or "t.me"
@@ -6859,7 +6838,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const res = await this.http.request<Auctions, Error>({
+            const req = this.http.request<Auctions, Error>({
                 path: `/v2/dns/auctions`,
                 method: 'GET',
                 query: query,
@@ -6867,7 +6846,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<Auctions>(res, { $ref: '#/components/schemas/Auctions' });
+            return prepareResponse<Auctions>(req, { $ref: '#/components/schemas/Auctions' });
         }
     };
     traces = {
@@ -6878,15 +6857,15 @@ export class TonApiClient {
          * @name GetTrace
          * @request GET:/v2/traces/{trace_id}
          */
-        getTrace: async (traceId: string, params: RequestParams = {}) => {
-            const res = await this.http.request<Trace, Error>({
+        getTrace: (traceId: string, params: RequestParams = {}) => {
+            const req = this.http.request<Trace, Error>({
                 path: `/v2/traces/${traceId}`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponseData<Trace>(res, { $ref: '#/components/schemas/Trace' });
+            return prepareResponse<Trace>(req, { $ref: '#/components/schemas/Trace' });
         }
     };
     events = {
@@ -6897,15 +6876,15 @@ export class TonApiClient {
          * @name GetEvent
          * @request GET:/v2/events/{event_id}
          */
-        getEvent: async (eventId: string, params: RequestParams = {}) => {
-            const res = await this.http.request<Event, Error>({
+        getEvent: (eventId: string, params: RequestParams = {}) => {
+            const req = this.http.request<Event, Error>({
                 path: `/v2/events/${eventId}`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponseData<Event>(res, { $ref: '#/components/schemas/Event' });
+            return prepareResponse<Event>(req, { $ref: '#/components/schemas/Event' });
         }
     };
     inscriptions = {
@@ -6916,7 +6895,7 @@ export class TonApiClient {
          * @name GetAccountInscriptions
          * @request GET:/v2/experimental/accounts/{account_id}/inscriptions
          */
-        getAccountInscriptions: async (
+        getAccountInscriptions: (
             accountId_Address: Address,
             query?: {
                 /**
@@ -6934,7 +6913,7 @@ export class TonApiClient {
             params: RequestParams = {}
         ) => {
             const accountId = accountId_Address.toRawString();
-            const res = await this.http.request<InscriptionBalances, Error>({
+            const req = this.http.request<InscriptionBalances, Error>({
                 path: `/v2/experimental/accounts/${accountId}/inscriptions`,
                 method: 'GET',
                 query: query,
@@ -6942,7 +6921,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<InscriptionBalances>(res, {
+            return prepareResponse<InscriptionBalances>(req, {
                 $ref: '#/components/schemas/InscriptionBalances'
             });
         },
@@ -6954,7 +6933,7 @@ export class TonApiClient {
          * @name GetAccountInscriptionsHistory
          * @request GET:/v2/experimental/accounts/{account_id}/inscriptions/history
          */
-        getAccountInscriptionsHistory: async (
+        getAccountInscriptionsHistory: (
             accountId_Address: Address,
             query?: {
                 /**
@@ -6974,7 +6953,7 @@ export class TonApiClient {
             params: RequestParams = {}
         ) => {
             const accountId = accountId_Address.toRawString();
-            const res = await this.http.request<AccountEvents, Error>({
+            const req = this.http.request<AccountEvents, Error>({
                 path: `/v2/experimental/accounts/${accountId}/inscriptions/history`,
                 method: 'GET',
                 query: query,
@@ -6982,7 +6961,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<AccountEvents>(res, {
+            return prepareResponse<AccountEvents>(req, {
                 $ref: '#/components/schemas/AccountEvents'
             });
         },
@@ -6994,7 +6973,7 @@ export class TonApiClient {
          * @name GetAccountInscriptionsHistoryByTicker
          * @request GET:/v2/experimental/accounts/{account_id}/inscriptions/{ticker}/history
          */
-        getAccountInscriptionsHistoryByTicker: async (
+        getAccountInscriptionsHistoryByTicker: (
             accountId_Address: Address,
             ticker: string,
             query?: {
@@ -7015,7 +6994,7 @@ export class TonApiClient {
             params: RequestParams = {}
         ) => {
             const accountId = accountId_Address.toRawString();
-            const res = await this.http.request<AccountEvents, Error>({
+            const req = this.http.request<AccountEvents, Error>({
                 path: `/v2/experimental/accounts/${accountId}/inscriptions/${ticker}/history`,
                 method: 'GET',
                 query: query,
@@ -7023,7 +7002,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<AccountEvents>(res, {
+            return prepareResponse<AccountEvents>(req, {
                 $ref: '#/components/schemas/AccountEvents'
             });
         },
@@ -7035,7 +7014,7 @@ export class TonApiClient {
          * @name GetInscriptionOpTemplate
          * @request GET:/v2/experimental/inscriptions/op-template
          */
-        getInscriptionOpTemplate: async (
+        getInscriptionOpTemplate: (
             query: {
                 /** @example "ton20" */
                 type: 'ton20' | 'gram20';
@@ -7052,7 +7031,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const res = await this.http.request<
+            const req = this.http.request<
                 {
                     /** @example "comment" */
                     comment: string;
@@ -7068,12 +7047,12 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<{
+            return prepareResponse<{
                 /** @example "comment" */
                 comment: string;
                 /** @example "0:0000000000000" */
                 destination: string;
-            }>(res, {
+            }>(req, {
                 type: 'object',
                 required: ['comment', 'destination'],
                 properties: { comment: { type: 'string' }, destination: { type: 'string' } }
@@ -7088,7 +7067,7 @@ export class TonApiClient {
          * @name GetJettons
          * @request GET:/v2/jettons
          */
-        getJettons: async (
+        getJettons: (
             query?: {
                 /**
                  * @format int32
@@ -7108,7 +7087,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const res = await this.http.request<Jettons, Error>({
+            const req = this.http.request<Jettons, Error>({
                 path: `/v2/jettons`,
                 method: 'GET',
                 query: query,
@@ -7116,7 +7095,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<Jettons>(res, { $ref: '#/components/schemas/Jettons' });
+            return prepareResponse<Jettons>(req, { $ref: '#/components/schemas/Jettons' });
         },
 
         /**
@@ -7126,18 +7105,16 @@ export class TonApiClient {
          * @name GetJettonInfo
          * @request GET:/v2/jettons/{account_id}
          */
-        getJettonInfo: async (accountId_Address: Address, params: RequestParams = {}) => {
+        getJettonInfo: (accountId_Address: Address, params: RequestParams = {}) => {
             const accountId = accountId_Address.toRawString();
-            const res = await this.http.request<JettonInfo, Error>({
+            const req = this.http.request<JettonInfo, Error>({
                 path: `/v2/jettons/${accountId}`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponseData<JettonInfo>(res, {
-                $ref: '#/components/schemas/JettonInfo'
-            });
+            return prepareResponse<JettonInfo>(req, { $ref: '#/components/schemas/JettonInfo' });
         },
 
         /**
@@ -7147,7 +7124,7 @@ export class TonApiClient {
          * @name GetJettonHolders
          * @request GET:/v2/jettons/{account_id}/holders
          */
-        getJettonHolders: async (
+        getJettonHolders: (
             accountId_Address: Address,
             query?: {
                 /**
@@ -7165,7 +7142,7 @@ export class TonApiClient {
             params: RequestParams = {}
         ) => {
             const accountId = accountId_Address.toRawString();
-            const res = await this.http.request<JettonHolders, Error>({
+            const req = this.http.request<JettonHolders, Error>({
                 path: `/v2/jettons/${accountId}/holders`,
                 method: 'GET',
                 query: query,
@@ -7173,7 +7150,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<JettonHolders>(res, {
+            return prepareResponse<JettonHolders>(req, {
                 $ref: '#/components/schemas/JettonHolders'
             });
         },
@@ -7185,21 +7162,21 @@ export class TonApiClient {
          * @name GetJettonTransferPayload
          * @request GET:/v2/jettons/{jetton_id}/transfer/{account_id}/payload
          */
-        getJettonTransferPayload: async (
+        getJettonTransferPayload: (
             accountId_Address: Address,
             jettonId_Address: Address,
             params: RequestParams = {}
         ) => {
             const accountId = accountId_Address.toRawString();
             const jettonId = jettonId_Address.toRawString();
-            const res = await this.http.request<JettonTransferPayload, Error>({
+            const req = this.http.request<JettonTransferPayload, Error>({
                 path: `/v2/jettons/${jettonId}/transfer/${accountId}/payload`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponseData<JettonTransferPayload>(res, {
+            return prepareResponse<JettonTransferPayload>(req, {
                 $ref: '#/components/schemas/JettonTransferPayload'
             });
         },
@@ -7211,15 +7188,15 @@ export class TonApiClient {
          * @name GetJettonsEvents
          * @request GET:/v2/events/{event_id}/jettons
          */
-        getJettonsEvents: async (eventId: string, params: RequestParams = {}) => {
-            const res = await this.http.request<Event, Error>({
+        getJettonsEvents: (eventId: string, params: RequestParams = {}) => {
+            const req = this.http.request<Event, Error>({
                 path: `/v2/events/${eventId}/jettons`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponseData<Event>(res, { $ref: '#/components/schemas/Event' });
+            return prepareResponse<Event>(req, { $ref: '#/components/schemas/Event' });
         }
     };
     staking = {
@@ -7230,19 +7207,16 @@ export class TonApiClient {
          * @name GetAccountNominatorsPools
          * @request GET:/v2/staking/nominator/{account_id}/pools
          */
-        getAccountNominatorsPools: async (
-            accountId_Address: Address,
-            params: RequestParams = {}
-        ) => {
+        getAccountNominatorsPools: (accountId_Address: Address, params: RequestParams = {}) => {
             const accountId = accountId_Address.toRawString();
-            const res = await this.http.request<AccountStaking, Error>({
+            const req = this.http.request<AccountStaking, Error>({
                 path: `/v2/staking/nominator/${accountId}/pools`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponseData<AccountStaking>(res, {
+            return prepareResponse<AccountStaking>(req, {
                 $ref: '#/components/schemas/AccountStaking'
             });
         },
@@ -7254,9 +7228,9 @@ export class TonApiClient {
          * @name GetStakingPoolInfo
          * @request GET:/v2/staking/pool/{account_id}
          */
-        getStakingPoolInfo: async (accountId_Address: Address, params: RequestParams = {}) => {
+        getStakingPoolInfo: (accountId_Address: Address, params: RequestParams = {}) => {
             const accountId = accountId_Address.toRawString();
-            const res = await this.http.request<
+            const req = this.http.request<
                 {
                     implementation: PoolImplementation;
                     pool: PoolInfo;
@@ -7269,10 +7243,10 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<{
+            return prepareResponse<{
                 implementation: PoolImplementation;
                 pool: PoolInfo;
-            }>(res, {
+            }>(req, {
                 type: 'object',
                 required: ['implementation', 'pool'],
                 properties: {
@@ -7289,9 +7263,9 @@ export class TonApiClient {
          * @name GetStakingPoolHistory
          * @request GET:/v2/staking/pool/{account_id}/history
          */
-        getStakingPoolHistory: async (accountId_Address: Address, params: RequestParams = {}) => {
+        getStakingPoolHistory: (accountId_Address: Address, params: RequestParams = {}) => {
             const accountId = accountId_Address.toRawString();
-            const res = await this.http.request<
+            const req = this.http.request<
                 {
                     apy: ApyHistory[];
                 },
@@ -7303,9 +7277,9 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<{
+            return prepareResponse<{
                 apy: ApyHistory[];
-            }>(res, {
+            }>(req, {
                 type: 'object',
                 required: ['apy'],
                 properties: {
@@ -7321,7 +7295,7 @@ export class TonApiClient {
          * @name GetStakingPools
          * @request GET:/v2/staking/pools
          */
-        getStakingPools: async (
+        getStakingPools: (
             query?: {
                 /**
                  * account ID
@@ -7337,7 +7311,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const res = await this.http.request<
+            const req = this.http.request<
                 {
                     pools: PoolInfo[];
                     implementations: Record<string, PoolImplementation>;
@@ -7354,10 +7328,10 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<{
+            return prepareResponse<{
                 pools: PoolInfo[];
                 implementations: Record<string, PoolImplementation>;
-            }>(res, {
+            }>(req, {
                 type: 'object',
                 required: ['pools', 'implementations'],
                 properties: {
@@ -7378,8 +7352,8 @@ export class TonApiClient {
          * @name GetStorageProviders
          * @request GET:/v2/storage/providers
          */
-        getStorageProviders: async (params: RequestParams = {}) => {
-            const res = await this.http.request<
+        getStorageProviders: (params: RequestParams = {}) => {
+            const req = this.http.request<
                 {
                     providers: StorageProvider[];
                 },
@@ -7391,9 +7365,9 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<{
+            return prepareResponse<{
                 providers: StorageProvider[];
-            }>(res, {
+            }>(req, {
                 type: 'object',
                 required: ['providers'],
                 properties: {
@@ -7413,7 +7387,7 @@ export class TonApiClient {
          * @name GetRates
          * @request GET:/v2/rates
          */
-        getRates: async (
+        getRates: (
             query: {
                 /**
                  * accept ton and jetton master addresses, separated by commas
@@ -7430,7 +7404,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const res = await this.http.request<
+            const req = this.http.request<
                 {
                     rates: Record<string, TokenRates>;
                 },
@@ -7443,9 +7417,9 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<{
+            return prepareResponse<{
                 rates: Record<string, TokenRates>;
-            }>(res, {
+            }>(req, {
                 type: 'object',
                 required: ['rates'],
                 properties: {
@@ -7464,7 +7438,7 @@ export class TonApiClient {
          * @name GetChartRates
          * @request GET:/v2/rates/chart
          */
-        getChartRates: async (
+        getChartRates: (
             query: {
                 /** accept jetton master address */
                 token: string;
@@ -7492,7 +7466,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const res = await this.http.request<
+            const req = this.http.request<
                 {
                     /** @example {} */
                     points: any;
@@ -7506,10 +7480,10 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<{
+            return prepareResponse<{
                 /** @example {} */
                 points: any;
-            }>(res, {
+            }>(req, {
                 type: 'object',
                 required: ['points'],
                 properties: { points: { additionalProperties: true, example: {} } }
@@ -7523,8 +7497,8 @@ export class TonApiClient {
          * @name GetMarketsRates
          * @request GET:/v2/rates/markets
          */
-        getMarketsRates: async (params: RequestParams = {}) => {
-            const res = await this.http.request<
+        getMarketsRates: (params: RequestParams = {}) => {
+            const req = this.http.request<
                 {
                     markets: MarketTonRates[];
                 },
@@ -7536,9 +7510,9 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<{
+            return prepareResponse<{
                 markets: MarketTonRates[];
-            }>(res, {
+            }>(req, {
                 type: 'object',
                 required: ['markets'],
                 properties: {
@@ -7558,8 +7532,8 @@ export class TonApiClient {
          * @name GetTonConnectPayload
          * @request GET:/v2/tonconnect/payload
          */
-        getTonConnectPayload: async (params: RequestParams = {}) => {
-            const res = await this.http.request<
+        getTonConnectPayload: (params: RequestParams = {}) => {
+            const req = this.http.request<
                 {
                     /** @example "84jHVNLQmZsAAAAAZB0Zryi2wqVJI-KaKNXOvCijEi46YyYzkaSHyJrMPBMOkVZa" */
                     payload: string;
@@ -7572,10 +7546,10 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<{
+            return prepareResponse<{
                 /** @example "84jHVNLQmZsAAAAAZB0Zryi2wqVJI-KaKNXOvCijEi46YyYzkaSHyJrMPBMOkVZa" */
                 payload: string;
-            }>(res, {
+            }>(req, {
                 type: 'object',
                 required: ['payload'],
                 properties: { payload: { type: 'string' } }
@@ -7589,14 +7563,14 @@ export class TonApiClient {
          * @name GetAccountInfoByStateInit
          * @request POST:/v2/tonconnect/stateinit
          */
-        getAccountInfoByStateInit: async (
+        getAccountInfoByStateInit: (
             data: {
                 /** @format cell-base64 */
                 stateInit: Cell;
             },
             params: RequestParams = {}
         ) => {
-            const res = await this.http.request<AccountInfoByStateInit, Error>({
+            const req = this.http.request<AccountInfoByStateInit, Error>({
                 path: `/v2/tonconnect/stateinit`,
                 method: 'POST',
                 body: prepareRequestData(data, {
@@ -7608,7 +7582,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<AccountInfoByStateInit>(res, {
+            return prepareResponse<AccountInfoByStateInit>(req, {
                 $ref: '#/components/schemas/AccountInfoByStateInit'
             });
         }
@@ -7621,8 +7595,8 @@ export class TonApiClient {
          * @name GetWalletBackup
          * @request GET:/v2/wallet/backup
          */
-        getWalletBackup: async (params: RequestParams = {}) => {
-            const res = await this.http.request<
+        getWalletBackup: (params: RequestParams = {}) => {
+            const req = this.http.request<
                 {
                     dump: string;
                 },
@@ -7634,9 +7608,9 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<{
+            return prepareResponse<{
                 dump: string;
-            }>(res, {
+            }>(req, {
                 type: 'object',
                 required: ['dump'],
                 properties: { dump: { type: 'string' } }
@@ -7650,15 +7624,15 @@ export class TonApiClient {
          * @name SetWalletBackup
          * @request PUT:/v2/wallet/backup
          */
-        setWalletBackup: async (data: File, params: RequestParams = {}) => {
-            const res = await this.http.request<void, Error>({
+        setWalletBackup: (data: File, params: RequestParams = {}) => {
+            const req = this.http.request<void, Error>({
                 path: `/v2/wallet/backup`,
                 method: 'PUT',
                 body: prepareRequestData(data),
                 ...params
             });
 
-            return prepareResponseData<void>(res);
+            return prepareResponse<void>(req);
         },
 
         /**
@@ -7668,7 +7642,7 @@ export class TonApiClient {
          * @name TonConnectProof
          * @request POST:/v2/wallet/auth/proof
          */
-        tonConnectProof: async (
+        tonConnectProof: (
             data: {
                 /**
                  * @format address
@@ -7695,7 +7669,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const res = await this.http.request<
+            const req = this.http.request<
                 {
                     /** @example "NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODQ3..." */
                     token: string;
@@ -7733,10 +7707,10 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<{
+            return prepareResponse<{
                 /** @example "NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODQ3..." */
                 token: string;
-            }>(res, {
+            }>(req, {
                 type: 'object',
                 required: ['token'],
                 properties: { token: { type: 'string' } }
@@ -7750,16 +7724,16 @@ export class TonApiClient {
          * @name GetAccountSeqno
          * @request GET:/v2/wallet/{account_id}/seqno
          */
-        getAccountSeqno: async (accountId_Address: Address, params: RequestParams = {}) => {
+        getAccountSeqno: (accountId_Address: Address, params: RequestParams = {}) => {
             const accountId = accountId_Address.toRawString();
-            const res = await this.http.request<Seqno, Error>({
+            const req = this.http.request<Seqno, Error>({
                 path: `/v2/wallet/${accountId}/seqno`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponseData<Seqno>(res, { $ref: '#/components/schemas/Seqno' });
+            return prepareResponse<Seqno>(req, { $ref: '#/components/schemas/Seqno' });
         },
 
         /**
@@ -7769,15 +7743,15 @@ export class TonApiClient {
          * @name GetWalletsByPublicKey
          * @request GET:/v2/pubkeys/{public_key}/wallets
          */
-        getWalletsByPublicKey: async (publicKey: string, params: RequestParams = {}) => {
-            const res = await this.http.request<Accounts, Error>({
+        getWalletsByPublicKey: (publicKey: string, params: RequestParams = {}) => {
+            const req = this.http.request<Accounts, Error>({
                 path: `/v2/pubkeys/${publicKey}/wallets`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponseData<Accounts>(res, { $ref: '#/components/schemas/Accounts' });
+            return prepareResponse<Accounts>(req, { $ref: '#/components/schemas/Accounts' });
         }
     };
     gasless = {
@@ -7788,15 +7762,15 @@ export class TonApiClient {
          * @name GaslessConfig
          * @request GET:/v2/gasless/config
          */
-        gaslessConfig: async (params: RequestParams = {}) => {
-            const res = await this.http.request<GaslessConfig, Error>({
+        gaslessConfig: (params: RequestParams = {}) => {
+            const req = this.http.request<GaslessConfig, Error>({
                 path: `/v2/gasless/config`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponseData<GaslessConfig>(res, {
+            return prepareResponse<GaslessConfig>(req, {
                 $ref: '#/components/schemas/GaslessConfig'
             });
         },
@@ -7808,7 +7782,7 @@ export class TonApiClient {
          * @name GaslessEstimate
          * @request POST:/v2/gasless/estimate/{master_id}
          */
-        gaslessEstimate: async (
+        gaslessEstimate: (
             masterId_Address: Address,
             data: {
                 /** @format address */
@@ -7822,7 +7796,7 @@ export class TonApiClient {
             params: RequestParams = {}
         ) => {
             const masterId = masterId_Address.toRawString();
-            const res = await this.http.request<SignRawParams, Error>({
+            const req = this.http.request<SignRawParams, Error>({
                 path: `/v2/gasless/estimate/${masterId}`,
                 method: 'POST',
                 body: prepareRequestData(data, {
@@ -7845,7 +7819,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<SignRawParams>(res, {
+            return prepareResponse<SignRawParams>(req, {
                 $ref: '#/components/schemas/SignRawParams'
             });
         },
@@ -7857,7 +7831,7 @@ export class TonApiClient {
          * @name GaslessSend
          * @request POST:/v2/gasless/send
          */
-        gaslessSend: async (
+        gaslessSend: (
             data: {
                 /** hex encoded public key */
                 walletPublicKey: string;
@@ -7866,7 +7840,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const res = await this.http.request<void, Error>({
+            const req = this.http.request<void, Error>({
                 path: `/v2/gasless/send`,
                 method: 'POST',
                 body: prepareRequestData(data, {
@@ -7880,7 +7854,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<void>(res);
+            return prepareResponse<void>(req);
         }
     };
     liteServer = {
@@ -7891,8 +7865,8 @@ export class TonApiClient {
          * @name GetRawMasterchainInfo
          * @request GET:/v2/liteserver/get_masterchain_info
          */
-        getRawMasterchainInfo: async (params: RequestParams = {}) => {
-            const res = await this.http.request<
+        getRawMasterchainInfo: (params: RequestParams = {}) => {
+            const req = this.http.request<
                 {
                     last: BlockRaw;
                     /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
@@ -7907,12 +7881,12 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<{
+            return prepareResponse<{
                 last: BlockRaw;
                 /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
                 state_root_hash: string;
                 init: InitStateRaw;
-            }>(res, {
+            }>(req, {
                 type: 'object',
                 required: ['last', 'state_root_hash', 'init'],
                 properties: {
@@ -7930,7 +7904,7 @@ export class TonApiClient {
          * @name GetRawMasterchainInfoExt
          * @request GET:/v2/liteserver/get_masterchain_info_ext
          */
-        getRawMasterchainInfoExt: async (
+        getRawMasterchainInfoExt: (
             query: {
                 /**
                  * mode
@@ -7941,7 +7915,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const res = await this.http.request<
+            const req = this.http.request<
                 {
                     /**
                      * @format int32
@@ -7982,7 +7956,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<{
+            return prepareResponse<{
                 /**
                  * @format int32
                  * @example 0
@@ -8012,7 +7986,7 @@ export class TonApiClient {
                 /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
                 state_root_hash: string;
                 init: InitStateRaw;
-            }>(res, {
+            }>(req, {
                 type: 'object',
                 required: [
                     'mode',
@@ -8044,8 +8018,8 @@ export class TonApiClient {
          * @name GetRawTime
          * @request GET:/v2/liteserver/get_time
          */
-        getRawTime: async (params: RequestParams = {}) => {
-            const res = await this.http.request<
+        getRawTime: (params: RequestParams = {}) => {
+            const req = this.http.request<
                 {
                     /**
                      * @format int32
@@ -8061,13 +8035,13 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<{
+            return prepareResponse<{
                 /**
                  * @format int32
                  * @example 1687146728
                  */
                 time: number;
-            }>(res, {
+            }>(req, {
                 type: 'object',
                 required: ['time'],
                 properties: { time: { type: 'integer', format: 'int32' } }
@@ -8081,8 +8055,8 @@ export class TonApiClient {
          * @name GetRawBlockchainBlock
          * @request GET:/v2/liteserver/get_block/{block_id}
          */
-        getRawBlockchainBlock: async (blockId: string, params: RequestParams = {}) => {
-            const res = await this.http.request<
+        getRawBlockchainBlock: (blockId: string, params: RequestParams = {}) => {
+            const req = this.http.request<
                 {
                     id: BlockRaw;
                     /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
@@ -8096,11 +8070,11 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<{
+            return prepareResponse<{
                 id: BlockRaw;
                 /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
                 data: string;
-            }>(res, {
+            }>(req, {
                 type: 'object',
                 required: ['id', 'data'],
                 properties: {
@@ -8117,8 +8091,8 @@ export class TonApiClient {
          * @name GetRawBlockchainBlockState
          * @request GET:/v2/liteserver/get_state/{block_id}
          */
-        getRawBlockchainBlockState: async (blockId: string, params: RequestParams = {}) => {
-            const res = await this.http.request<
+        getRawBlockchainBlockState: (blockId: string, params: RequestParams = {}) => {
+            const req = this.http.request<
                 {
                     id: BlockRaw;
                     /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
@@ -8136,7 +8110,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<{
+            return prepareResponse<{
                 id: BlockRaw;
                 /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
                 root_hash: string;
@@ -8144,7 +8118,7 @@ export class TonApiClient {
                 file_hash: string;
                 /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
                 data: string;
-            }>(res, {
+            }>(req, {
                 type: 'object',
                 required: ['id', 'root_hash', 'file_hash', 'data'],
                 properties: {
@@ -8163,7 +8137,7 @@ export class TonApiClient {
          * @name GetRawBlockchainBlockHeader
          * @request GET:/v2/liteserver/get_block_header/{block_id}
          */
-        getRawBlockchainBlockHeader: async (
+        getRawBlockchainBlockHeader: (
             blockId: string,
             query: {
                 /**
@@ -8175,7 +8149,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const res = await this.http.request<
+            const req = this.http.request<
                 {
                     id: BlockRaw;
                     /**
@@ -8195,7 +8169,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<{
+            return prepareResponse<{
                 id: BlockRaw;
                 /**
                  * @format int32
@@ -8204,7 +8178,7 @@ export class TonApiClient {
                 mode: number;
                 /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
                 header_proof: string;
-            }>(res, {
+            }>(req, {
                 type: 'object',
                 required: ['id', 'mode', 'header_proof'],
                 properties: {
@@ -8222,14 +8196,14 @@ export class TonApiClient {
          * @name SendRawMessage
          * @request POST:/v2/liteserver/send_message
          */
-        sendRawMessage: async (
+        sendRawMessage: (
             data: {
                 /** @format cell-base64 */
                 body: Cell;
             },
             params: RequestParams = {}
         ) => {
-            const res = await this.http.request<
+            const req = this.http.request<
                 {
                     /**
                      * @format int32
@@ -8250,13 +8224,13 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<{
+            return prepareResponse<{
                 /**
                  * @format int32
                  * @example 200
                  */
                 code: number;
-            }>(res, {
+            }>(req, {
                 type: 'object',
                 required: ['code'],
                 properties: { code: { type: 'integer', format: 'int32' } }
@@ -8270,7 +8244,7 @@ export class TonApiClient {
          * @name GetRawAccountState
          * @request GET:/v2/liteserver/get_account_state/{account_id}
          */
-        getRawAccountState: async (
+        getRawAccountState: (
             accountId_Address: Address,
             query?: {
                 /**
@@ -8282,7 +8256,7 @@ export class TonApiClient {
             params: RequestParams = {}
         ) => {
             const accountId = accountId_Address.toRawString();
-            const res = await this.http.request<
+            const req = this.http.request<
                 {
                     id: BlockRaw;
                     shardblk: BlockRaw;
@@ -8302,7 +8276,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<{
+            return prepareResponse<{
                 id: BlockRaw;
                 shardblk: BlockRaw;
                 /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
@@ -8311,7 +8285,7 @@ export class TonApiClient {
                 proof: string;
                 /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
                 state: string;
-            }>(res, {
+            }>(req, {
                 type: 'object',
                 required: ['id', 'shardblk', 'shard_proof', 'proof', 'state'],
                 properties: {
@@ -8331,7 +8305,7 @@ export class TonApiClient {
          * @name GetRawShardInfo
          * @request GET:/v2/liteserver/get_shard_info/{block_id}
          */
-        getRawShardInfo: async (
+        getRawShardInfo: (
             blockId: string,
             query: {
                 /**
@@ -8354,7 +8328,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const res = await this.http.request<
+            const req = this.http.request<
                 {
                     id: BlockRaw;
                     shardblk: BlockRaw;
@@ -8372,14 +8346,14 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<{
+            return prepareResponse<{
                 id: BlockRaw;
                 shardblk: BlockRaw;
                 /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
                 shard_proof: string;
                 /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
                 shard_descr: string;
-            }>(res, {
+            }>(req, {
                 type: 'object',
                 required: ['id', 'shardblk', 'shard_proof', 'shard_descr'],
                 properties: {
@@ -8398,8 +8372,8 @@ export class TonApiClient {
          * @name GetAllRawShardsInfo
          * @request GET:/v2/liteserver/get_all_shards_info/{block_id}
          */
-        getAllRawShardsInfo: async (blockId: string, params: RequestParams = {}) => {
-            const res = await this.http.request<
+        getAllRawShardsInfo: (blockId: string, params: RequestParams = {}) => {
+            const req = this.http.request<
                 {
                     id: BlockRaw;
                     /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
@@ -8415,13 +8389,13 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<{
+            return prepareResponse<{
                 id: BlockRaw;
                 /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
                 proof: string;
                 /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
                 data: string;
-            }>(res, {
+            }>(req, {
                 type: 'object',
                 required: ['id', 'proof', 'data'],
                 properties: {
@@ -8439,7 +8413,7 @@ export class TonApiClient {
          * @name GetRawTransactions
          * @request GET:/v2/liteserver/get_transactions/{account_id}
          */
-        getRawTransactions: async (
+        getRawTransactions: (
             accountId_Address: Address,
             query: {
                 /**
@@ -8463,7 +8437,7 @@ export class TonApiClient {
             params: RequestParams = {}
         ) => {
             const accountId = accountId_Address.toRawString();
-            const res = await this.http.request<
+            const req = this.http.request<
                 {
                     ids: BlockRaw[];
                     /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
@@ -8478,11 +8452,11 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<{
+            return prepareResponse<{
                 ids: BlockRaw[];
                 /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
                 transactions: string;
-            }>(res, {
+            }>(req, {
                 type: 'object',
                 required: ['ids', 'transactions'],
                 properties: {
@@ -8499,7 +8473,7 @@ export class TonApiClient {
          * @name GetRawListBlockTransactions
          * @request GET:/v2/liteserver/list_block_transactions/{block_id}
          */
-        getRawListBlockTransactions: async (
+        getRawListBlockTransactions: (
             blockId: string,
             query: {
                 /**
@@ -8529,7 +8503,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const res = await this.http.request<
+            const req = this.http.request<
                 {
                     id: BlockRaw;
                     /**
@@ -8567,7 +8541,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<{
+            return prepareResponse<{
                 id: BlockRaw;
                 /**
                  * @format int32
@@ -8591,7 +8565,7 @@ export class TonApiClient {
                 }[];
                 /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
                 proof: string;
-            }>(res, {
+            }>(req, {
                 type: 'object',
                 required: ['id', 'req_count', 'incomplete', 'ids', 'proof'],
                 properties: {
@@ -8623,7 +8597,7 @@ export class TonApiClient {
          * @name GetRawBlockProof
          * @request GET:/v2/liteserver/get_block_proof
          */
-        getRawBlockProof: async (
+        getRawBlockProof: (
             query: {
                 /**
                  * known block: (workchain,shard,seqno,root_hash,file_hash)
@@ -8644,7 +8618,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const res = await this.http.request<
+            const req = this.http.request<
                 {
                     /** @example true */
                     complete: boolean;
@@ -8696,7 +8670,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<{
+            return prepareResponse<{
                 /** @example true */
                 complete: boolean;
                 from: BlockRaw;
@@ -8737,7 +8711,7 @@ export class TonApiClient {
                         };
                     };
                 }[];
-            }>(res, {
+            }>(req, {
                 type: 'object',
                 required: ['complete', 'from', 'to', 'steps'],
                 properties: {
@@ -8833,7 +8807,7 @@ export class TonApiClient {
          * @name GetRawConfig
          * @request GET:/v2/liteserver/get_config_all/{block_id}
          */
-        getRawConfig: async (
+        getRawConfig: (
             blockId: string,
             query: {
                 /**
@@ -8845,7 +8819,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const res = await this.http.request<
+            const req = this.http.request<
                 {
                     /**
                      * @format int32
@@ -8867,7 +8841,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<{
+            return prepareResponse<{
                 /**
                  * @format int32
                  * @example 0
@@ -8878,7 +8852,7 @@ export class TonApiClient {
                 state_proof: string;
                 /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
                 config_proof: string;
-            }>(res, {
+            }>(req, {
                 type: 'object',
                 required: ['mode', 'id', 'state_proof', 'config_proof'],
                 properties: {
@@ -8897,8 +8871,8 @@ export class TonApiClient {
          * @name GetRawShardBlockProof
          * @request GET:/v2/liteserver/get_shard_block_proof/{block_id}
          */
-        getRawShardBlockProof: async (blockId: string, params: RequestParams = {}) => {
-            const res = await this.http.request<
+        getRawShardBlockProof: (blockId: string, params: RequestParams = {}) => {
+            const req = this.http.request<
                 {
                     masterchain_id: BlockRaw;
                     links: {
@@ -8915,14 +8889,14 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<{
+            return prepareResponse<{
                 masterchain_id: BlockRaw;
                 links: {
                     id: BlockRaw;
                     /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
                     proof: string;
                 }[];
-            }>(res, {
+            }>(req, {
                 type: 'object',
                 required: ['masterchain_id', 'links'],
                 properties: {
@@ -8949,8 +8923,8 @@ export class TonApiClient {
          * @name GetOutMsgQueueSizes
          * @request GET:/v2/liteserver/get_out_msg_queue_sizes
          */
-        getOutMsgQueueSizes: async (params: RequestParams = {}) => {
-            const res = await this.http.request<
+        getOutMsgQueueSizes: (params: RequestParams = {}) => {
+            const req = this.http.request<
                 {
                     /** @format uint32 */
                     ext_msg_queue_size_limit: number;
@@ -8968,7 +8942,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<{
+            return prepareResponse<{
                 /** @format uint32 */
                 ext_msg_queue_size_limit: number;
                 shards: {
@@ -8976,7 +8950,7 @@ export class TonApiClient {
                     /** @format uint32 */
                     size: number;
                 }[];
-            }>(res, {
+            }>(req, {
                 type: 'object',
                 required: ['ext_msg_queue_size_limit', 'shards'],
                 properties: {
@@ -9004,16 +8978,16 @@ export class TonApiClient {
          * @name GetMultisigAccount
          * @request GET:/v2/multisig/{account_id}
          */
-        getMultisigAccount: async (accountId_Address: Address, params: RequestParams = {}) => {
+        getMultisigAccount: (accountId_Address: Address, params: RequestParams = {}) => {
             const accountId = accountId_Address.toRawString();
-            const res = await this.http.request<Multisig, Error>({
+            const req = this.http.request<Multisig, Error>({
                 path: `/v2/multisig/${accountId}`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponseData<Multisig>(res, { $ref: '#/components/schemas/Multisig' });
+            return prepareResponse<Multisig>(req, { $ref: '#/components/schemas/Multisig' });
         }
     };
     emulation = {
@@ -9024,14 +8998,14 @@ export class TonApiClient {
          * @name DecodeMessage
          * @request POST:/v2/message/decode
          */
-        decodeMessage: async (
+        decodeMessage: (
             data: {
                 /** @format cell */
                 boc: Cell;
             },
             params: RequestParams = {}
         ) => {
-            const res = await this.http.request<DecodedMessage, Error>({
+            const req = this.http.request<DecodedMessage, Error>({
                 path: `/v2/message/decode`,
                 method: 'POST',
                 body: prepareRequestData(data, {
@@ -9043,7 +9017,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<DecodedMessage>(res, {
+            return prepareResponse<DecodedMessage>(req, {
                 $ref: '#/components/schemas/DecodedMessage'
             });
         },
@@ -9055,7 +9029,7 @@ export class TonApiClient {
          * @name EmulateMessageToEvent
          * @request POST:/v2/events/emulate
          */
-        emulateMessageToEvent: async (
+        emulateMessageToEvent: (
             data: {
                 /** @format cell */
                 boc: Cell;
@@ -9065,7 +9039,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const res = await this.http.request<Event, Error>({
+            const req = this.http.request<Event, Error>({
                 path: `/v2/events/emulate`,
                 method: 'POST',
                 query: query,
@@ -9078,7 +9052,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<Event>(res, { $ref: '#/components/schemas/Event' });
+            return prepareResponse<Event>(req, { $ref: '#/components/schemas/Event' });
         },
 
         /**
@@ -9088,7 +9062,7 @@ export class TonApiClient {
          * @name EmulateMessageToTrace
          * @request POST:/v2/traces/emulate
          */
-        emulateMessageToTrace: async (
+        emulateMessageToTrace: (
             data: {
                 /** @format cell */
                 boc: Cell;
@@ -9098,7 +9072,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const res = await this.http.request<Trace, Error>({
+            const req = this.http.request<Trace, Error>({
                 path: `/v2/traces/emulate`,
                 method: 'POST',
                 query: query,
@@ -9111,7 +9085,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<Trace>(res, { $ref: '#/components/schemas/Trace' });
+            return prepareResponse<Trace>(req, { $ref: '#/components/schemas/Trace' });
         },
 
         /**
@@ -9121,7 +9095,7 @@ export class TonApiClient {
          * @name EmulateMessageToWallet
          * @request POST:/v2/wallet/emulate
          */
-        emulateMessageToWallet: async (
+        emulateMessageToWallet: (
             data: {
                 /** @format cell */
                 boc: Cell;
@@ -9141,7 +9115,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const res = await this.http.request<MessageConsequences, Error>({
+            const req = this.http.request<MessageConsequences, Error>({
                 path: `/v2/wallet/emulate`,
                 method: 'POST',
                 body: prepareRequestData(data, {
@@ -9170,7 +9144,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<MessageConsequences>(res, {
+            return prepareResponse<MessageConsequences>(req, {
                 $ref: '#/components/schemas/MessageConsequences'
             });
         },
@@ -9182,7 +9156,7 @@ export class TonApiClient {
          * @name EmulateMessageToAccountEvent
          * @request POST:/v2/accounts/{account_id}/events/emulate
          */
-        emulateMessageToAccountEvent: async (
+        emulateMessageToAccountEvent: (
             accountId_Address: Address,
             data: {
                 /** @format cell */
@@ -9194,7 +9168,7 @@ export class TonApiClient {
             params: RequestParams = {}
         ) => {
             const accountId = accountId_Address.toRawString();
-            const res = await this.http.request<AccountEvent, Error>({
+            const req = this.http.request<AccountEvent, Error>({
                 path: `/v2/accounts/${accountId}/events/emulate`,
                 method: 'POST',
                 query: query,
@@ -9207,7 +9181,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponseData<AccountEvent>(res, {
+            return prepareResponse<AccountEvent>(req, {
                 $ref: '#/components/schemas/AccountEvent'
             });
         }
