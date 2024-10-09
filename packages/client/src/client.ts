@@ -2761,7 +2761,7 @@ class HttpClient {
                 ...baseApiParams,
                 headers: {
                     ...baseApiParams.headers,
-                    ['x-tonapi-client']: `tonapi-js@$0.1.3`,
+                    ['x-tonapi-client']: `tonapi-js@$0.1.4`,
                     Authorization: `Bearer ${apiConfig.apiKey}`
                 }
             };
@@ -6631,6 +6631,38 @@ export class TonApiClient {
         },
 
         /**
+         * @description Get NFT collection items by their addresses
+         *
+         * @tags NFT
+         * @name GetNftCollectionItemsByAddresses
+         * @request POST:/v2/nfts/collections/_bulk
+         */
+        getNftCollectionItemsByAddresses: (
+            data: {
+                accountIds: Address[];
+            },
+            params: RequestParams = {}
+        ) => {
+            const req = this.http.request<NftCollections, Error>({
+                path: `/v2/nfts/collections/_bulk`,
+                method: 'POST',
+                body: prepareRequestData(data, {
+                    type: 'object',
+                    required: ['accountIds'],
+                    properties: {
+                        accountIds: { type: 'array', items: { type: 'string', format: 'address' } }
+                    }
+                }),
+                format: 'json',
+                ...params
+            });
+
+            return prepareResponse<NftCollections>(req, {
+                $ref: '#/components/schemas/NftCollections'
+            });
+        },
+
+        /**
          * @description Get NFT items from collection by collection address
          *
          * @tags NFT
@@ -7115,6 +7147,36 @@ export class TonApiClient {
             });
 
             return prepareResponse<JettonInfo>(req, { $ref: '#/components/schemas/JettonInfo' });
+        },
+
+        /**
+         * @description Get jetton metadata items by jetton master addresses
+         *
+         * @tags Jettons
+         * @name GetJettonInfosByAddresses
+         * @request POST:/v2/jettons/_bulk
+         */
+        getJettonInfosByAddresses: (
+            data: {
+                accountIds: Address[];
+            },
+            params: RequestParams = {}
+        ) => {
+            const req = this.http.request<Jettons, Error>({
+                path: `/v2/jettons/_bulk`,
+                method: 'POST',
+                body: prepareRequestData(data, {
+                    type: 'object',
+                    required: ['accountIds'],
+                    properties: {
+                        accountIds: { type: 'array', items: { type: 'string', format: 'address' } }
+                    }
+                }),
+                format: 'json',
+                ...params
+            });
+
+            return prepareResponse<Jettons>(req, { $ref: '#/components/schemas/Jettons' });
         },
 
         /**
