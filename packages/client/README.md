@@ -11,7 +11,7 @@
 - Seamless integration with `@ton/core`
 <!-- - Automatically generated from the latest API specifications -->
 
-Additionally, we offer [`@ton-api/ton-adapter`](https://www.npmjs.com/package/@ton-api/ton-adapter), a companion package that allows users of `@ton/ton` to leverage the functionality of `@ton-api/client` while maintaining their existing code structure.
+Additionally, [`@ton-api/ton-adapter`](https://www.npmjs.com/package/@ton-api/ton-adapter) enables users to work with contracts written for `@ton/ton` through `@ton-api/client`, ensuring seamless integration while maintaining their existing code structure.
 
 ## Prerequisites
 
@@ -37,23 +37,20 @@ pnpm add @ton-api/client @ton/core
 Here's a basic example to get you started:
 
 ```javascript
-import { TonApiClient, Api } from '@ton-api/client';
+import { TonApiClient } from '@ton-api/client';
 import { Address } from '@ton/core';
 
-// Configure the client
-const http = new TonApiClient({
+// Initialize the TonApi
+const ta = new TonApiClient({
     baseUrl: 'https://tonapi.io',
     apiKey: 'YOUR_API_KEY'
 });
 
-// Initialize the API
-const api = new Api(http);
-
 // Use the API
 async function fetchAccountEvents() {
     const address = Address.parse('YOUR_ADDRESS_HERE');
-
-    const events = await api.accounts.getAccountEvents(address, { limit: 50 })
+    const events = await ta.accounts.getAccountEvents(address, { limit: 50 })
+    
     console.log('Account events:', events)
 }
 
@@ -71,7 +68,7 @@ For detailed API information and endpoint descriptions, please refer to the [off
 ```javascript
 const collectionAddress = Address.parse('COLLECTION_ADDRESS_HERE');
 
-api.nft.getNftCollection(collectionAddress)
+ta.nft.getNftCollection(collectionAddress)
     .then(collection => console.log('NFT Collection:', collection))
     .catch(error => console.error('Error fetching NFT collection:', error));
 ```
@@ -81,7 +78,7 @@ api.nft.getNftCollection(collectionAddress)
 ```javascript
 const jettonAddress = Address.parse('JETTON_ADDRESS_HERE');
 
-api.jettons.getJettonInfo(jettonAddress)
+ta.jettons.getJettonInfo(jettonAddress)
     .then(jetton => console.log('Jetton Info:', jetton))
     .catch(error => console.error('Error fetching jetton info:', error));
 ```

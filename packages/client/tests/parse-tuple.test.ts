@@ -1,6 +1,6 @@
 import { Address, Tuple, TupleItem } from '@ton/core';
 import { execGetMethodForBlockchainAccount } from './__mock__/tuple';
-import { client } from './utils/client';
+import { ta } from './utils/client';
 import fetchMock from 'jest-fetch-mock';
 
 function guardTuple(item: TupleItem): item is Tuple {
@@ -21,7 +21,7 @@ test('Tuple test', async () => {
 
     const addressString = 'Ef_X4pRKtgXOXYMOXNgXNRdlhkNKJ9bTKMfqvj6HDIiQG98F';
     const addressObject = Address.parse(addressString);
-    const res = await client.blockchain.execGetMethodForBlockchainAccount(
+    const res = await ta.blockchain.execGetMethodForBlockchainAccount(
         addressObject,
         'list_nominators'
     );

@@ -1,13 +1,10 @@
 import { Address, Contract, ContractProvider, TupleItem } from '@ton/core';
 import { WalletContractV4 } from '@ton/ton';
-import { Api, TonApiClient } from '@ton-api/client';
+import { TonApiClient } from '@ton-api/client';
 
-const httpClient = new TonApiClient({
+const ta = new TonApiClient({
     baseUrl: 'https://tonapi.io'
 });
-
-// Initialize the ton API client
-const client = new Api(httpClient);
 
 export class NftItem implements Contract {
     constructor(public readonly address: Address) {}
@@ -40,7 +37,7 @@ export class WalletItem implements Contract {
     }
 
     static async createFromAddress(address: Address) {
-        const accountData = await client.blockchain.execGetMethodForBlockchainAccount(
+        const accountData = await ta.blockchain.execGetMethodForBlockchainAccount(
             address,
             'get_public_key'
         );

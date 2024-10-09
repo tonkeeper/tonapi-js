@@ -9,7 +9,7 @@ function camelToSnake(camel: string): string {
 }
 
 function cellParse(src: string): Cell {
-  return Cell.fromBase64(Buffer.from(src, "hex").toString("base64"));
+  return Cell.fromHex(src);
 }
 
 function parseHexToBigInt(str: string) {

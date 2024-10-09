@@ -1,7 +1,7 @@
 import { Address, Cell, TupleItem, TupleItemCell } from '@ton/core';
 import fetchMock from 'jest-fetch-mock';
 import { execGetMethodForBlockchainAccount, getBlockchainRawAccount } from './__mock__/cell';
-import { client } from './utils/client';
+import { ta } from './utils/client';
 
 beforeEach(() => {
     fetchMock.enableMocks();
@@ -17,7 +17,7 @@ test('Cell hex in response test', async () => {
 
     const addressString = '0:009d03ddede8c2620a72f999d03d5888102250a214bf574a29ff64df80162168';
     const addressObject = Address.parse(addressString);
-    const res = await client.blockchain.getBlockchainRawAccount(addressObject);
+    const res = await ta.blockchain.getBlockchainRawAccount(addressObject);
 
     expect(res).toBeDefined();
     expect(res.code).toBeDefined();
@@ -33,7 +33,7 @@ test('Cell hex in request body test', async () => {
 
     const cell = Cell.fromBase64(cellBase64);
 
-    await client.blockchain.sendBlockchainMessage({
+    await ta.blockchain.sendBlockchainMessage({
         boc: cell
     });
 
@@ -70,7 +70,7 @@ test('Cell base64 in response test', async () => {
 
     const addressString = 'EQDW6q4sRqQwNCmW4qwUpeFSU1Xhd6l3xwJ6jjknBPzxKNtT';
     const addressObject = Address.parse(addressString);
-    const res = await client.blockchain.execGetMethodForBlockchainAccount(
+    const res = await ta.blockchain.execGetMethodForBlockchainAccount(
         addressObject,
         'royalty_params'
     );
