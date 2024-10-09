@@ -1486,7 +1486,10 @@ export interface NftItem {
         /** @example "Best collection in TON network" */
         description: string;
     };
-    /** @example true */
+    /**
+     * Collection master contract confirmed that this item is part of collection
+     * @example true
+     */
     verified: boolean;
     /** @example {} */
     metadata: Record<string, any>;
@@ -1494,6 +1497,10 @@ export interface NftItem {
     previews?: ImagePreview[];
     /** @example "crypto.ton" */
     dns?: string;
+    /**
+     * please use trust field
+     * @deprecated
+     */
     approvedBy: NftApprovedBy;
     /** @example false */
     includeCnft?: boolean;
@@ -2761,7 +2768,7 @@ class HttpClient {
                 ...baseApiParams,
                 headers: {
                     ...baseApiParams.headers,
-                    ['x-tonapi-client']: `tonapi-js@$0.1.4`,
+                    ['x-tonapi-client']: `tonapi-js@$0.2.0-beta.0`,
                     Authorization: `Bearer ${apiConfig.apiKey}`
                 }
             };
@@ -4109,7 +4116,11 @@ const components = {
             sale: { $ref: '#/components/schemas/Sale' },
             previews: { type: 'array', items: { $ref: '#/components/schemas/ImagePreview' } },
             dns: { type: 'string' },
-            approved_by: { $ref: '#/components/schemas/NftApprovedBy' },
+            approved_by: {
+                deprecated: true,
+                description: 'please use trust field',
+                $ref: '#/components/schemas/NftApprovedBy'
+            },
             include_cnft: { type: 'boolean' },
             trust: { $ref: '#/components/schemas/TrustType' }
         }
