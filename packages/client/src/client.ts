@@ -48,8 +48,11 @@ export interface BlockCurrencyCollection {
          * @example 13
          */
         id: number;
-        /** @example "10000000000" */
-        value: string;
+        /**
+         * @format bigint
+         * @example "10000000000"
+         */
+        value: bigint;
     }[];
 }
 
@@ -84,7 +87,7 @@ export interface ReducedBlock {
      * @example 0
      */
     workchainId: number;
-    /** @example 8000000000000000 */
+    /** @example "8000000000000000" */
     shard: string;
     /**
      * @format int32
@@ -113,7 +116,7 @@ export interface BlockchainBlock {
      * @example 0
      */
     workchainId: number;
-    /** @example 8000000000000000 */
+    /** @example "8000000000000000" */
     shard: string;
     /**
      * @format int32
@@ -284,8 +287,11 @@ export interface Message {
      * @example 5681002
      */
     createdAt: number;
-    /** @example "0xdeadbeaf" */
-    opCode?: string;
+    /**
+     * @format bigint
+     * @example "0xdeadbeaf"
+     */
+    opCode?: bigint;
     init?: StateInit;
     /** @example "1219de582369ac80ee1afe12147930f458a54ff1eea612611a8bc6bd31581a6c" */
     hash: string;
@@ -648,9 +654,9 @@ export interface WorkchainDescr {
      * @example 1000000
      */
     flags: number;
-    /** @example 1000000 */
+    /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
     zerostateRootHash: string;
-    /** @example 1000000 */
+    /** @example "A6A0BD6608672B11B79538A50B2204E748305C12AA0DED9C16CF0006CE3AF8DB" */
     zerostateFileHash: string;
     /**
      * @format int64
@@ -738,12 +744,16 @@ export interface ValidatorsSet {
     utimeUntil: number;
     total: number;
     main: number;
-    /** @example "1152921504606846800" */
-    totalWeight?: string;
+    /**
+     * @format bigint
+     * @example "1152921504606846800"
+     */
+    totalWeight?: bigint;
     list: {
         publicKey: string;
         /** @format bigint */
         weight: bigint;
+        /** @example "45061C1D4EC44A937D0318589E13C73D151D1CEF5D3C0E53AFBCF56A6C2FE2BD" */
         adnlAddr?: string;
     }[];
 }
@@ -993,9 +1003,10 @@ export interface SignRawParams {
     relayAddress: Address;
     /**
      * Commission for the transaction. In nanocoins.
+     * @format bigint
      * @example "1000000"
      */
-    commission: string;
+    commission: bigint;
     /**
      * @format address
      * @example "0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf"
@@ -1406,16 +1417,22 @@ export interface JettonPreview {
 }
 
 export interface JettonBalance {
-    /** @example 597968399 */
-    balance: string;
+    /**
+     * @format bigint
+     * @example "597968399"
+     */
+    balance: bigint;
     price?: TokenRates;
     walletAddress: AccountAddress;
     jetton: JettonPreview;
     /** @example ["custom_payload","non_transferable"] */
     extensions?: string[];
     lock?: {
-        /** @example 597968399 */
-        amount: string;
+        /**
+         * @format bigint
+         * @example "597968399"
+         */
+        amount: bigint;
         /**
          * @format int64
          * @example 1678223064
@@ -1429,8 +1446,11 @@ export interface JettonsBalances {
 }
 
 export interface Price {
-    /** @example "123000000000" */
-    value: string;
+    /**
+     * @format bigint
+     * @example "123000000000"
+     */
+    value: bigint;
     /** @example "TON" */
     tokenName: string;
 }
@@ -1692,9 +1712,10 @@ export interface InscriptionMintAction {
     recipient: AccountAddress;
     /**
      * amount in minimal particles
+     * @format bigint
      * @example "123456789"
      */
-    amount: string;
+    amount: bigint;
     /** @example "ton20" */
     type: 'ton20' | 'gram20';
     /** @example "nano" */
@@ -1708,9 +1729,10 @@ export interface InscriptionTransferAction {
     recipient: AccountAddress;
     /**
      * amount in minimal particles
+     * @format bigint
      * @example "123456789"
      */
-    amount: string;
+    amount: bigint;
     /**
      * @example "Hi! This is your salary.
      * From accounting with love."
@@ -1758,9 +1780,10 @@ export interface JettonTransferAction {
     recipientsWallet: Address;
     /**
      * amount in quanta of tokens
-     * @example 1000000000
+     * @format bigint
+     * @example "1000000000"
      */
-    amount: string;
+    amount: bigint;
     /**
      * @example "Hi! This is your salary.
      * From accounting with love."
@@ -1780,9 +1803,10 @@ export interface JettonBurnAction {
     sendersWallet: Address;
     /**
      * amount in quanta of tokens
-     * @example 1000000000
+     * @format bigint
+     * @example "1000000000"
      */
-    amount: string;
+    amount: bigint;
     jetton: JettonPreview;
 }
 
@@ -1795,9 +1819,10 @@ export interface JettonMintAction {
     recipientsWallet: Address;
     /**
      * amount in quanta of tokens
-     * @example 1000000000
+     * @format bigint
+     * @example "1000000000"
      */
-    amount: string;
+    amount: bigint;
     jetton: JettonPreview;
 }
 
@@ -1902,10 +1927,16 @@ export interface ElectionsDepositStakeAction {
 
 export interface JettonSwapAction {
     dex: 'stonfi' | 'dedust' | 'megatonfi';
-    /** @example "1660050553" */
-    amountIn: string;
-    /** @example "1660050553" */
-    amountOut: string;
+    /**
+     * @format bigint
+     * @example "1660050553"
+     */
+    amountIn: bigint;
+    /**
+     * @format bigint
+     * @example "1660050553"
+     */
+    amountOut: bigint;
     /**
      * @format bigint
      * @example 1000000000
@@ -2202,8 +2233,11 @@ export interface Risk {
 }
 
 export interface JettonQuantity {
-    /** @example "597968399" */
-    quantity: string;
+    /**
+     * @format bigint
+     * @example "597968399"
+     */
+    quantity: bigint;
     walletAddress: AccountAddress;
     jetton: JettonPreview;
 }
@@ -2273,8 +2307,11 @@ export interface DecodedRawMessage {
         boc: Cell;
         /** @example "nft_transfer" */
         decodedOpName?: string;
-        /** @example "0xdeadbeaf" */
-        opCode?: string;
+        /**
+         * @format bigint
+         * @example "0xdeadbeaf"
+         */
+        opCode?: bigint;
         decodedBody?: any;
     };
     /** @example 2 */
@@ -2340,8 +2377,11 @@ export interface InscriptionBalance {
     type: 'ton20' | 'gram20';
     /** @example "nano" */
     ticker: string;
-    /** @example "1000000000" */
-    balance: string;
+    /**
+     * @format bigint
+     * @example "1000000000"
+     */
+    balance: bigint;
     /** @example 9 */
     decimals: number;
 }
@@ -2353,8 +2393,11 @@ export interface Jettons {
 export interface JettonInfo {
     /** @example true */
     mintable: boolean;
-    /** @example "5887105890579978" */
-    totalSupply: string;
+    /**
+     * @format bigint
+     * @example "5887105890579978"
+     */
+    totalSupply: bigint;
     admin?: AccountAddress;
     metadata: JettonMetadata;
     verification: JettonVerificationType;
@@ -2375,9 +2418,10 @@ export interface JettonHolders {
         owner: AccountAddress;
         /**
          * balance in the smallest jetton's units
+         * @format bigint
          * @example "168856200518084"
          */
-        balance: string;
+        balance: bigint;
     }[];
     /**
      * total number of holders
@@ -2584,7 +2628,7 @@ export interface BlockRaw {
      * @example 4294967295
      */
     workchain: number;
-    /** @example 800000000000000 */
+    /** @example "800000000000000" */
     shard: string;
     /**
      * @format int32
@@ -2768,7 +2812,7 @@ class HttpClient {
                 ...baseApiParams,
                 headers: {
                     ...baseApiParams.headers,
-                    ['x-tonapi-client']: `tonapi-js@$0.2.0-beta.0`,
+                    // ["x-tonapi-client"]: `tonapi-js@$0.2.0-beta.1`,
                     Authorization: `Bearer ${apiConfig.apiKey}`
                 }
             };
@@ -2961,7 +3005,7 @@ const components = {
                     required: ['id', 'value'],
                     properties: {
                         id: { type: 'integer', format: 'int64' },
-                        value: { type: 'string' }
+                        value: { type: 'string', 'x-js-format': 'bigint' }
                     }
                 }
             }
@@ -3159,7 +3203,7 @@ const components = {
             source: { $ref: '#/components/schemas/AccountAddress' },
             import_fee: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             created_at: { type: 'integer', format: 'int64' },
-            op_code: { type: 'string' },
+            op_code: { type: 'string', 'x-js-format': 'bigint' },
             init: { $ref: '#/components/schemas/StateInit' },
             hash: { type: 'string' },
             raw_body: { type: 'string', format: 'cell' },
@@ -3469,7 +3513,7 @@ const components = {
             utime_until: { type: 'integer' },
             total: { type: 'integer' },
             main: { type: 'integer' },
-            total_weight: { type: 'string' },
+            total_weight: { type: 'string', 'x-js-format': 'bigint' },
             list: {
                 type: 'array',
                 items: {
@@ -3647,7 +3691,7 @@ const components = {
         required: ['messages', 'relay_address', 'commission', 'from', 'valid_until'],
         properties: {
             relay_address: { type: 'string', format: 'address' },
-            commission: { type: 'string' },
+            commission: { type: 'string', 'x-js-format': 'bigint' },
             from: { type: 'string', format: 'address' },
             valid_until: { type: 'integer', format: 'int64' },
             messages: { type: 'array', items: { $ref: '#/components/schemas/SignRawMessage' } }
@@ -4045,7 +4089,7 @@ const components = {
         type: 'object',
         required: ['balance', 'wallet_address', 'jetton'],
         properties: {
-            balance: { type: 'string' },
+            balance: { type: 'string', 'x-js-format': 'bigint' },
             price: { $ref: '#/components/schemas/TokenRates' },
             wallet_address: { $ref: '#/components/schemas/AccountAddress' },
             jetton: { $ref: '#/components/schemas/JettonPreview' },
@@ -4054,7 +4098,7 @@ const components = {
                 type: 'object',
                 required: ['amount', 'till'],
                 properties: {
-                    amount: { type: 'string' },
+                    amount: { type: 'string', 'x-js-format': 'bigint' },
                     till: { type: 'integer', format: 'int64' }
                 }
             }
@@ -4070,7 +4114,10 @@ const components = {
     '#/components/schemas/Price': {
         type: 'object',
         required: ['value', 'token_name'],
-        properties: { value: { type: 'string' }, token_name: { type: 'string' } }
+        properties: {
+            value: { type: 'string', 'x-js-format': 'bigint' },
+            token_name: { type: 'string' }
+        }
     },
     '#/components/schemas/ImagePreview': {
         type: 'object',
@@ -4300,7 +4347,7 @@ const components = {
         required: ['type', 'ticker', 'recipient', 'amount', 'decimals'],
         properties: {
             recipient: { $ref: '#/components/schemas/AccountAddress' },
-            amount: { type: 'string' },
+            amount: { type: 'string', 'x-js-format': 'bigint' },
             type: { type: 'string', enum: ['ton20', 'gram20'] },
             ticker: { type: 'string' },
             decimals: { type: 'integer' }
@@ -4312,7 +4359,7 @@ const components = {
         properties: {
             sender: { $ref: '#/components/schemas/AccountAddress' },
             recipient: { $ref: '#/components/schemas/AccountAddress' },
-            amount: { type: 'string' },
+            amount: { type: 'string', 'x-js-format': 'bigint' },
             comment: { type: 'string' },
             type: { type: 'string', enum: ['ton20', 'gram20'] },
             ticker: { type: 'string' },
@@ -4340,7 +4387,7 @@ const components = {
             recipient: { $ref: '#/components/schemas/AccountAddress' },
             senders_wallet: { type: 'string', format: 'address' },
             recipients_wallet: { type: 'string', format: 'address' },
-            amount: { type: 'string' },
+            amount: { type: 'string', 'x-js-format': 'bigint' },
             comment: { type: 'string' },
             encrypted_comment: { $ref: '#/components/schemas/EncryptedComment' },
             refund: { $ref: '#/components/schemas/Refund' },
@@ -4353,7 +4400,7 @@ const components = {
         properties: {
             sender: { $ref: '#/components/schemas/AccountAddress' },
             senders_wallet: { type: 'string', format: 'address' },
-            amount: { type: 'string' },
+            amount: { type: 'string', 'x-js-format': 'bigint' },
             jetton: { $ref: '#/components/schemas/JettonPreview' }
         }
     },
@@ -4363,7 +4410,7 @@ const components = {
         properties: {
             recipient: { $ref: '#/components/schemas/AccountAddress' },
             recipients_wallet: { type: 'string', format: 'address' },
-            amount: { type: 'string' },
+            amount: { type: 'string', 'x-js-format': 'bigint' },
             jetton: { $ref: '#/components/schemas/JettonPreview' }
         }
     },
@@ -4457,8 +4504,8 @@ const components = {
         required: ['dex', 'amount_in', 'amount_out', 'user_wallet', 'router'],
         properties: {
             dex: { type: 'string', enum: ['stonfi', 'dedust', 'megatonfi'] },
-            amount_in: { type: 'string' },
-            amount_out: { type: 'string' },
+            amount_in: { type: 'string', 'x-js-format': 'bigint' },
+            amount_out: { type: 'string', 'x-js-format': 'bigint' },
             ton_in: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             ton_out: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             user_wallet: { $ref: '#/components/schemas/AccountAddress' },
@@ -4685,7 +4732,7 @@ const components = {
         type: 'object',
         required: ['quantity', 'wallet_address', 'jetton'],
         properties: {
-            quantity: { type: 'string' },
+            quantity: { type: 'string', 'x-js-format': 'bigint' },
             wallet_address: { $ref: '#/components/schemas/AccountAddress' },
             jetton: { $ref: '#/components/schemas/JettonPreview' }
         }
@@ -4752,7 +4799,7 @@ const components = {
                 properties: {
                     boc: { type: 'string', format: 'cell' },
                     decoded_op_name: { type: 'string' },
-                    op_code: { type: 'string' },
+                    op_code: { type: 'string', 'x-js-format': 'bigint' },
                     decoded_body: {}
                 }
             },
@@ -4812,7 +4859,7 @@ const components = {
         properties: {
             type: { type: 'string', enum: ['ton20', 'gram20'] },
             ticker: { type: 'string' },
-            balance: { type: 'string' },
+            balance: { type: 'string', 'x-js-format': 'bigint' },
             decimals: { type: 'integer' }
         }
     },
@@ -4828,7 +4875,7 @@ const components = {
         required: ['mintable', 'total_supply', 'metadata', 'verification', 'holders_count'],
         properties: {
             mintable: { type: 'boolean' },
-            total_supply: { type: 'string' },
+            total_supply: { type: 'string', 'x-js-format': 'bigint' },
             admin: { $ref: '#/components/schemas/AccountAddress' },
             metadata: { $ref: '#/components/schemas/JettonMetadata' },
             verification: { $ref: '#/components/schemas/JettonVerificationType' },
@@ -4847,7 +4894,7 @@ const components = {
                     properties: {
                         address: { type: 'string', format: 'address' },
                         owner: { $ref: '#/components/schemas/AccountAddress' },
-                        balance: { type: 'string' }
+                        balance: { type: 'string', 'x-js-format': 'bigint' }
                     }
                 }
             },
@@ -7065,8 +7112,11 @@ export class TonApiClient {
                 comment?: string;
                 /** @example "transfer" */
                 operation: 'transfer';
-                /** @example "1000000000" */
-                amount: string;
+                /**
+                 * @format bigint
+                 * @example "1000000000"
+                 */
+                amount: bigint;
                 /** @example "nano" */
                 ticker: string;
                 /** @example "UQAs87W4yJHlF8mt29ocA4agnMrLsOP69jC1HPyBUjJay7Mg" */

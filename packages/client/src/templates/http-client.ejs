@@ -111,7 +111,7 @@ class HttpClient {
                 ...baseApiParams,
                 headers: {
                     ...baseApiParams.headers,
-                    ["x-tonapi-client"]: `tonapi-js@$<%~ config.packageVersion %>`,
+                    // ["x-tonapi-client"]: `tonapi-js@$<%~ config.packageVersion %>`,
                     Authorization: `Bearer ${apiConfig.apiKey}`,
                 }
             };
