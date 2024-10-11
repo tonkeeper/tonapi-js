@@ -2806,19 +2806,25 @@ class HttpClient {
         const tonapi = typeof window !== 'undefined' && window && (window as any).tonapi;
         const providedFetch = (tonapi && tonapi.fetch) ?? null;
 
-        if (apiConfig.apiKey) {
-            const baseApiParams = apiConfig.baseApiParams || {};
-            apiConfig.baseApiParams = {
-                ...baseApiParams,
-                headers: {
-                    ...baseApiParams.headers,
-                    // ["x-tonapi-client"]: `tonapi-js@$0.2.0-beta.1`,
-                    Authorization: `Bearer ${apiConfig.apiKey}`
-                }
-            };
-        }
+        const baseApiParams = apiConfig.baseApiParams || {};
+        const { apiKey, ...apiConfigWithoutApiKey } = apiConfig;
 
-        Object.assign(this, apiConfig, { providedFetch });
+        const headers = {
+            ...(baseApiParams.headers ?? {}),
+            ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
+            'x-tonapi-client': `tonapi-js@$0.2.0-beta.2`
+        };
+
+        const preparedApiConfig = {
+            ...apiConfigWithoutApiKey,
+            providedFetch,
+            baseApiParams: {
+                ...baseApiParams,
+                headers
+            }
+        };
+
+        Object.assign(this, preparedApiConfig);
     }
 
     protected encodeQueryParam(key: string, value: any) {
