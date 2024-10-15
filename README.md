@@ -1,7 +1,5 @@
 # TonAPI SDK
 
-⚠️ Note that the package is in public beta right now.
-
 [Learn more about the TonApi](https://tonapi.io)
 
 This repository contains JavaScript SDK packages related to the TonApi
@@ -22,6 +20,9 @@ This is adapter allows to utilize [TonApi client](https://www.npmjs.com/package/
 - [npm](https://www.npmjs.com/package/@ton-api/ton-adapter)
 
 ## @ton-api/streaming
+
+⚠️ Note that the package is in public alpha right now.
+
 Subscribe to TON blockchain events in real time using this package
 
 - [github](./packages/streaming)

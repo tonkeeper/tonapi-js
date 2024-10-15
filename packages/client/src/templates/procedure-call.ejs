@@ -101,9 +101,9 @@ const queryTmplValue = queryAddressParams.length === 0 ? queryTmpl : `${queryTmp
 <%~ routeDocs.lines %>
 
  */
-<%~ route.routeName.usage %><%~ route.namespace ? ': ' : ' = ' %> async (<%~ wrapperArgs %>)<%~ config.toJS ? `: ${describeReturnType()}` : "" %> => {
+<%~ route.routeName.usage %><%~ route.namespace ? ': ' : ' = ' %> (<%~ wrapperArgs %>)<%~ config.toJS ? `: ${describeReturnType()}` : "" %> => {
     <%~ reducedPathParams %>
-    const res = await <%~ config.singleHttpClient ? 'this.http.request' : 'this.request' %><<%~ type %>, <%~ errorType %>>({
+    const req = <%~ config.singleHttpClient ? 'this.http.request' : 'this.request' %><<%~ type %>, <%~ errorType %>>({
         path: `<%~ path %>`,
         method: '<%~ _.upperCase(method) %>',
         <%~ queryTmpl ? `query: ${queryTmplValue},` : '' %>
@@ -112,8 +112,8 @@ const queryTmplValue = queryAddressParams.length === 0 ? queryTmpl : `${queryTmp
         <%~ bodyContentKindTmpl ? `type: ${bodyContentKindTmpl},` : '' %>
         <%~ responseFormatTmpl ? `format: ${responseFormatTmpl},` : '' %>
         ...<%~ _.get(requestConfigParam, "name") %>,
-    })
+    });
 
-    return prepareResponseData<<%~ type %>>(res<%~ schemaTmpl %>);
+    return prepareResponse<<%~ type %>>(req<%~ schemaTmpl %>);
 }<%~ route.namespace ? ',' : '' %>
 

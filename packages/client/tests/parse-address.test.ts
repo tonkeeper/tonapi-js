@@ -1,5 +1,5 @@
 import { Address } from '@ton/core';
-import { client } from './utils/client';
+import { ta } from './utils/client';
 import fetchMock from 'jest-fetch-mock';
 import { getAccounts, getBlockchainRawAccount } from './__mock__/address';
 
@@ -18,7 +18,7 @@ test('Address simple in params & response', async () => {
     const addressString = 'UQC62nZpm36EFzADVfXDVd_4OpbFyc1D3w3ZvCPHLni8Dst4';
     const addressObject = Address.parse(addressString);
     const addressRawString = addressObject.toRawString();
-    const res = await client.blockchain.getBlockchainRawAccount(addressObject);
+    const res = await ta.blockchain.getBlockchainRawAccount(addressObject);
 
     expect(res).toBeDefined();
     expect(Address.isAddress(res.address)).toBe(true);
@@ -54,7 +54,7 @@ test('Address in request body test', async () => {
     ];
 
     const accountIds = addressStrings.map(value => Address.parse(value));
-    const res = await client.accounts.getAccounts({ accountIds });
+    const res = await ta.accounts.getAccounts({ accountIds });
 
     expect(res).toBeDefined();
     expect(fetchMock).toHaveBeenCalledWith(

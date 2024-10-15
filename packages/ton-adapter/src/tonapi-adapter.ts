@@ -18,14 +18,14 @@ import {
 } from '@ton/core';
 import {
     AccountStatus as TonApiAccountStatus,
-    Api,
+    TonApiClient,
     BlockchainRawAccount,
     AccountStatus
 } from '@ton-api/client';
 import { Buffer } from 'buffer';
 
 export class ContractAdapter {
-    constructor(private readonly tonapi: Api<unknown>) {}
+    constructor(private readonly tonapi: TonApiClient) {}
 
     /**
      * Open smart contract
@@ -52,7 +52,7 @@ type LoclaBlockchainRawAccount = Partial<Pick<BlockchainRawAccount, 'lastTransac
     Omit<BlockchainRawAccount, 'lastTransactionLt'>;
 
 function createProvider(
-    tonapi: Api<unknown>,
+    tonapi: TonApiClient,
     address: Address,
     init: { code?: Cell | null; data?: Cell | null } | null
 ): ContractProvider {
@@ -61,28 +61,26 @@ function createProvider(
             // Load state
             const account: LoclaBlockchainRawAccount = await tonapi.blockchain
                 .getBlockchainRawAccount(address)
-                .catch(async (error: Response) => {
-                    const body = await error.json();
-
-                    if (body.error === 'entity not found') {
-                        const mockResult: LoclaBlockchainRawAccount = {
-                            address: address,
-                            balance: 0n,
-                            lastTransactionLt: undefined,
-                            status: AccountStatus.Uninit,
-                            storage: {
-                                usedCells: 1,
-                                usedBits: 95,
-                                usedPublicCells: 0,
-                                lastPaid: Math.floor(new Date().getTime() / 1000),
-                                duePayment: 0n
-                            }
-                        };
-
-                        return mockResult;
+                .catch((error: Error) => {
+                    if (error.message !== 'entity not found') {
+                        throw new Error(`Account request failed: ${error.message}`, error);
                     }
 
-                    throw new Error('Account request failed: ', body.error);
+                    const mockResult: LoclaBlockchainRawAccount = {
+                        address: address,
+                        balance: 0n,
+                        lastTransactionLt: undefined,
+                        status: AccountStatus.Uninit,
+                        storage: {
+                            usedCells: 1,
+                            usedBits: 95,
+                            usedPublicCells: 0,
+                            lastPaid: Math.floor(new Date().getTime() / 1000),
+                            duePayment: 0n
+                        }
+                    };
+
+                    return mockResult;
                 });
 
             // Convert state
@@ -121,6 +119,10 @@ function createProvider(
             };
         },
         async get(name, args) {
+            if (typeof name !== 'string') {
+                throw new Error('Method name must be a string for TonClient provider');
+            }
+
             if (args.some(arg => arg.type === 'tuple')) {
                 throw new Error('Tuples as get parameters are not supported by tonapi');
             }

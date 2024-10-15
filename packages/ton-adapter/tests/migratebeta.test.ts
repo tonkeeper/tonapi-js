@@ -1,12 +1,7 @@
 import { Address, Contract, ContractProvider, OpenedContract } from '@ton/ton';
 import { mnemonicNew, mnemonicToPrivateKey, KeyPair } from '@ton/crypto';
 import { ContractAdapter } from '@ton-api/ton-adapter';
-import { Api, TonApiClient } from '@ton-api/client';
-
-const httpClient = new TonApiClient({
-    baseUrl: 'https://tonapi.io'
-    // apiKey: 'your-api-key',
-});
+import { TonApiClient } from '@ton-api/client';
 
 class NftItem implements Contract {
     constructor(public readonly address: Address) {}
@@ -28,10 +23,13 @@ class NftItem implements Contract {
 }
 
 // Initialize the ton API client
-const client = new Api(httpClient);
+const ta = new TonApiClient({
+    baseUrl: 'https://tonapi.io'
+    // apiKey: 'your-api-key',
+});
 
 // Create an adapter
-const contractAdapter = new ContractAdapter(client);
+const contractAdapter = new ContractAdapter(ta);
 let keyPair: KeyPair; // eslint-disable-line
 let contract: OpenedContract<NftItem>;
 

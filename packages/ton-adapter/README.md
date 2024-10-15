@@ -35,24 +35,23 @@ Here's a basic example to get you started:
 ```typescript
 import { SendMode, WalletContractV5R1, internal } from '@ton/ton';
 import { mnemonicNew, mnemonicToPrivateKey } from '@ton/crypto';
-import { Api, TonApiClient } from '@ton-api/client';
+import { TonApiClient } from '@ton-api/client';
 import { ContractAdapter } from '@ton-api/ton-adapter';
 
 // Initialize TonApi client
-const httpClient = new TonApiClient({
-    baseUrl: 'https://tonapi.io',
+const ta = new TonApiClient({
+    baseUrl: 'https://tonapi.io'
     apiKey: 'YOUR_API_KEY'
 });
-const client = new Api(httpClient);
 
 // Create an adapter
-const adapter = new ContractAdapter(client);
+const adapter = new ContractAdapter(ta);
 
 // Create and use a wallet contract
 async function main() {
     const mnemonics = await mnemonicNew();
     const keyPair = await mnemonicToPrivateKey(mnemonics);
-    const wallet = WalletContractV5R1.create({ workChain: 0, publicKey: keyPair.publicKey });
+    const wallet = WalletContractV5R1.create({ workchain: 0, publicKey: keyPair.publicKey });
 
     // Open the contract using the adapter
     const contract = adapter.open(wallet);

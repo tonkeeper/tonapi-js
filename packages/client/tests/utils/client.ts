@@ -1,12 +1,12 @@
-import { Api, TonApiClient } from '../../src/client';
+import { TonApiClient } from '../../src/client';
 
-const httpWithApiKey = new TonApiClient({
-    baseUrl: 'https://tonapi.io',
+const baseUrl = 'https://tonapi.io';
+
+export const taWithApiKey = new TonApiClient({
+    baseUrl,
     apiKey: 'TEST_API_KEY'
 });
-export const clienWithApiKey = new Api(httpWithApiKey);
 
-const http = new TonApiClient({
-    baseUrl: 'https://tonapi.io'
+export const ta = new TonApiClient({
+    baseUrl
 });
-export const client = new Api(http);
