@@ -4,6 +4,11 @@
 
 `@ton-api/client` is an automatically generated SDK that provides seamless access to the endpoints offered by [tonapi.io](https://tonapi.io). This client is specifically designed to integrate with the TON blockchain, offering type-safe interactions and full compatibility with @ton/core library.
 
+## Documentation
+
+For a detailed view of all methods and endpoints in a Swagger format, refer to the [Swagger documentation](https://tonapi.io/api-v2)
+For detailed API information and endpoint descriptions, please refer to the [official documentation](https://docs.tonconsole.com/tonapi/rest-api) or check the [Swagger UI](https://tonapi.io/api-v2) for an interactive method list.
+
 ## Features
 
 - Full coverage of tonapi.io endpoints

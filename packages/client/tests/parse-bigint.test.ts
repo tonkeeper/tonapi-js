@@ -31,7 +31,7 @@ test('BigInt parse data in number test', async () => {
     expect(typeof accounts[1].balance).toBe('bigint');
 });
 
-test.skip('BigInt parse data in string test', async () => {   // TODO: wait for swagger update
+test('BigInt parse data in string test', async () => {
     fetchMock.mockResponseOnce(getJettonInfo);
     const usdtJettonAddress = Address.parse('EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs');
     const res = await ta.jettons.getJettonInfo(usdtJettonAddress);
