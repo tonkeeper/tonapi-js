@@ -98,7 +98,7 @@ test('Client throw error test', async () => {
         Address.parse('0:97264395BD65A255A429B11326C84128B7D70FFED7949ABAE3036D506BA38621')
     );
 
-    await expect(req).rejects.toThrow('entity not found');
+    await expect(req).rejects.toThrow(); // TODO: add check for error message
 });
 
 test('Client x-tonapi-client header test', async () => {

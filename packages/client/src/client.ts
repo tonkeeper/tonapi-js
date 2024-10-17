@@ -2607,6 +2607,9 @@ export interface DnsExpiring {
     }[];
 }
 
+/** @example [1668436763,97.21323234] */
+export type ChartPoints = [number, number];
+
 export interface AccountInfoByStateInit {
     /** @example "NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODQ3..." */
     publicKey: string;
@@ -5029,6 +5032,11 @@ const components = {
                 }
             }
         }
+    },
+    '#/components/schemas/ChartPoints': {
+        type: 'array',
+        additionalItems: false,
+        items: { '0': { type: 'integer', format: 'int64' }, '1': { type: 'number' } }
     },
     '#/components/schemas/AccountInfoByStateInit': {
         type: 'object',
@@ -7569,8 +7577,11 @@ export class TonApiClient {
          */
         getChartRates: (
             query: {
-                /** accept jetton master address */
-                token: string;
+                /**
+                 * accept jetton master address
+                 * @format address
+                 */
+                token: Address;
                 /** @example "usd" */
                 currency?: string;
                 /**
@@ -7597,25 +7608,28 @@ export class TonApiClient {
         ) => {
             const req = this.http.request<
                 {
-                    /** @example {} */
-                    points: any;
+                    points: ChartPoints[];
                 },
                 Error
             >({
                 path: `/v2/rates/chart`,
                 method: 'GET',
-                query: query,
+                query: query && {
+                    ...query,
+                    token: query.token?.toRawString()
+                },
                 format: 'json',
                 ...params
             });
 
             return prepareResponse<{
-                /** @example {} */
-                points: any;
+                points: ChartPoints[];
             }>(req, {
                 type: 'object',
                 required: ['points'],
-                properties: { points: { additionalProperties: true, example: {} } }
+                properties: {
+                    points: { type: 'array', items: { $ref: '#/components/schemas/ChartPoints' } }
+                }
             });
         },
 
