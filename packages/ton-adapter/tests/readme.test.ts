@@ -1,23 +1,22 @@
 import { SendMode, WalletContractV5R1, internal } from '@ton/ton';
 import { mnemonicNew, mnemonicToPrivateKey } from '@ton/crypto';
-import { Api, TonApiClient } from '@ton-api/client';
+import { TonApiClient } from '@ton-api/client';
 import { ContractAdapter } from '@ton-api/ton-adapter';
 
 // Initialize TonApi client
-const httpClient = new TonApiClient({
+const ta = new TonApiClient({
     baseUrl: 'https://tonapi.io'
     // apiKey: 'YOUR_API_KEY' // Uncomment this line and set your API key
 });
-const client = new Api(httpClient);
 
 // Create an adapter
-const adapter = new ContractAdapter(client);
+const adapter = new ContractAdapter(ta);
 
 // Create and use a wallet contract
 async function main() {
     const mnemonics = await mnemonicNew();
     const keyPair = await mnemonicToPrivateKey(mnemonics);
-    const wallet = WalletContractV5R1.create({ workChain: 0, publicKey: keyPair.publicKey });
+    const wallet = WalletContractV5R1.create({ workchain: 0, publicKey: keyPair.publicKey });
 
     // Open the contract using the adapter
     const contract = adapter.open(wallet);
@@ -41,7 +40,7 @@ async function main() {
                 })
             ]
         })
-        .catch(res => res.json().then(console.log)); // can't send transfer without from noexists wallet
+        .catch(error => console.log(error.message)); // can't send transfer from noexists wallet
 }
 
 test('Readme example', async () => {
@@ -57,9 +56,7 @@ test('Readme example', async () => {
 
     // Check the second console.log call (Error message)
     expect(consoleLogMock.mock.calls[1]).toEqual([
-        {
-            error: 'error code: 0 message: cannot apply external message to current state : Failed to unpack account state'
-        }
+        'error code: 0 message: cannot apply external message to current state : Failed to unpack account state'
     ]);
 
     // Restore the original console.log

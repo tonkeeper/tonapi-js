@@ -9,11 +9,21 @@ function camelToSnake(camel: string): string {
 }
 
 function cellParse(src: string): Cell {
-  return Cell.fromBase64(Buffer.from(src, "hex").toString("base64"));
+  return Cell.fromHex(src);
 }
 
 function parseHexToBigInt(str: string) {
   return str.startsWith('-') ? BigInt(str.slice(1)) * -1n : BigInt(str);
+}
+
+async function prepareResponse<U>(promise: Promise<any>, orSchema?: any): Promise<U> {
+  return await promise
+      .then(obj => prepareResponseData<U>(obj, orSchema))
+      .catch(async (error) => {
+          const errorJson = await error.json();
+          const errorMessage = typeof errorJson === 'string' ? errorJson : errorJson?.error as string;
+          throw new Error(errorMessage, { cause: error });
+      });
 }
 
 function prepareResponseData<U>(obj: any, orSchema?: any): U {
@@ -46,6 +56,10 @@ function prepareResponseData<U>(obj: any, orSchema?: any): U {
 
       if (schema.format === "cell") {
         return obj && (cellParse(obj as string) as U);
+      }
+
+      if (schema['x-js-format'] === 'bigint') {
+          return BigInt(obj as string) as U;
       }
 
       // maybe not used
@@ -140,6 +154,10 @@ function prepareRequestData(data: any, orSchema?: any): any {
 
           if (schema.format === 'cell-base64') {
               return (data as Cell).toBoc().toString('base64');
+          }
+
+          if (schema['x-js-format'] === 'bigint') {
+              return (data as bigint).toString();
           }
       }
   }

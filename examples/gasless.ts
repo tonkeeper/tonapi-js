@@ -1,4 +1,4 @@
-import { Api, TonApiClient } from '@ton-api/client';
+import { TonApiClient } from '@ton-api/client';
 import { storeMessageRelaxed, WalletContractV5R1 } from '@ton/ton';
 import { Address, beginCell, internal, toNano, SendMode, external, storeMessage } from '@ton/core';
 import { mnemonicToPrivateKey } from '@ton/crypto';
@@ -6,13 +6,12 @@ import { ContractAdapter } from '@ton-api/ton-adapter';
 
 // if you need to send lots of requests in parallel,
 // make sure you use a tonapi token.
-const http = new TonApiClient({
+const ta = new TonApiClient({
     baseUrl: 'https://tonapi.io',
     // apiKey: 'YOUR API KEY'
 });
 
-const client = new Api(http);
-const provider = new ContractAdapter(client);
+const provider = new ContractAdapter(ta);
 
 const OP_CODES = {
     TK_RELAYER_FEE: 0x878da6e3,
@@ -37,13 +36,13 @@ const main = async () => {
     const jettonAmount = 1_000_000n; // amount in the smallest jetton units. This is 1 USDt.
 
     const keyPair = await mnemonicToPrivateKey(seed.split(' '));
-    const workChain = 0;
-    const wallet = WalletContractV5R1.create({ workChain, publicKey: keyPair.publicKey });
+    const workchain = 0;
+    const wallet = WalletContractV5R1.create({ workchain, publicKey: keyPair.publicKey });
     const contract = provider.open(wallet);
 
     console.log('Wallet address:', wallet.address.toString());
 
-    const jettonWalletAddressResult = await client.blockchain.execGetMethodForBlockchainAccount(
+    const jettonWalletAddressResult = await ta.blockchain.execGetMethodForBlockchainAccount(
         usdtMaster,
         'get_wallet_address',
         {
@@ -85,7 +84,7 @@ const main = async () => {
     // we send a single message containing a transfer from our wallet to a desired destination.
 	// as a result of estimation, TonAPI returns a list of messages that we need to sign.
 	// the first message is a fee transfer to the relay address, the second message is our original transfer.
-    const params = await client.gasless.gaslessEstimate(usdtMaster, {
+    const params = await ta.gasless.gaslessEstimate(usdtMaster, {
         walletAddress: wallet.address,
         walletPublicKey: keyPair.publicKey.toString('hex'),
         messages: [
@@ -128,7 +127,7 @@ const main = async () => {
         .endCell();
 
     // Send a gasless transfer
-    client.gasless
+    ta.gasless
         .gaslessSend({
             walletPublicKey: keyPair.publicKey.toString('hex'),
             boc: extMessage
@@ -138,7 +137,7 @@ const main = async () => {
 };
 
 async function printConfigAndReturnRelayAddress(): Promise<Address> {
-    const cfg = await client.gasless.gaslessConfig();
+    const cfg = await ta.gasless.gaslessConfig();
 
     console.log('Available jettons for gasless transfer');
     console.log(cfg.gasJettons.map(gasJetton => gasJetton.masterId));

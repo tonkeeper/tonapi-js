@@ -1,6 +1,6 @@
 {
   "name": "@ton-api/ton-adapter",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "TonApi adapter for @ton/ton",
   "files": [
     "dist"
@@ -49,13 +49,13 @@
     }
   ],
   "peerDependencies": {
-    "@ton-api/client": "^0.1.0",
-    "@ton/core": ">=0.56.0"
+    "@ton-api/client": "^0.2.0",
+    "@ton/core": ">=0.59.0"
   },
   "devDependencies": {
-    "@ton-api/client": "^0.1.0",
-    "@ton/core": "^0.56.0",
-    "@ton/ton": "^14.0.0",
+    "@ton-api/client": "^0.2.0",
+    "@ton/core": "^0.59.0",
+    "@ton/ton": "^15.1.0",
     "@types/node": "^20.11.16",
     "dotenv": "^16.4.5",
     "jest": "^29.7.0",

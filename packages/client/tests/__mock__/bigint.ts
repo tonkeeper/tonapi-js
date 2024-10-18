@@ -25,3 +25,23 @@ export const getAccount = JSONStringify({
         }
     ]
 });
+
+export const getJettonInfo = JSONStringify({
+    mintable: true,
+    total_supply: 1030000002000000n,
+    admin: {
+        address: '0:6440fe3c69410383963945173c4b11479bf0b9b4d7090e58777bda581c2f9998',
+        is_scam: false,
+        is_wallet: false
+    },
+    metadata: {
+        address: '0:b113a994b5024a16719f69139328eb759596c38a25f59028b146fecdc3621dfe',
+        name: 'Tether USD',
+        symbol: 'USD₮',
+        decimals: '6',
+        image: 'https://cache.tonapi.io/imgproxy/T3PB4s7oprNVaJkwqbGg54nexKE0zzKhcrPv8jcWYzU/rs:fill:200:200:1/g:no/aHR0cHM6Ly90ZXRoZXIudG8vaW1hZ2VzL2xvZ29DaXJjbGUucG5n.webp',
+        description: 'Tether Token for Tether USD'
+    },
+    verification: 'whitelist',
+    holders_count: 1734294
+});
