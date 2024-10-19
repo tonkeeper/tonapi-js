@@ -5141,6 +5141,9 @@ async function prepareResponse<U>(promise: Promise<any>, orSchema?: any): Promis
     return await promise
         .then(obj => prepareResponseData<U>(obj, orSchema))
         .catch(async error => {
+            if (!error.json) {
+                throw error;
+            }
             const errorJson = await error.json();
             const errorMessage =
                 typeof errorJson === 'string' ? errorJson : (errorJson?.error as string);
