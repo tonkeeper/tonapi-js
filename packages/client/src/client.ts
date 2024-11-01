@@ -1462,7 +1462,7 @@ export interface ImagePreview {
     url: string;
 }
 
-export type NftApprovedBy = ('getgems' | 'tonkeeper' | 'ton.diamonds')[];
+export type NftApprovedBy = ('getgems' | 'tonkeeper')[];
 
 /** @example "whitelist" */
 export enum TrustType {
@@ -2288,6 +2288,9 @@ export interface DecodedMessage {
             op: number;
             rawMessages: DecodedRawMessage[];
         };
+        walletV5?: {
+            rawMessages: DecodedRawMessage[];
+        };
         walletHighloadV2?: {
             /**
              * @format int64
@@ -2815,7 +2818,7 @@ class HttpClient {
         const headers = {
             ...(baseApiParams.headers ?? {}),
             ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
-            'x-tonapi-client': `tonapi-js@0.2.0`
+            'x-tonapi-client': `tonapi-js@0.1.0-beta.0`
         };
 
         const preparedApiConfig = {
@@ -4135,7 +4138,7 @@ const components = {
     },
     '#/components/schemas/NftApprovedBy': {
         type: 'array',
-        items: { type: 'string', enum: ['getgems', 'tonkeeper', 'ton.diamonds'] }
+        items: { type: 'string', enum: ['getgems', 'tonkeeper'] }
     },
     '#/components/schemas/TrustType': {
         type: 'string',
@@ -4776,6 +4779,16 @@ const components = {
                             valid_until: { type: 'integer', format: 'int64' },
                             seqno: { type: 'integer', format: 'int64' },
                             op: { type: 'integer', format: 'int32' },
+                            raw_messages: {
+                                type: 'array',
+                                items: { $ref: '#/components/schemas/DecodedRawMessage' }
+                            }
+                        }
+                    },
+                    wallet_v5: {
+                        type: 'object',
+                        required: ['raw_messages'],
+                        properties: {
                             raw_messages: {
                                 type: 'array',
                                 items: { $ref: '#/components/schemas/DecodedRawMessage' }
