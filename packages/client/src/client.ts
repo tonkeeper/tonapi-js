@@ -1462,7 +1462,7 @@ export interface ImagePreview {
     url: string;
 }
 
-export type NftApprovedBy = ('getgems' | 'tonkeeper' | 'ton.diamonds')[];
+export type NftApprovedBy = ('getgems' | 'tonkeeper')[];
 
 /** @example "whitelist" */
 export enum TrustType {
@@ -2286,6 +2286,14 @@ export interface DecodedMessage {
              * @example 1
              */
             op: number;
+            rawMessages: DecodedRawMessage[];
+        };
+        walletV5?: {
+            /**
+             * @format int64
+             * @example 1
+             */
+            validUntil: number;
             rawMessages: DecodedRawMessage[];
         };
         walletHighloadV2?: {
@@ -4135,7 +4143,7 @@ const components = {
     },
     '#/components/schemas/NftApprovedBy': {
         type: 'array',
-        items: { type: 'string', enum: ['getgems', 'tonkeeper', 'ton.diamonds'] }
+        items: { type: 'string', enum: ['getgems', 'tonkeeper'] }
     },
     '#/components/schemas/TrustType': {
         type: 'string',
@@ -4776,6 +4784,17 @@ const components = {
                             valid_until: { type: 'integer', format: 'int64' },
                             seqno: { type: 'integer', format: 'int64' },
                             op: { type: 'integer', format: 'int32' },
+                            raw_messages: {
+                                type: 'array',
+                                items: { $ref: '#/components/schemas/DecodedRawMessage' }
+                            }
+                        }
+                    },
+                    wallet_v5: {
+                        type: 'object',
+                        required: ['raw_messages', 'valid_until'],
+                        properties: {
+                            valid_until: { type: 'integer', format: 'int64' },
                             raw_messages: {
                                 type: 'array',
                                 items: { $ref: '#/components/schemas/DecodedRawMessage' }
