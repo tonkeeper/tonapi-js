@@ -5141,9 +5141,33 @@ async function prepareResponse<U>(promise: Promise<any>, orSchema?: any): Promis
     return await promise
         .then(obj => prepareResponseData<U>(obj, orSchema))
         .catch(async error => {
-            const errorJson = await error.json();
-            const errorMessage =
-                typeof errorJson === 'string' ? errorJson : (errorJson?.error as string);
+            let errorMessage: string;
+
+            if (
+                error &&
+                typeof error === 'object' &&
+                'json' in error &&
+                typeof error.json === 'function'
+            ) {
+                try {
+                    const errorJson = await error.json();
+                    errorMessage =
+                        typeof errorJson === 'string'
+                            ? errorJson
+                            : (errorJson?.error as string) || 'Unknown error';
+                } catch (jsonParseError: unknown) {
+                    if (jsonParseError instanceof Error) {
+                        errorMessage = `Failed to parse error response: ${jsonParseError.message}`;
+                    } else {
+                        errorMessage = 'Failed to parse error response: Unknown parsing error';
+                    }
+                }
+            } else if (error instanceof Error) {
+                errorMessage = error.message || 'Unknown error without JSON';
+            } else {
+                errorMessage = 'Unknown error occurred';
+            }
+
             throw new Error(errorMessage, { cause: error });
         });
 }
