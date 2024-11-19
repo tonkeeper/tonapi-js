@@ -51,8 +51,8 @@ test('Client apiKey missing test', async () => {
         baseUrl: 'https://tonapi.io'
     };
 
-    const ta = new TonApiClient(config);
-    const res = await ta.utilities.status();
+    const localTa = new TonApiClient(config);
+    const res = await localTa.utilities.status();
     expect(res).toBeDefined();
 
     expect(fetchMock).toHaveBeenCalledWith(
@@ -74,8 +74,8 @@ test('Client fallback test', async () => {
         baseUrl: 'https://tonapi.io'
     };
 
-    const ta = new TonApiClient(config);
-    const res = await ta.blockchain.status();
+    const localTa = new TonApiClient(config);
+    const res = await localTa.blockchain.status();
     expect(res).toBeDefined();
 
     expect(fetchMock).toHaveBeenCalledWith(
@@ -113,4 +113,23 @@ test('Client x-tonapi-client header test', async () => {
     );
 
     fetchMock.disableMocks();
+});
+
+test('Client custom fetch is called', async () => {
+    const customFetch = jest.fn(
+        (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+            return fetch(input, init);
+        }
+    );
+
+    const config: ApiConfig = {
+        baseUrl: 'https://tonapi.io',
+        fetch: customFetch
+    };
+
+    const ta = new TonApiClient(config);
+
+    await ta.utilities.status();
+
+    expect(customFetch).toHaveBeenCalled();
 });

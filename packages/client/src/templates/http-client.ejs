@@ -103,7 +103,7 @@ class HttpClient {
 
     constructor(apiConfig: ApiConfig = {}) {
         const tonapi = typeof window !== 'undefined' && window && (window as any).tonapi;
-        const providedFetch = (tonapi && tonapi.fetch) ?? null;
+        const providedFetch = apiConfig.fetch ?? (tonapi && tonapi.fetch) ?? null;
 
         const baseApiParams = apiConfig.baseApiParams || {};
         const { apiKey, ...apiConfigWithoutApiKey } = apiConfig;
