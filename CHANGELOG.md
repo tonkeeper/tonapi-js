@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.3.0] - 2024-11-19
+
+### Fixed
+- Fixed issue where errors without a json method or with invalid JSON responses caused unhandled exceptions.
+- Properly apply custom fetch from ApiConfig #201
+
 ## [0.2.0] - 2024-10-18
 
 ### Added
