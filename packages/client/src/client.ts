@@ -1332,6 +1332,15 @@ export interface BlockchainConfig {
         accounts: Address[];
         suspendedUntil: number;
     };
+    /** precompiled contracts */
+    '45'?: {
+        contracts: {
+            /** @format address */
+            codeHash: Address;
+            /** @format int64 */
+            gasUsage: number;
+        }[];
+    };
     /** Bridge parameters for wrapping TON in other networks. */
     '71'?: {
         oracleBridgeParams: OracleBridgeParams;
@@ -1462,7 +1471,7 @@ export interface ImagePreview {
     url: string;
 }
 
-export type NftApprovedBy = ('getgems' | 'tonkeeper' | 'ton.diamonds')[];
+export type NftApprovedBy = ('getgems' | 'tonkeeper')[];
 
 /** @example "whitelist" */
 export enum TrustType {
@@ -2288,6 +2297,14 @@ export interface DecodedMessage {
             op: number;
             rawMessages: DecodedRawMessage[];
         };
+        walletV5?: {
+            /**
+             * @format int64
+             * @example 1
+             */
+            validUntil: number;
+            rawMessages: DecodedRawMessage[];
+        };
         walletHighloadV2?: {
             /**
              * @format int64
@@ -2815,7 +2832,7 @@ class HttpClient {
         const headers = {
             ...(baseApiParams.headers ?? {}),
             ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
-            'x-tonapi-client': `tonapi-js@0.2.0`
+            'x-tonapi-client': `tonapi-js@0.1.0-beta.0`
         };
 
         const preparedApiConfig = {
@@ -4011,6 +4028,23 @@ const components = {
                     suspended_until: { type: 'integer' }
                 }
             },
+            '45': {
+                type: 'object',
+                required: ['contracts'],
+                properties: {
+                    contracts: {
+                        type: 'array',
+                        items: {
+                            type: 'object',
+                            required: ['code_hash', 'gas_usage'],
+                            properties: {
+                                code_hash: { type: 'string', format: 'address' },
+                                gas_usage: { type: 'integer', format: 'int64' }
+                            }
+                        }
+                    }
+                }
+            },
             '71': {
                 type: 'object',
                 required: ['oracle_bridge_params'],
@@ -4135,7 +4169,7 @@ const components = {
     },
     '#/components/schemas/NftApprovedBy': {
         type: 'array',
-        items: { type: 'string', enum: ['getgems', 'tonkeeper', 'ton.diamonds'] }
+        items: { type: 'string', enum: ['getgems', 'tonkeeper'] }
     },
     '#/components/schemas/TrustType': {
         type: 'string',
@@ -4776,6 +4810,17 @@ const components = {
                             valid_until: { type: 'integer', format: 'int64' },
                             seqno: { type: 'integer', format: 'int64' },
                             op: { type: 'integer', format: 'int32' },
+                            raw_messages: {
+                                type: 'array',
+                                items: { $ref: '#/components/schemas/DecodedRawMessage' }
+                            }
+                        }
+                    },
+                    wallet_v5: {
+                        type: 'object',
+                        required: ['raw_messages', 'valid_until'],
+                        properties: {
+                            valid_until: { type: 'integer', format: 'int64' },
                             raw_messages: {
                                 type: 'array',
                                 items: { $ref: '#/components/schemas/DecodedRawMessage' }
