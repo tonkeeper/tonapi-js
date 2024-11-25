@@ -40,7 +40,7 @@ import { ContractAdapter } from '@ton-api/ton-adapter';
 
 // Initialize TonApi client
 const ta = new TonApiClient({
-    baseUrl: 'https://tonapi.io'
+    baseUrl: 'https://tonapi.io',
     apiKey: 'YOUR_API_KEY'
 });
 
