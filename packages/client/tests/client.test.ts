@@ -136,7 +136,7 @@ test('Client custom fetch is called', async () => {
     expect(customFetch).toHaveBeenCalled();
 });
 
-test.only('Client post method in fetch', async () => {
+test('Client post method in fetch', async () => {
     fetchMock.enableMocks();
 
     const accountIds = [
