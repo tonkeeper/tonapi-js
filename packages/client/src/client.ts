@@ -1332,6 +1332,15 @@ export interface BlockchainConfig {
         accounts: Address[];
         suspendedUntil: number;
     };
+    /** precompiled contracts */
+    '45'?: {
+        contracts: {
+            /** @format address */
+            codeHash: Address;
+            /** @format int64 */
+            gasUsage: number;
+        }[];
+    };
     /** Bridge parameters for wrapping TON in other networks. */
     '71'?: {
         oracleBridgeParams: OracleBridgeParams;
@@ -4017,6 +4026,23 @@ const components = {
                 properties: {
                     accounts: { type: 'array', items: { type: 'string', format: 'address' } },
                     suspended_until: { type: 'integer' }
+                }
+            },
+            '45': {
+                type: 'object',
+                required: ['contracts'],
+                properties: {
+                    contracts: {
+                        type: 'array',
+                        items: {
+                            type: 'object',
+                            required: ['code_hash', 'gas_usage'],
+                            properties: {
+                                code_hash: { type: 'string', format: 'address' },
+                                gas_usage: { type: 'integer', format: 'int64' }
+                            }
+                        }
+                    }
                 }
             },
             '71': {
