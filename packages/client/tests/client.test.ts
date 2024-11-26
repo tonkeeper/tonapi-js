@@ -2,6 +2,8 @@ import { TonApiClient, ApiConfig } from '../src/client';
 import fetchMock from 'jest-fetch-mock';
 import { ta, taWithApiKey } from './utils/client';
 import { JSONStringify } from './utils/jsonbig';
+import { Address } from '@ton/core';
+import { getAccounts } from './__mock__/services';
 
 test('Client status test', async () => {
     fetchMock.enableMocks();
@@ -132,4 +134,27 @@ test('Client custom fetch is called', async () => {
     await ta.utilities.status();
 
     expect(customFetch).toHaveBeenCalled();
+});
+
+test.only('Client post method in fetch', async () => {
+    fetchMock.enableMocks();
+
+    const accountIds = [
+        'UQCae11h9N5znylEPRjmuLYGvIwnxkcCw4zVW4BJjVASi5eL',
+        'UQAW2nxA69WYdMr90utDmpeZFwvG4XYcc9iibAP5sZnlojRO'
+    ];
+    fetchMock.mockResponseOnce(getAccounts);
+
+    const res = await ta.accounts.getAccounts({ accountIds: accountIds.map(id => Address.parse(id)) });
+
+    expect(res).toBeDefined();
+    
+    expect(fetchMock).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+            method: 'POST'
+        })
+    );
+
+    fetchMock.disableMocks();
 });
