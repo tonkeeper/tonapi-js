@@ -1332,6 +1332,15 @@ export interface BlockchainConfig {
         accounts: Address[];
         suspendedUntil: number;
     };
+    /** precompiled contracts */
+    '45'?: {
+        contracts: {
+            /** @format address */
+            codeHash: Address;
+            /** @format int64 */
+            gasUsage: number;
+        }[];
+    };
     /** Bridge parameters for wrapping TON in other networks. */
     '71'?: {
         oracleBridgeParams: OracleBridgeParams;
@@ -1462,7 +1471,7 @@ export interface ImagePreview {
     url: string;
 }
 
-export type NftApprovedBy = ('getgems' | 'tonkeeper' | 'ton.diamonds')[];
+export type NftApprovedBy = ('getgems' | 'tonkeeper')[];
 
 /** @example "whitelist" */
 export enum TrustType {
@@ -2288,6 +2297,14 @@ export interface DecodedMessage {
             op: number;
             rawMessages: DecodedRawMessage[];
         };
+        walletV5?: {
+            /**
+             * @format int64
+             * @example 1
+             */
+            validUntil: number;
+            rawMessages: DecodedRawMessage[];
+        };
         walletHighloadV2?: {
             /**
              * @format int64
@@ -2357,7 +2374,10 @@ export interface JettonMetadata {
     symbol: string;
     /** @example "9" */
     decimals: string;
-    /** @example "https://cache.tonapi.io/images/jetton.jpg" */
+    /**
+     * this field currently returns a cached image URL (e.g., "https://cache.tonapi.io/images/jetton.jpg"). In the future, this will be replaced with the original URL from the metadata. The cached image is already available in the `preview` field of `JettonInfo` and will remain there.
+     * @example "https://bitcoincash-example.github.io/website/logo.png"
+     */
     image?: string;
     /** @example "Wrapped Toncoin" */
     description?: string;
@@ -2400,6 +2420,8 @@ export interface JettonInfo {
     totalSupply: bigint;
     admin?: AccountAddress;
     metadata: JettonMetadata;
+    /** @example "https://cache.tonapi.io/images/jetton.jpg" */
+    preview: string;
     verification: JettonVerificationType;
     /**
      * @format int32
@@ -2815,7 +2837,7 @@ class HttpClient {
         const headers = {
             ...(baseApiParams.headers ?? {}),
             ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
-            'x-tonapi-client': `tonapi-js@0.2.0`
+            'x-tonapi-client': `tonapi-js@0.1.0-beta.0`
         };
 
         const preparedApiConfig = {
@@ -4011,6 +4033,23 @@ const components = {
                     suspended_until: { type: 'integer' }
                 }
             },
+            '45': {
+                type: 'object',
+                required: ['contracts'],
+                properties: {
+                    contracts: {
+                        type: 'array',
+                        items: {
+                            type: 'object',
+                            required: ['code_hash', 'gas_usage'],
+                            properties: {
+                                code_hash: { type: 'string', format: 'address' },
+                                gas_usage: { type: 'integer', format: 'int64' }
+                            }
+                        }
+                    }
+                }
+            },
             '71': {
                 type: 'object',
                 required: ['oracle_bridge_params'],
@@ -4135,7 +4174,7 @@ const components = {
     },
     '#/components/schemas/NftApprovedBy': {
         type: 'array',
-        items: { type: 'string', enum: ['getgems', 'tonkeeper', 'ton.diamonds'] }
+        items: { type: 'string', enum: ['getgems', 'tonkeeper'] }
     },
     '#/components/schemas/TrustType': {
         type: 'string',
@@ -4782,6 +4821,17 @@ const components = {
                             }
                         }
                     },
+                    wallet_v5: {
+                        type: 'object',
+                        required: ['raw_messages', 'valid_until'],
+                        properties: {
+                            valid_until: { type: 'integer', format: 'int64' },
+                            raw_messages: {
+                                type: 'array',
+                                items: { $ref: '#/components/schemas/DecodedRawMessage' }
+                            }
+                        }
+                    },
                     wallet_highload_v2: {
                         type: 'object',
                         required: ['subwallet_id', 'bounded_query_id', 'raw_messages'],
@@ -4881,12 +4931,20 @@ const components = {
     },
     '#/components/schemas/JettonInfo': {
         type: 'object',
-        required: ['mintable', 'total_supply', 'metadata', 'verification', 'holders_count'],
+        required: [
+            'mintable',
+            'total_supply',
+            'metadata',
+            'verification',
+            'holders_count',
+            'preview'
+        ],
         properties: {
             mintable: { type: 'boolean' },
             total_supply: { type: 'string', 'x-js-format': 'bigint' },
             admin: { $ref: '#/components/schemas/AccountAddress' },
             metadata: { $ref: '#/components/schemas/JettonMetadata' },
+            preview: { type: 'string' },
             verification: { $ref: '#/components/schemas/JettonVerificationType' },
             holders_count: { type: 'integer', format: 'int32' }
         }

@@ -5288,6 +5288,27 @@ components:
                 example: 0:0000000000000000000000000000000000000000000000000000000000000000
             suspended_until:
               type: integer
+
+        "45":
+          type: object
+          description: precompiled contracts
+          required:
+            - contracts
+          properties:
+            contracts:
+              type: array
+              items:
+                type: object
+                required:
+                  - code_hash
+                  - gas_usage
+                properties:
+                  code_hash:
+                    type: string
+                    format: address
+                  gas_usage:
+                    type: integer
+                    format: int64
         "71":
           type: object
           description: Bridge parameters for wrapping TON in other networks.
@@ -5497,7 +5518,6 @@ components:
         enum:
           - getgems
           - tonkeeper
-          - ton.diamonds
     TrustType:
       type: string
       example: whitelist
@@ -6761,6 +6781,20 @@ components:
                   type: array
                   items:
                     $ref: '#/components/schemas/DecodedRawMessage'
+            wallet_v5:
+              type: object
+              required:
+                - raw_messages
+                - valid_until
+              properties:
+                valid_until:
+                  type: integer
+                  format: int64
+                  example: 1
+                raw_messages:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/DecodedRawMessage'
             wallet_highload_v2:
               type: object
               required:
@@ -6866,7 +6900,8 @@ components:
           example: "9"
         image:
           type: string
-          example: "https://cache.tonapi.io/images/jetton.jpg"
+          example: "https://bitcoincash-example.github.io/website/logo.png"
+          description: this field currently returns a cached image URL (e.g., "https://cache.tonapi.io/images/jetton.jpg"). In the future, this will be replaced with the original URL from the metadata. The cached image is already available in the `preview` field of `JettonInfo` and will remain there.
         description:
           type: string
           example: Wrapped Toncoin
@@ -6938,6 +6973,7 @@ components:
         - metadata
         - verification
         - holders_count
+        - preview
       properties:
         mintable:
           type: boolean
@@ -6950,6 +6986,9 @@ components:
           $ref: '#/components/schemas/AccountAddress'
         metadata:
           $ref: '#/components/schemas/JettonMetadata'
+        preview:
+          type: string
+          example: "https://cache.tonapi.io/images/jetton.jpg"
         verification:
           $ref: '#/components/schemas/JettonVerificationType'
         holders_count:
