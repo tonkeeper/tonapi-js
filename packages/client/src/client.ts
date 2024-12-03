@@ -2374,7 +2374,10 @@ export interface JettonMetadata {
     symbol: string;
     /** @example "9" */
     decimals: string;
-    /** @example "https://cache.tonapi.io/images/jetton.jpg" */
+    /**
+     * this field currently returns a cached image URL (e.g., "https://cache.tonapi.io/images/jetton.jpg"). In the future, this will be replaced with the original URL from the metadata. The cached image is already available in the `preview` field of `JettonInfo` and will remain there.
+     * @example "https://bitcoincash-example.github.io/website/logo.png"
+     */
     image?: string;
     /** @example "Wrapped Toncoin" */
     description?: string;
@@ -2417,6 +2420,8 @@ export interface JettonInfo {
     totalSupply: bigint;
     admin?: AccountAddress;
     metadata: JettonMetadata;
+    /** @example "https://cache.tonapi.io/images/jetton.jpg" */
+    preview: string;
     verification: JettonVerificationType;
     /**
      * @format int32
@@ -4926,12 +4931,20 @@ const components = {
     },
     '#/components/schemas/JettonInfo': {
         type: 'object',
-        required: ['mintable', 'total_supply', 'metadata', 'verification', 'holders_count'],
+        required: [
+            'mintable',
+            'total_supply',
+            'metadata',
+            'verification',
+            'holders_count',
+            'preview'
+        ],
         properties: {
             mintable: { type: 'boolean' },
             total_supply: { type: 'string', 'x-js-format': 'bigint' },
             admin: { $ref: '#/components/schemas/AccountAddress' },
             metadata: { $ref: '#/components/schemas/JettonMetadata' },
+            preview: { type: 'string' },
             verification: { $ref: '#/components/schemas/JettonVerificationType' },
             holders_count: { type: 'integer', format: 'int32' }
         }
@@ -7800,53 +7813,6 @@ export class TonApiClient {
         }
     };
     wallet = {
-        /**
-         * @description Get backup info
-         *
-         * @tags Wallet
-         * @name GetWalletBackup
-         * @request GET:/v2/wallet/backup
-         */
-        getWalletBackup: (params: RequestParams = {}) => {
-            const req = this.http.request<
-                {
-                    dump: string;
-                },
-                Error
-            >({
-                path: `/v2/wallet/backup`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<{
-                dump: string;
-            }>(req, {
-                type: 'object',
-                required: ['dump'],
-                properties: { dump: { type: 'string' } }
-            });
-        },
-
-        /**
-         * @description Set backup info
-         *
-         * @tags Wallet
-         * @name SetWalletBackup
-         * @request PUT:/v2/wallet/backup
-         */
-        setWalletBackup: (data: File, params: RequestParams = {}) => {
-            const req = this.http.request<void, Error>({
-                path: `/v2/wallet/backup`,
-                method: 'PUT',
-                body: prepareRequestData(data),
-                ...params
-            });
-
-            return prepareResponse<void>(req);
-        },
-
         /**
          * @description Account verification and token issuance
          *
