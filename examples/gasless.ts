@@ -1,14 +1,24 @@
-import { TonApiClient } from '@ton-api/client';
-import { storeMessageRelaxed, WalletContractV5R1 } from '@ton/ton';
-import { Address, beginCell, internal, toNano, SendMode, external, storeMessage } from '@ton/core';
+import { WalletContractV5R1 } from '@ton/ton';
+import {
+    Address,
+    beginCell,
+    internal,
+    toNano,
+    SendMode,
+    external,
+    storeMessage,
+    storeMessageRelaxed
+} from '@ton/core';
 import { mnemonicToPrivateKey } from '@ton/crypto';
+
+import { TonApiClient } from '@ton-api/client';
 import { ContractAdapter } from '@ton-api/ton-adapter';
 
 // if you need to send lots of requests in parallel,
 // make sure you use a tonapi token.
 const ta = new TonApiClient({
-    baseUrl: 'https://tonapi.io',
-    // apiKey: 'YOUR API KEY'
+    baseUrl: 'https://tonapi.io'
+    // apiKey: 'YOUR_API_KEY',
 });
 
 const provider = new ContractAdapter(ta);
@@ -24,12 +34,11 @@ const BASE_JETTON_SEND_AMOUNT = toNano(0.05);
 const main = async () => {
     
     // this is a simple example of how to send a gasless transfer.
-	// you only need to specify your seed and a destination address.
- 
-	// the seed is not sent to the network, it is used to sign messages locally.
+    // you only need to specify your seed and a destination address.
 
-    const seed =
-        '..!!! REPLACE THIS WITH YOUR SEED !!! ..'; // wallet seed `word1 word2 word3 ... word24`
+    // the seed is not sent to the network, it is used to sign messages locally.
+
+    const seed = '..!!! REPLACE THIS WITH YOUR SEED !!! ..'; // wallet seed `word1 word2 word3 ... word24`
     const destination = Address.parse('..!!! REPLACE THIS WITH A CORRECT DESTINATION !!!..'); // replace with a correct recipient address
     const usdtMaster = Address.parse('EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs'); // USDt jetton master.
 
@@ -37,7 +46,10 @@ const main = async () => {
 
     const keyPair = await mnemonicToPrivateKey(seed.split(' '));
     const workchain = 0;
-    const wallet = WalletContractV5R1.create({ workchain, publicKey: keyPair.publicKey });
+    const wallet = WalletContractV5R1.create({
+        workchain,
+        publicKey: keyPair.publicKey
+    });
     const contract = provider.open(wallet);
 
     console.log('Wallet address:', wallet.address.toString());
@@ -49,11 +61,12 @@ const main = async () => {
             args: [wallet.address.toRawString()]
         }
     );
+
     const jettonWallet = Address.parse(jettonWalletAddressResult.decoded.jettonWalletAddress);
 
     // we use USDt in this example,
-	// so we just print all supported gas jettons and get the relay address.
-	// we have to send excess to the relay address in order to make a transfer cheaper.
+    // so we just print all supported gas jettons and get the relay address.
+    // we have to send excess to the relay address in order to make a transfer cheaper.
     const relayerAddress = await printConfigAndReturnRelayAddress();
 
     // Create payload for jetton transfer
@@ -82,17 +95,13 @@ const main = async () => {
         .endCell();
 
     // we send a single message containing a transfer from our wallet to a desired destination.
-	// as a result of estimation, TonAPI returns a list of messages that we need to sign.
-	// the first message is a fee transfer to the relay address, the second message is our original transfer.
+    // as a result of estimation, TonAPI returns a list of messages that we need to sign.
+    // the first message is a fee transfer to the relay address, the second message is our original transfer.
     const params = await ta.gasless.gaslessEstimate(usdtMaster, {
         walletAddress: wallet.address,
         walletPublicKey: keyPair.publicKey.toString('hex'),
-        messages: [
-            {
-                boc: messageToEstimate
-            }
-        ]
-    }); // .catch(res => res.json().then(console.error));
+        messages: [{ boc: messageToEstimate }]
+    }); //.catch(error => console.error(error));
 
     console.log('Estimated transfer:', params);
 
@@ -133,7 +142,7 @@ const main = async () => {
             boc: extMessage
         })
         .then(() => console.log('A gasless transfer sent!'))
-        .catch(res => res.json().then(console.error));
+        .catch(error => console.error(error.message));
 };
 
 async function printConfigAndReturnRelayAddress(): Promise<Address> {
