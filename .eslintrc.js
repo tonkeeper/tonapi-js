@@ -1,10 +1,10 @@
 module.exports = {
     root: true,
     ignorePatterns: ['**/*.js'],
+    parser: '@typescript-eslint/parser',
     overrides: [
         {
             files: ['src/**/*.ts', 'src/**/*.tsx'],
-            parser: '@typescript-eslint/parser',
             parserOptions: {
                 project: './tsconfig.base.json',
                 tsconfigRootDir: __dirname,
@@ -95,7 +95,6 @@ module.exports = {
         },
         {
             files: ['tests/**/*.ts'],
-            parser: '@typescript-eslint/parser',
             parserOptions: {
                 project: './packages/*/tsconfig.test.json',
                 tsconfigRootDir: __dirname,
