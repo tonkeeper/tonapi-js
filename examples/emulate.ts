@@ -14,10 +14,13 @@ const emulateTransaction = async () => {
     const senderAddress = Address.parse('UQAQxxpzxmEVU0Lu8U0zNTxBzXIWPvo263TIN1OQM9YvxsnV');
 
     const { seqno } = await client.wallet.getAccountSeqno(senderAddress);
-    const { public_key } = await client.accounts.getAccountPublicKey(senderAddress); // FIX: undefined
+    
+    // @ts-ignore 
+    // FIXME: Update generator to produce the correct interface.
+    const { publicKey: publicKeyHex } = await client.accounts.getAccountPublicKey(senderAddress); 
 
     const workchain = 0;
-    const publicKey = Buffer.from(public_key, 'hex');
+    const publicKey = Buffer.from(publicKeyHex, 'hex');
 
     const wallet = WalletContractV4.create({ workchain, publicKey });
 
