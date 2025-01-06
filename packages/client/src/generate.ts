@@ -140,6 +140,14 @@ const generateApiParams: GenerateApiParams = {
             return typeName === 'TvmStackRecord' ? 'TupleItem' : typeName;
         },
         onPreParseSchema(originalSchema) {
+            if (originalSchema.type === 'array' && originalSchema.prefixItems) {
+                const { prefixItems, ...rest } = originalSchema
+                return {
+                    ...rest,
+                    items: prefixItems
+                }
+            }
+
             return {
                 ...originalSchema,
                 format: originalSchema['x-js-format'] ?? originalSchema.format
