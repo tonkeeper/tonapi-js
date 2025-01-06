@@ -71,7 +71,7 @@ const describeReturnType = () => !config.toJS ? '' : `Promise<HttpResponse<${typ
 
 const reducedPathParams = addressType.map((name) => `const ${name} = ${getNameAddressFromId(name)}.toRawString();`).join('\n');
 
-const rawSchema = responseBodyInfo.success.schema.content?.['application/json'].schema;
+const rawSchema = responseBodyInfo.success.schema.content?.['application/json']?.schema;
 const schemaTmpl = rawSchema ? `, ${JSON.stringify(utils.clearSchemaReferenceInformation(rawSchema))}` : '';
 
 const rawRequestBody = route.raw.requestBody;
