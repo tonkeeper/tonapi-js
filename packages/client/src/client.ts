@@ -265,6 +265,7 @@ export interface Message {
      * @example 60000000
      */
     value: bigint;
+    valueExtra?: ExtraCurrency[];
     /**
      * @format bigint
      * @example 5681002
@@ -930,6 +931,7 @@ export interface Account {
      * @example 123456789
      */
     balance: bigint;
+    extraBalance?: ExtraCurrency[];
     /**
      * {'USD': 1, 'IDR': 1000}
      * @example {}
@@ -1423,6 +1425,8 @@ export interface JettonPreview {
     image: string;
     verification: JettonVerificationType;
     customPayloadApiUri?: string;
+    /** @format int32 */
+    score?: number;
 }
 
 export interface JettonBalance {
@@ -1613,6 +1617,12 @@ export interface ValueFlow {
         jetton: JettonPreview;
         /**
          * @format bigint
+         * @example "200"
+         */
+        qty: bigint;
+        /**
+         * @deprecated
+         * @format bigint
          * @example 10
          */
         quantity: bigint;
@@ -1623,6 +1633,7 @@ export interface Action {
     /** @example "TonTransfer" */
     type:
         | 'TonTransfer'
+        | 'ExtraCurrencyTransfer'
         | 'JettonTransfer'
         | 'JettonBurn'
         | 'JettonMint'
@@ -1646,6 +1657,7 @@ export interface Action {
     /** @example "ok" */
     status: 'ok' | 'failed';
     TonTransfer?: TonTransferAction;
+    ExtraCurrencyTransfer?: ExtraCurrencyTransferAction;
     ContractDeploy?: ContractDeployAction;
     JettonTransfer?: JettonTransferAction;
     JettonBurn?: JettonBurnAction;
@@ -1689,6 +1701,38 @@ export interface TonTransferAction {
     comment?: string;
     encryptedComment?: EncryptedComment;
     refund?: Refund;
+}
+
+export interface EcPreview {
+    /**
+     * @format int32
+     * @example 239
+     */
+    id: number;
+    /** @example "FMS" */
+    symbol: string;
+    /** @example 5 */
+    decimals: number;
+    /** @example "https://cache.tonapi.io/images/extra.jpg" */
+    image: string;
+}
+
+export interface ExtraCurrencyTransferAction {
+    sender: AccountAddress;
+    recipient: AccountAddress;
+    /**
+     * amount in quanta of tokens
+     * @format bigint
+     * @example "1000000000"
+     */
+    amount: bigint;
+    /**
+     * @example "Hi! This is your salary.
+     * From accounting with love."
+     */
+    comment?: string;
+    encryptedComment?: EncryptedComment;
+    currency: EcPreview;
 }
 
 export interface SmartContractAction {
@@ -2428,6 +2472,8 @@ export interface JettonInfo {
      * @example 2000
      */
     holdersCount: number;
+    /** @format int32 */
+    score?: number;
 }
 
 export interface JettonHolders {
@@ -2629,7 +2675,7 @@ export interface DnsExpiring {
     }[];
 }
 
-/** @example [1668436763,97.21323234] */
+/** @example [[1668436763,97.21323234]] */
 export type ChartPoints = [number, number];
 
 export interface AccountInfoByStateInit {
@@ -2689,13 +2735,9 @@ export interface BlockchainAccountInspect {
     /** @format cell */
     code: Cell;
     codeHash: string;
-    methods: {
-        /** @format int64 */
-        id: number;
-        /** @example "get_something" */
-        method: string;
-    }[];
-    compiler?: 'func';
+    methods: Method[];
+    compiler: 'func' | 'fift' | 'tact';
+    source?: Source;
 }
 
 export enum PoolImplementationType {
@@ -2725,6 +2767,37 @@ export interface MarketTonRates {
      * @example 1668436763
      */
     lastDateUpdate: number;
+}
+
+export interface ExtraCurrency {
+    /**
+     * @format bigint
+     * @example "1000000000"
+     */
+    amount: bigint;
+    preview: EcPreview;
+}
+
+export interface SourceFile {
+    name: string;
+    content: string;
+    /** @example false */
+    isEntrypoint: boolean;
+    /** @example false */
+    isStdLib: boolean;
+    /** @example false */
+    includeInCommand: boolean;
+}
+
+export interface Source {
+    files: SourceFile[];
+}
+
+export interface Method {
+    /** @format int64 */
+    id: number;
+    /** @example "get_something" */
+    method: string;
 }
 
 export type QueryParamsType = Record<string | number, any>;
@@ -3228,6 +3301,7 @@ const components = {
             bounce: { type: 'boolean' },
             bounced: { type: 'boolean' },
             value: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            value_extra: { type: 'array', items: { $ref: '#/components/schemas/ExtraCurrency' } },
             fwd_fee: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             ihr_fee: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             destination: { $ref: '#/components/schemas/AccountAddress' },
@@ -3674,6 +3748,7 @@ const components = {
         properties: {
             address: { type: 'string', format: 'address' },
             balance: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            extra_balance: { type: 'array', items: { $ref: '#/components/schemas/ExtraCurrency' } },
             currencies_balance: { type: 'object', additionalProperties: true },
             last_activity: { type: 'integer', format: 'int64' },
             status: { $ref: '#/components/schemas/AccountStatus' },
@@ -4130,7 +4205,8 @@ const components = {
             decimals: { type: 'integer' },
             image: { type: 'string' },
             verification: { $ref: '#/components/schemas/JettonVerificationType' },
-            custom_payload_api_uri: { type: 'string' }
+            custom_payload_api_uri: { type: 'string' },
+            score: { type: 'integer', format: 'int32' }
         }
     },
     '#/components/schemas/JettonBalance': {
@@ -4292,11 +4368,17 @@ const components = {
                 type: 'array',
                 items: {
                     type: 'object',
-                    required: ['account', 'quantity', 'jetton'],
+                    required: ['account', 'qty', 'quantity', 'jetton'],
                     properties: {
                         account: { $ref: '#/components/schemas/AccountAddress' },
                         jetton: { $ref: '#/components/schemas/JettonPreview' },
-                        quantity: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' }
+                        qty: { type: 'string', 'x-js-format': 'bigint' },
+                        quantity: {
+                            type: 'integer',
+                            deprecated: true,
+                            format: 'int64',
+                            'x-js-format': 'bigint'
+                        }
                     }
                 }
             }
@@ -4310,6 +4392,7 @@ const components = {
                 type: 'string',
                 enum: [
                     'TonTransfer',
+                    'ExtraCurrencyTransfer',
                     'JettonTransfer',
                     'JettonBurn',
                     'JettonMint',
@@ -4334,6 +4417,7 @@ const components = {
             },
             status: { type: 'string', enum: ['ok', 'failed'] },
             TonTransfer: { $ref: '#/components/schemas/TonTransferAction' },
+            ExtraCurrencyTransfer: { $ref: '#/components/schemas/ExtraCurrencyTransferAction' },
             ContractDeploy: { $ref: '#/components/schemas/ContractDeployAction' },
             JettonTransfer: { $ref: '#/components/schemas/JettonTransferAction' },
             JettonBurn: { $ref: '#/components/schemas/JettonBurnAction' },
@@ -4367,6 +4451,28 @@ const components = {
             comment: { type: 'string' },
             encrypted_comment: { $ref: '#/components/schemas/EncryptedComment' },
             refund: { $ref: '#/components/schemas/Refund' }
+        }
+    },
+    '#/components/schemas/EcPreview': {
+        type: 'object',
+        required: ['id', 'symbol', 'decimals', 'image'],
+        properties: {
+            id: { type: 'integer', format: 'int32' },
+            symbol: { type: 'string' },
+            decimals: { type: 'integer' },
+            image: { type: 'string' }
+        }
+    },
+    '#/components/schemas/ExtraCurrencyTransferAction': {
+        type: 'object',
+        required: ['sender', 'recipient', 'amount', 'currency'],
+        properties: {
+            sender: { $ref: '#/components/schemas/AccountAddress' },
+            recipient: { $ref: '#/components/schemas/AccountAddress' },
+            amount: { type: 'string', 'x-js-format': 'bigint' },
+            comment: { type: 'string' },
+            encrypted_comment: { $ref: '#/components/schemas/EncryptedComment' },
+            currency: { $ref: '#/components/schemas/EcPreview' }
         }
     },
     '#/components/schemas/SmartContractAction': {
@@ -4946,7 +5052,8 @@ const components = {
             metadata: { $ref: '#/components/schemas/JettonMetadata' },
             preview: { type: 'string' },
             verification: { $ref: '#/components/schemas/JettonVerificationType' },
-            holders_count: { type: 'integer', format: 'int32' }
+            holders_count: { type: 'integer', format: 'int32' },
+            score: { type: 'integer', format: 'int32' }
         }
     },
     '#/components/schemas/JettonHolders': {
@@ -5093,8 +5200,12 @@ const components = {
     },
     '#/components/schemas/ChartPoints': {
         type: 'array',
+        prefixItems: [
+            { type: 'integer', format: 'int64', description: 'Unix timestamp of the data point' },
+            { type: 'number', description: 'Decimal price of the token in the requested currency' }
+        ],
         additionalItems: false,
-        items: { '0': { type: 'integer', format: 'int64' }, '1': { type: 'number' } }
+        items: false
     },
     '#/components/schemas/AccountInfoByStateInit': {
         type: 'object',
@@ -5136,22 +5247,13 @@ const components = {
     },
     '#/components/schemas/BlockchainAccountInspect': {
         type: 'object',
-        required: ['code', 'code_hash', 'methods'],
+        required: ['code', 'code_hash', 'methods', 'compiler'],
         properties: {
             code: { type: 'string', format: 'cell' },
             code_hash: { type: 'string' },
-            methods: {
-                type: 'array',
-                items: {
-                    type: 'object',
-                    required: ['id', 'method'],
-                    properties: {
-                        id: { type: 'integer', format: 'int64' },
-                        method: { type: 'string' }
-                    }
-                }
-            },
-            compiler: { type: 'string', enum: ['func'] }
+            methods: { type: 'array', items: { $ref: '#/components/schemas/Method' } },
+            compiler: { type: 'string', enum: ['func', 'fift', 'tact'] },
+            source: { $ref: '#/components/schemas/Source' }
         }
     },
     '#/components/schemas/PoolImplementationType': {
@@ -5175,6 +5277,35 @@ const components = {
             usd_price: { type: 'number' },
             last_date_update: { type: 'integer', format: 'int64' }
         }
+    },
+    '#/components/schemas/ExtraCurrency': {
+        type: 'object',
+        required: ['amount', 'preview'],
+        properties: {
+            amount: { type: 'string', 'x-js-format': 'bigint' },
+            preview: { $ref: '#/components/schemas/EcPreview' }
+        }
+    },
+    '#/components/schemas/SourceFile': {
+        type: 'object',
+        required: ['name', 'content', 'is_entrypoint', 'is_std_lib', 'include_in_command'],
+        properties: {
+            name: { type: 'string' },
+            content: { type: 'string' },
+            is_entrypoint: { type: 'boolean' },
+            is_std_lib: { type: 'boolean' },
+            include_in_command: { type: 'boolean' }
+        }
+    },
+    '#/components/schemas/Source': {
+        type: 'object',
+        required: ['files'],
+        properties: { files: { type: 'array', items: { $ref: '#/components/schemas/SourceFile' } } }
+    },
+    '#/components/schemas/Method': {
+        type: 'object',
+        required: ['id', 'method'],
+        properties: { id: { type: 'integer', format: 'int64' }, method: { type: 'string' } }
     }
 };
 type ComponentRef = keyof typeof components;
@@ -5385,6 +5516,41 @@ export class TonApiClient {
     }
 
     utilities = {
+        /**
+         * @description Get the openapi.json file
+         *
+         * @tags Utilities
+         * @name GetOpenapiJson
+         * @request GET:/v2/openapi.json
+         */
+        getOpenapiJson: (params: RequestParams = {}) => {
+            const req = this.http.request<any, Error>({
+                path: `/v2/openapi.json`,
+                method: 'GET',
+                format: 'json',
+                ...params
+            });
+
+            return prepareResponse<any>(req, {});
+        },
+
+        /**
+         * @description Get the openapi.yml file
+         *
+         * @tags Utilities
+         * @name GetOpenapiYml
+         * @request GET:/v2/openapi.yml
+         */
+        getOpenapiYml: (params: RequestParams = {}) => {
+            const req = this.http.request<File, Error>({
+                path: `/v2/openapi.yml`,
+                method: 'GET',
+                ...params
+            });
+
+            return prepareResponse<File>(req);
+        },
+
         /**
          * @description Status
          *
@@ -5820,6 +5986,14 @@ export class TonApiClient {
                  * @example ["0:9a33970f617bcd71acf2cd28357c067aa31859c02820d8f01d74c88063a8f4d8"]
                  */
                 args?: string[];
+                /**
+                 * A temporary fix to switch to a scheme with direct ordering of arguments.
+                 * If equal to false, then the method takes arguments in direct order,
+                 * e.g. for get_nft_content(int index, cell individual_content) we pass a list of arguments [index, individual_content].
+                 * If equal to true, then the method takes arguments in reverse order, e.g. [individual_content, index].
+                 * @default true
+                 */
+                fix_order?: boolean;
             },
             params: RequestParams = {}
         ) => {
@@ -5850,6 +6024,7 @@ export class TonApiClient {
                 boc?: Cell;
                 /** @maxItems 10 */
                 batch?: Cell[];
+                meta?: Record<string, string>;
             },
             params: RequestParams = {}
         ) => {
@@ -5864,7 +6039,8 @@ export class TonApiClient {
                             type: 'array',
                             maxItems: 10,
                             items: { type: 'string', format: 'cell' }
-                        }
+                        },
+                        meta: { type: 'object', additionalProperties: { type: 'string' } }
                     }
                 }),
                 ...params
