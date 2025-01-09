@@ -145,10 +145,12 @@ test('Client post method in fetch', async () => {
     ];
     fetchMock.mockResponseOnce(getAccounts);
 
-    const res = await ta.accounts.getAccounts({ accountIds: accountIds.map(id => Address.parse(id)) });
+    const res = await ta.accounts.getAccounts({
+        accountIds: accountIds.map(id => Address.parse(id))
+    });
 
     expect(res).toBeDefined();
-    
+
     expect(fetchMock).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({
@@ -156,5 +158,20 @@ test('Client post method in fetch', async () => {
         })
     );
 
+    fetchMock.disableMocks();
+});
+
+test('Client resopnse type for schema outside component (with snace_case)', async () => {
+    fetchMock.enableMocks();
+    fetchMock.mockResponseOnce(
+        JSONStringify({
+            public_key: '9544d2cccdd17e06e27f14fd531f803378d27f64710fd6aadc418c53d0660ec6'
+        })
+    );
+    const senderAddress = Address.parse('UQAQxxpzxmEVU0Lu8U0zNTxBzXIWPvo263TIN1OQM9YvxsnV');
+    const res = await ta.accounts.getAccountPublicKey(senderAddress);
+
+    expect(res).toBeDefined();
+    expect(res.publicKey).toBe('9544d2cccdd17e06e27f14fd531f803378d27f64710fd6aadc418c53d0660ec6');
     fetchMock.disableMocks();
 });

@@ -265,6 +265,7 @@ export interface Message {
      * @example 60000000
      */
     value: bigint;
+    valueExtra?: ExtraCurrency[];
     /**
      * @format bigint
      * @example 5681002
@@ -930,6 +931,7 @@ export interface Account {
      * @example 123456789
      */
     balance: bigint;
+    extraBalance?: ExtraCurrency[];
     /**
      * {'USD': 1, 'IDR': 1000}
      * @example {}
@@ -1423,6 +1425,8 @@ export interface JettonPreview {
     image: string;
     verification: JettonVerificationType;
     customPayloadApiUri?: string;
+    /** @format int32 */
+    score?: number;
 }
 
 export interface JettonBalance {
@@ -1613,6 +1617,12 @@ export interface ValueFlow {
         jetton: JettonPreview;
         /**
          * @format bigint
+         * @example "200"
+         */
+        qty: bigint;
+        /**
+         * @deprecated
+         * @format bigint
          * @example 10
          */
         quantity: bigint;
@@ -1623,6 +1633,7 @@ export interface Action {
     /** @example "TonTransfer" */
     type:
         | 'TonTransfer'
+        | 'ExtraCurrencyTransfer'
         | 'JettonTransfer'
         | 'JettonBurn'
         | 'JettonMint'
@@ -1646,6 +1657,7 @@ export interface Action {
     /** @example "ok" */
     status: 'ok' | 'failed';
     TonTransfer?: TonTransferAction;
+    ExtraCurrencyTransfer?: ExtraCurrencyTransferAction;
     ContractDeploy?: ContractDeployAction;
     JettonTransfer?: JettonTransferAction;
     JettonBurn?: JettonBurnAction;
@@ -1689,6 +1701,38 @@ export interface TonTransferAction {
     comment?: string;
     encryptedComment?: EncryptedComment;
     refund?: Refund;
+}
+
+export interface EcPreview {
+    /**
+     * @format int32
+     * @example 239
+     */
+    id: number;
+    /** @example "FMS" */
+    symbol: string;
+    /** @example 5 */
+    decimals: number;
+    /** @example "https://cache.tonapi.io/images/extra.jpg" */
+    image: string;
+}
+
+export interface ExtraCurrencyTransferAction {
+    sender: AccountAddress;
+    recipient: AccountAddress;
+    /**
+     * amount in quanta of tokens
+     * @format bigint
+     * @example "1000000000"
+     */
+    amount: bigint;
+    /**
+     * @example "Hi! This is your salary.
+     * From accounting with love."
+     */
+    comment?: string;
+    encryptedComment?: EncryptedComment;
+    currency: EcPreview;
 }
 
 export interface SmartContractAction {
@@ -2428,6 +2472,8 @@ export interface JettonInfo {
      * @example 2000
      */
     holdersCount: number;
+    /** @format int32 */
+    score?: number;
 }
 
 export interface JettonHolders {
@@ -2629,7 +2675,7 @@ export interface DnsExpiring {
     }[];
 }
 
-/** @example [1668436763,97.21323234] */
+/** @example [[1668436763,97.21323234]] */
 export type ChartPoints = [number, number];
 
 export interface AccountInfoByStateInit {
@@ -2689,13 +2735,9 @@ export interface BlockchainAccountInspect {
     /** @format cell */
     code: Cell;
     codeHash: string;
-    methods: {
-        /** @format int64 */
-        id: number;
-        /** @example "get_something" */
-        method: string;
-    }[];
-    compiler?: 'func';
+    methods: Method[];
+    compiler: 'func' | 'fift' | 'tact';
+    source?: Source;
 }
 
 export enum PoolImplementationType {
@@ -2726,6 +2768,481 @@ export interface MarketTonRates {
      */
     lastDateUpdate: number;
 }
+
+export interface ExtraCurrency {
+    /**
+     * @format bigint
+     * @example "1000000000"
+     */
+    amount: bigint;
+    preview: EcPreview;
+}
+
+export interface SourceFile {
+    name: string;
+    content: string;
+    /** @example false */
+    isEntrypoint: boolean;
+    /** @example false */
+    isStdLib: boolean;
+    /** @example false */
+    includeInCommand: boolean;
+}
+
+export interface Source {
+    files: SourceFile[];
+}
+
+export interface Method {
+    /** @format int64 */
+    id: number;
+    /** @example "get_something" */
+    method: string;
+}
+
+export type GetOpenapiJsonData = any;
+
+/** @format binary */
+export type GetOpenapiYmlData = File;
+
+export type StatusData = ServiceStatus;
+
+export type GetReducedBlockchainBlocksData = ReducedBlocks;
+
+export type GetBlockchainBlockData = BlockchainBlock;
+
+export type GetBlockchainMasterchainShardsData = BlockchainBlockShards;
+
+export type GetBlockchainMasterchainBlocksData = BlockchainBlocks;
+
+export type GetBlockchainMasterchainTransactionsData = Transactions;
+
+export type GetBlockchainConfigFromBlockData = BlockchainConfig;
+
+export type GetRawBlockchainConfigFromBlockData = RawBlockchainConfig;
+
+export type GetBlockchainBlockTransactionsData = Transactions;
+
+export type GetBlockchainTransactionData = Transaction;
+
+export type GetBlockchainTransactionByMessageHashData = Transaction;
+
+export type GetBlockchainValidatorsData = Validators;
+
+export type GetBlockchainMasterchainHeadData = BlockchainBlock;
+
+export type GetBlockchainRawAccountData = BlockchainRawAccount;
+
+export type GetBlockchainAccountTransactionsData = Transactions;
+
+export type ExecGetMethodForBlockchainAccountData = MethodExecutionResult;
+
+export type SendBlockchainMessageData = any;
+
+export type GetBlockchainConfigData = BlockchainConfig;
+
+export type GetRawBlockchainConfigData = RawBlockchainConfig;
+
+export type BlockchainAccountInspectData = BlockchainAccountInspect;
+
+export interface AddressParseData {
+    /**
+     * @format address
+     * @example "0:6e731f2e28b73539a7f85ac47ca104d5840b229351189977bb6151d36b5e3f5e"
+     */
+    rawForm: Address;
+    bounceable: {
+        b64: string;
+        b64url: string;
+    };
+    nonBounceable: {
+        b64: string;
+        b64url: string;
+    };
+    givenType: string;
+    testOnly: boolean;
+}
+
+export type GetAccountsData = Accounts;
+
+export type GetAccountData = Account;
+
+export type AccountDnsBackResolveData = DomainNames;
+
+export type GetAccountJettonsBalancesData = JettonsBalances;
+
+export type GetAccountJettonBalanceData = JettonBalance;
+
+export type GetAccountJettonsHistoryData = AccountEvents;
+
+export type GetAccountJettonHistoryByIdData = AccountEvents;
+
+export type GetAccountNftItemsData = NftItems;
+
+export type GetAccountNftHistoryData = AccountEvents;
+
+export type GetAccountEventsData = AccountEvents;
+
+export type GetAccountEventData = AccountEvent;
+
+export type GetAccountTracesData = TraceIDs;
+
+export type GetAccountSubscriptionsData = Subscriptions;
+
+export type ReindexAccountData = any;
+
+export type SearchAccountsData = FoundAccounts;
+
+export type GetAccountDnsExpiringData = DnsExpiring;
+
+export interface GetAccountPublicKeyData {
+    /** @example "NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODQ3..." */
+    publicKey: string;
+}
+
+export type GetAccountMultisigsData = Multisigs;
+
+export interface GetAccountDiffData {
+    /**
+     * @format int64
+     * @example 1000000000
+     */
+    balanceChange: number;
+}
+
+export type GetDnsInfoData = DomainInfo;
+
+export type DnsResolveData = DnsRecord;
+
+export type GetDomainBidsData = DomainBids;
+
+export type GetAllAuctionsData = Auctions;
+
+export type GetNftCollectionsData = NftCollections;
+
+export type GetNftCollectionData = NftCollection;
+
+export type GetNftCollectionItemsByAddressesData = NftCollections;
+
+export type GetItemsFromCollectionData = NftItems;
+
+export type GetNftItemsByAddressesData = NftItems;
+
+export type GetNftItemByAddressData = NftItem;
+
+export type GetNftHistoryByIdData = AccountEvents;
+
+export type GetTraceData = Trace;
+
+export type GetEventData = Event;
+
+export type GetAccountInscriptionsData = InscriptionBalances;
+
+export type GetAccountInscriptionsHistoryData = AccountEvents;
+
+export type GetAccountInscriptionsHistoryByTickerData = AccountEvents;
+
+export interface GetInscriptionOpTemplateData {
+    /** @example "comment" */
+    comment: string;
+    /** @example "0:0000000000000" */
+    destination: string;
+}
+
+export type GetJettonsData = Jettons;
+
+export type GetJettonInfoData = JettonInfo;
+
+export type GetJettonInfosByAddressesData = Jettons;
+
+export type GetJettonHoldersData = JettonHolders;
+
+export type GetJettonTransferPayloadData = JettonTransferPayload;
+
+export type GetJettonsEventsData = Event;
+
+export type GetAccountNominatorsPoolsData = AccountStaking;
+
+export interface GetStakingPoolInfoData {
+    implementation: PoolImplementation;
+    pool: PoolInfo;
+}
+
+export interface GetStakingPoolHistoryData {
+    apy: ApyHistory[];
+}
+
+export interface GetStakingPoolsData {
+    pools: PoolInfo[];
+    implementations: Record<string, PoolImplementation>;
+}
+
+export interface GetStorageProvidersData {
+    providers: StorageProvider[];
+}
+
+export interface GetRatesData {
+    rates: Record<string, TokenRates>;
+}
+
+export interface GetChartRatesData {
+    points: ChartPoints[];
+}
+
+export interface GetMarketsRatesData {
+    markets: MarketTonRates[];
+}
+
+export interface GetTonConnectPayloadData {
+    /** @example "84jHVNLQmZsAAAAAZB0Zryi2wqVJI-KaKNXOvCijEi46YyYzkaSHyJrMPBMOkVZa" */
+    payload: string;
+}
+
+export type GetAccountInfoByStateInitData = AccountInfoByStateInit;
+
+export interface TonConnectProofData {
+    /** @example "NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODQ3..." */
+    token: string;
+}
+
+export type GetAccountSeqnoData = Seqno;
+
+export type GaslessConfigData = GaslessConfig;
+
+export type GaslessEstimateData = SignRawParams;
+
+export type GaslessSendData = any;
+
+export type GetWalletsByPublicKeyData = Accounts;
+
+export interface GetRawMasterchainInfoData {
+    last: BlockRaw;
+    /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
+    stateRootHash: string;
+    init: InitStateRaw;
+}
+
+export interface GetRawMasterchainInfoExtData {
+    /**
+     * @format int32
+     * @example 0
+     */
+    mode: number;
+    /**
+     * @format int32
+     * @example 257
+     */
+    version: number;
+    /**
+     * @format int64
+     * @example 7
+     */
+    capabilities: number;
+    last: BlockRaw;
+    /**
+     * @format int32
+     * @example 1687938199
+     */
+    lastUtime: number;
+    /**
+     * @format int32
+     * @example 1687938204
+     */
+    now: number;
+    /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
+    stateRootHash: string;
+    init: InitStateRaw;
+}
+
+export interface GetRawTimeData {
+    /**
+     * @format int32
+     * @example 1687146728
+     */
+    time: number;
+}
+
+export interface GetRawBlockchainBlockData {
+    id: BlockRaw;
+    /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
+    data: string;
+}
+
+export interface GetRawBlockchainBlockStateData {
+    id: BlockRaw;
+    /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
+    rootHash: string;
+    /** @example "A6A0BD6608672B11B79538A50B2204E748305C12AA0DED9C16CF0006CE3AF8DB" */
+    fileHash: string;
+    /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
+    data: string;
+}
+
+export interface GetRawBlockchainBlockHeaderData {
+    id: BlockRaw;
+    /**
+     * @format int32
+     * @example 0
+     */
+    mode: number;
+    /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
+    headerProof: string;
+}
+
+export interface SendRawMessageData {
+    /**
+     * @format int32
+     * @example 200
+     */
+    code: number;
+}
+
+export interface GetRawAccountStateData {
+    id: BlockRaw;
+    shardblk: BlockRaw;
+    /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
+    shardProof: string;
+    /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
+    proof: string;
+    /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
+    state: string;
+}
+
+export interface GetRawShardInfoData {
+    id: BlockRaw;
+    shardblk: BlockRaw;
+    /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
+    shardProof: string;
+    /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
+    shardDescr: string;
+}
+
+export interface GetAllRawShardsInfoData {
+    id: BlockRaw;
+    /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
+    proof: string;
+    /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
+    data: string;
+}
+
+export interface GetRawTransactionsData {
+    ids: BlockRaw[];
+    /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
+    transactions: string;
+}
+
+export interface GetRawListBlockTransactionsData {
+    id: BlockRaw;
+    /**
+     * @format int32
+     * @example 100
+     */
+    reqCount: number;
+    /** @example true */
+    incomplete: boolean;
+    ids: {
+        /**
+         * @format int32
+         * @example 0
+         */
+        mode: number;
+        /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
+        account?: string;
+        /** @format bigint */
+        lt?: bigint;
+        /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
+        hash?: string;
+    }[];
+    /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
+    proof: string;
+}
+
+export interface GetRawBlockProofData {
+    /** @example true */
+    complete: boolean;
+    from: BlockRaw;
+    to: BlockRaw;
+    steps: {
+        lite_server_block_link_back: {
+            /** @example false */
+            to_key_block: boolean;
+            from: BlockRaw;
+            to: BlockRaw;
+            /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
+            dest_proof: string;
+            /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
+            proof: string;
+            /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
+            state_proof: string;
+        };
+        lite_server_block_link_forward: {
+            /** @example false */
+            to_key_block: boolean;
+            from: BlockRaw;
+            to: BlockRaw;
+            /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
+            dest_proof: string;
+            /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
+            config_proof: string;
+            signatures: {
+                /** @format int64 */
+                validator_set_hash: number;
+                /** @format int32 */
+                catchain_seqno: number;
+                signatures: {
+                    /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
+                    node_id_short: string;
+                    /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
+                    signature: string;
+                }[];
+            };
+        };
+    }[];
+}
+
+export interface GetRawConfigData {
+    /**
+     * @format int32
+     * @example 0
+     */
+    mode: number;
+    id: BlockRaw;
+    /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
+    stateProof: string;
+    /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
+    configProof: string;
+}
+
+export interface GetRawShardBlockProofData {
+    masterchainId: BlockRaw;
+    links: {
+        id: BlockRaw;
+        /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
+        proof: string;
+    }[];
+}
+
+export interface GetOutMsgQueueSizesData {
+    /** @format uint32 */
+    extMsgQueueSizeLimit: number;
+    shards: {
+        id: BlockRaw;
+        /** @format uint32 */
+        size: number;
+    }[];
+}
+
+export type GetMultisigAccountData = Multisig;
+
+export type DecodeMessageData = DecodedMessage;
+
+export type EmulateMessageToEventData = Event;
+
+export type EmulateMessageToTraceData = Trace;
+
+export type EmulateMessageToWalletData = MessageConsequences;
+
+export type EmulateMessageToAccountEventData = AccountEvent;
 
 export type QueryParamsType = Record<string | number, any>;
 export type ResponseFormat = keyof Omit<Body, 'body' | 'bodyUsed'>;
@@ -2837,7 +3354,7 @@ class HttpClient {
         const headers = {
             ...(baseApiParams.headers ?? {}),
             ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
-            'x-tonapi-client': `tonapi-js@0.3.0`
+            'x-tonapi-client': `tonapi-js@0.3.1`
         };
 
         const preparedApiConfig = {
@@ -3228,6 +3745,7 @@ const components = {
             bounce: { type: 'boolean' },
             bounced: { type: 'boolean' },
             value: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            value_extra: { type: 'array', items: { $ref: '#/components/schemas/ExtraCurrency' } },
             fwd_fee: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             ihr_fee: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             destination: { $ref: '#/components/schemas/AccountAddress' },
@@ -3674,6 +4192,7 @@ const components = {
         properties: {
             address: { type: 'string', format: 'address' },
             balance: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            extra_balance: { type: 'array', items: { $ref: '#/components/schemas/ExtraCurrency' } },
             currencies_balance: { type: 'object', additionalProperties: true },
             last_activity: { type: 'integer', format: 'int64' },
             status: { $ref: '#/components/schemas/AccountStatus' },
@@ -4130,7 +4649,8 @@ const components = {
             decimals: { type: 'integer' },
             image: { type: 'string' },
             verification: { $ref: '#/components/schemas/JettonVerificationType' },
-            custom_payload_api_uri: { type: 'string' }
+            custom_payload_api_uri: { type: 'string' },
+            score: { type: 'integer', format: 'int32' }
         }
     },
     '#/components/schemas/JettonBalance': {
@@ -4292,11 +4812,17 @@ const components = {
                 type: 'array',
                 items: {
                     type: 'object',
-                    required: ['account', 'quantity', 'jetton'],
+                    required: ['account', 'qty', 'quantity', 'jetton'],
                     properties: {
                         account: { $ref: '#/components/schemas/AccountAddress' },
                         jetton: { $ref: '#/components/schemas/JettonPreview' },
-                        quantity: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' }
+                        qty: { type: 'string', 'x-js-format': 'bigint' },
+                        quantity: {
+                            type: 'integer',
+                            deprecated: true,
+                            format: 'int64',
+                            'x-js-format': 'bigint'
+                        }
                     }
                 }
             }
@@ -4310,6 +4836,7 @@ const components = {
                 type: 'string',
                 enum: [
                     'TonTransfer',
+                    'ExtraCurrencyTransfer',
                     'JettonTransfer',
                     'JettonBurn',
                     'JettonMint',
@@ -4334,6 +4861,7 @@ const components = {
             },
             status: { type: 'string', enum: ['ok', 'failed'] },
             TonTransfer: { $ref: '#/components/schemas/TonTransferAction' },
+            ExtraCurrencyTransfer: { $ref: '#/components/schemas/ExtraCurrencyTransferAction' },
             ContractDeploy: { $ref: '#/components/schemas/ContractDeployAction' },
             JettonTransfer: { $ref: '#/components/schemas/JettonTransferAction' },
             JettonBurn: { $ref: '#/components/schemas/JettonBurnAction' },
@@ -4367,6 +4895,28 @@ const components = {
             comment: { type: 'string' },
             encrypted_comment: { $ref: '#/components/schemas/EncryptedComment' },
             refund: { $ref: '#/components/schemas/Refund' }
+        }
+    },
+    '#/components/schemas/EcPreview': {
+        type: 'object',
+        required: ['id', 'symbol', 'decimals', 'image'],
+        properties: {
+            id: { type: 'integer', format: 'int32' },
+            symbol: { type: 'string' },
+            decimals: { type: 'integer' },
+            image: { type: 'string' }
+        }
+    },
+    '#/components/schemas/ExtraCurrencyTransferAction': {
+        type: 'object',
+        required: ['sender', 'recipient', 'amount', 'currency'],
+        properties: {
+            sender: { $ref: '#/components/schemas/AccountAddress' },
+            recipient: { $ref: '#/components/schemas/AccountAddress' },
+            amount: { type: 'string', 'x-js-format': 'bigint' },
+            comment: { type: 'string' },
+            encrypted_comment: { $ref: '#/components/schemas/EncryptedComment' },
+            currency: { $ref: '#/components/schemas/EcPreview' }
         }
     },
     '#/components/schemas/SmartContractAction': {
@@ -4946,7 +5496,8 @@ const components = {
             metadata: { $ref: '#/components/schemas/JettonMetadata' },
             preview: { type: 'string' },
             verification: { $ref: '#/components/schemas/JettonVerificationType' },
-            holders_count: { type: 'integer', format: 'int32' }
+            holders_count: { type: 'integer', format: 'int32' },
+            score: { type: 'integer', format: 'int32' }
         }
     },
     '#/components/schemas/JettonHolders': {
@@ -5093,8 +5644,12 @@ const components = {
     },
     '#/components/schemas/ChartPoints': {
         type: 'array',
+        prefixItems: [
+            { type: 'integer', format: 'int64', description: 'Unix timestamp of the data point' },
+            { type: 'number', description: 'Decimal price of the token in the requested currency' }
+        ],
         additionalItems: false,
-        items: { '0': { type: 'integer', format: 'int64' }, '1': { type: 'number' } }
+        items: false
     },
     '#/components/schemas/AccountInfoByStateInit': {
         type: 'object',
@@ -5136,22 +5691,13 @@ const components = {
     },
     '#/components/schemas/BlockchainAccountInspect': {
         type: 'object',
-        required: ['code', 'code_hash', 'methods'],
+        required: ['code', 'code_hash', 'methods', 'compiler'],
         properties: {
             code: { type: 'string', format: 'cell' },
             code_hash: { type: 'string' },
-            methods: {
-                type: 'array',
-                items: {
-                    type: 'object',
-                    required: ['id', 'method'],
-                    properties: {
-                        id: { type: 'integer', format: 'int64' },
-                        method: { type: 'string' }
-                    }
-                }
-            },
-            compiler: { type: 'string', enum: ['func'] }
+            methods: { type: 'array', items: { $ref: '#/components/schemas/Method' } },
+            compiler: { type: 'string', enum: ['func', 'fift', 'tact'] },
+            source: { $ref: '#/components/schemas/Source' }
         }
     },
     '#/components/schemas/PoolImplementationType': {
@@ -5175,6 +5721,35 @@ const components = {
             usd_price: { type: 'number' },
             last_date_update: { type: 'integer', format: 'int64' }
         }
+    },
+    '#/components/schemas/ExtraCurrency': {
+        type: 'object',
+        required: ['amount', 'preview'],
+        properties: {
+            amount: { type: 'string', 'x-js-format': 'bigint' },
+            preview: { $ref: '#/components/schemas/EcPreview' }
+        }
+    },
+    '#/components/schemas/SourceFile': {
+        type: 'object',
+        required: ['name', 'content', 'is_entrypoint', 'is_std_lib', 'include_in_command'],
+        properties: {
+            name: { type: 'string' },
+            content: { type: 'string' },
+            is_entrypoint: { type: 'boolean' },
+            is_std_lib: { type: 'boolean' },
+            include_in_command: { type: 'boolean' }
+        }
+    },
+    '#/components/schemas/Source': {
+        type: 'object',
+        required: ['files'],
+        properties: { files: { type: 'array', items: { $ref: '#/components/schemas/SourceFile' } } }
+    },
+    '#/components/schemas/Method': {
+        type: 'object',
+        required: ['id', 'method'],
+        properties: { id: { type: 'integer', format: 'int64' }, method: { type: 'string' } }
     }
 };
 type ComponentRef = keyof typeof components;
@@ -5386,6 +5961,41 @@ export class TonApiClient {
 
     utilities = {
         /**
+         * @description Get the openapi.json file
+         *
+         * @tags Utilities
+         * @name GetOpenapiJson
+         * @request GET:/v2/openapi.json
+         */
+        getOpenapiJson: (params: RequestParams = {}) => {
+            const req = this.http.request<GetOpenapiJsonData, Error>({
+                path: `/v2/openapi.json`,
+                method: 'GET',
+                format: 'json',
+                ...params
+            });
+
+            return prepareResponse<GetOpenapiJsonData>(req, {});
+        },
+
+        /**
+         * @description Get the openapi.yml file
+         *
+         * @tags Utilities
+         * @name GetOpenapiYml
+         * @request GET:/v2/openapi.yml
+         */
+        getOpenapiYml: (params: RequestParams = {}) => {
+            const req = this.http.request<GetOpenapiYmlData, Error>({
+                path: `/v2/openapi.yml`,
+                method: 'GET',
+                ...params
+            });
+
+            return prepareResponse<GetOpenapiYmlData>(req);
+        },
+
+        /**
          * @description Status
          *
          * @tags Utilities
@@ -5393,16 +6003,14 @@ export class TonApiClient {
          * @request GET:/v2/status
          */
         status: (params: RequestParams = {}) => {
-            const req = this.http.request<ServiceStatus, Error>({
+            const req = this.http.request<StatusData, Error>({
                 path: `/v2/status`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<ServiceStatus>(req, {
-                $ref: '#/components/schemas/ServiceStatus'
-            });
+            return prepareResponse<StatusData>(req, { $ref: '#/components/schemas/ServiceStatus' });
         },
 
         /**
@@ -5414,49 +6022,14 @@ export class TonApiClient {
          */
         addressParse: (accountId_Address: Address, params: RequestParams = {}) => {
             const accountId = accountId_Address.toRawString();
-            const req = this.http.request<
-                {
-                    /**
-                     * @format address
-                     * @example "0:6e731f2e28b73539a7f85ac47ca104d5840b229351189977bb6151d36b5e3f5e"
-                     */
-                    raw_form: Address;
-                    bounceable: {
-                        b64: string;
-                        b64url: string;
-                    };
-                    non_bounceable: {
-                        b64: string;
-                        b64url: string;
-                    };
-                    given_type: string;
-                    test_only: boolean;
-                },
-                Error
-            >({
+            const req = this.http.request<AddressParseData, Error>({
                 path: `/v2/address/${accountId}/parse`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<{
-                /**
-                 * @format address
-                 * @example "0:6e731f2e28b73539a7f85ac47ca104d5840b229351189977bb6151d36b5e3f5e"
-                 */
-                raw_form: Address;
-                bounceable: {
-                    b64: string;
-                    b64url: string;
-                };
-                non_bounceable: {
-                    b64: string;
-                    b64url: string;
-                };
-                given_type: string;
-                test_only: boolean;
-            }>(req, {
+            return prepareResponse<AddressParseData>(req, {
                 type: 'object',
                 required: ['raw_form', 'bounceable', 'non_bounceable', 'given_type', 'test_only'],
                 properties: {
@@ -5494,7 +6067,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const req = this.http.request<ReducedBlocks, Error>({
+            const req = this.http.request<GetReducedBlockchainBlocksData, Error>({
                 path: `/v2/blockchain/reduced/blocks`,
                 method: 'GET',
                 query: query,
@@ -5502,7 +6075,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<ReducedBlocks>(req, {
+            return prepareResponse<GetReducedBlockchainBlocksData>(req, {
                 $ref: '#/components/schemas/ReducedBlocks'
             });
         },
@@ -5515,14 +6088,14 @@ export class TonApiClient {
          * @request GET:/v2/blockchain/blocks/{block_id}
          */
         getBlockchainBlock: (blockId: string, params: RequestParams = {}) => {
-            const req = this.http.request<BlockchainBlock, Error>({
+            const req = this.http.request<GetBlockchainBlockData, Error>({
                 path: `/v2/blockchain/blocks/${blockId}`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<BlockchainBlock>(req, {
+            return prepareResponse<GetBlockchainBlockData>(req, {
                 $ref: '#/components/schemas/BlockchainBlock'
             });
         },
@@ -5535,14 +6108,14 @@ export class TonApiClient {
          * @request GET:/v2/blockchain/masterchain/{masterchain_seqno}/shards
          */
         getBlockchainMasterchainShards: (masterchainSeqno: number, params: RequestParams = {}) => {
-            const req = this.http.request<BlockchainBlockShards, Error>({
+            const req = this.http.request<GetBlockchainMasterchainShardsData, Error>({
                 path: `/v2/blockchain/masterchain/${masterchainSeqno}/shards`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<BlockchainBlockShards>(req, {
+            return prepareResponse<GetBlockchainMasterchainShardsData>(req, {
                 $ref: '#/components/schemas/BlockchainBlockShards'
             });
         },
@@ -5555,14 +6128,14 @@ export class TonApiClient {
          * @request GET:/v2/blockchain/masterchain/{masterchain_seqno}/blocks
          */
         getBlockchainMasterchainBlocks: (masterchainSeqno: number, params: RequestParams = {}) => {
-            const req = this.http.request<BlockchainBlocks, Error>({
+            const req = this.http.request<GetBlockchainMasterchainBlocksData, Error>({
                 path: `/v2/blockchain/masterchain/${masterchainSeqno}/blocks`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<BlockchainBlocks>(req, {
+            return prepareResponse<GetBlockchainMasterchainBlocksData>(req, {
                 $ref: '#/components/schemas/BlockchainBlocks'
             });
         },
@@ -5578,14 +6151,14 @@ export class TonApiClient {
             masterchainSeqno: number,
             params: RequestParams = {}
         ) => {
-            const req = this.http.request<Transactions, Error>({
+            const req = this.http.request<GetBlockchainMasterchainTransactionsData, Error>({
                 path: `/v2/blockchain/masterchain/${masterchainSeqno}/transactions`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<Transactions>(req, {
+            return prepareResponse<GetBlockchainMasterchainTransactionsData>(req, {
                 $ref: '#/components/schemas/Transactions'
             });
         },
@@ -5598,14 +6171,14 @@ export class TonApiClient {
          * @request GET:/v2/blockchain/masterchain/{masterchain_seqno}/config
          */
         getBlockchainConfigFromBlock: (masterchainSeqno: number, params: RequestParams = {}) => {
-            const req = this.http.request<BlockchainConfig, Error>({
+            const req = this.http.request<GetBlockchainConfigFromBlockData, Error>({
                 path: `/v2/blockchain/masterchain/${masterchainSeqno}/config`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<BlockchainConfig>(req, {
+            return prepareResponse<GetBlockchainConfigFromBlockData>(req, {
                 $ref: '#/components/schemas/BlockchainConfig'
             });
         },
@@ -5618,14 +6191,14 @@ export class TonApiClient {
          * @request GET:/v2/blockchain/masterchain/{masterchain_seqno}/config/raw
          */
         getRawBlockchainConfigFromBlock: (masterchainSeqno: number, params: RequestParams = {}) => {
-            const req = this.http.request<RawBlockchainConfig, Error>({
+            const req = this.http.request<GetRawBlockchainConfigFromBlockData, Error>({
                 path: `/v2/blockchain/masterchain/${masterchainSeqno}/config/raw`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<RawBlockchainConfig>(req, {
+            return prepareResponse<GetRawBlockchainConfigFromBlockData>(req, {
                 $ref: '#/components/schemas/RawBlockchainConfig'
             });
         },
@@ -5638,14 +6211,14 @@ export class TonApiClient {
          * @request GET:/v2/blockchain/blocks/{block_id}/transactions
          */
         getBlockchainBlockTransactions: (blockId: string, params: RequestParams = {}) => {
-            const req = this.http.request<Transactions, Error>({
+            const req = this.http.request<GetBlockchainBlockTransactionsData, Error>({
                 path: `/v2/blockchain/blocks/${blockId}/transactions`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<Transactions>(req, {
+            return prepareResponse<GetBlockchainBlockTransactionsData>(req, {
                 $ref: '#/components/schemas/Transactions'
             });
         },
@@ -5658,14 +6231,16 @@ export class TonApiClient {
          * @request GET:/v2/blockchain/transactions/{transaction_id}
          */
         getBlockchainTransaction: (transactionId: string, params: RequestParams = {}) => {
-            const req = this.http.request<Transaction, Error>({
+            const req = this.http.request<GetBlockchainTransactionData, Error>({
                 path: `/v2/blockchain/transactions/${transactionId}`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<Transaction>(req, { $ref: '#/components/schemas/Transaction' });
+            return prepareResponse<GetBlockchainTransactionData>(req, {
+                $ref: '#/components/schemas/Transaction'
+            });
         },
 
         /**
@@ -5676,14 +6251,16 @@ export class TonApiClient {
          * @request GET:/v2/blockchain/messages/{msg_id}/transaction
          */
         getBlockchainTransactionByMessageHash: (msgId: string, params: RequestParams = {}) => {
-            const req = this.http.request<Transaction, Error>({
+            const req = this.http.request<GetBlockchainTransactionByMessageHashData, Error>({
                 path: `/v2/blockchain/messages/${msgId}/transaction`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<Transaction>(req, { $ref: '#/components/schemas/Transaction' });
+            return prepareResponse<GetBlockchainTransactionByMessageHashData>(req, {
+                $ref: '#/components/schemas/Transaction'
+            });
         },
 
         /**
@@ -5694,14 +6271,16 @@ export class TonApiClient {
          * @request GET:/v2/blockchain/validators
          */
         getBlockchainValidators: (params: RequestParams = {}) => {
-            const req = this.http.request<Validators, Error>({
+            const req = this.http.request<GetBlockchainValidatorsData, Error>({
                 path: `/v2/blockchain/validators`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<Validators>(req, { $ref: '#/components/schemas/Validators' });
+            return prepareResponse<GetBlockchainValidatorsData>(req, {
+                $ref: '#/components/schemas/Validators'
+            });
         },
 
         /**
@@ -5712,14 +6291,14 @@ export class TonApiClient {
          * @request GET:/v2/blockchain/masterchain-head
          */
         getBlockchainMasterchainHead: (params: RequestParams = {}) => {
-            const req = this.http.request<BlockchainBlock, Error>({
+            const req = this.http.request<GetBlockchainMasterchainHeadData, Error>({
                 path: `/v2/blockchain/masterchain-head`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<BlockchainBlock>(req, {
+            return prepareResponse<GetBlockchainMasterchainHeadData>(req, {
                 $ref: '#/components/schemas/BlockchainBlock'
             });
         },
@@ -5733,14 +6312,14 @@ export class TonApiClient {
          */
         getBlockchainRawAccount: (accountId_Address: Address, params: RequestParams = {}) => {
             const accountId = accountId_Address.toRawString();
-            const req = this.http.request<BlockchainRawAccount, Error>({
+            const req = this.http.request<GetBlockchainRawAccountData, Error>({
                 path: `/v2/blockchain/accounts/${accountId}`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<BlockchainRawAccount>(req, {
+            return prepareResponse<GetBlockchainRawAccountData>(req, {
                 $ref: '#/components/schemas/BlockchainRawAccount'
             });
         },
@@ -5784,7 +6363,7 @@ export class TonApiClient {
             params: RequestParams = {}
         ) => {
             const accountId = accountId_Address.toRawString();
-            const req = this.http.request<Transactions, Error>({
+            const req = this.http.request<GetBlockchainAccountTransactionsData, Error>({
                 path: `/v2/blockchain/accounts/${accountId}/transactions`,
                 method: 'GET',
                 query: query,
@@ -5792,7 +6371,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<Transactions>(req, {
+            return prepareResponse<GetBlockchainAccountTransactionsData>(req, {
                 $ref: '#/components/schemas/Transactions'
             });
         },
@@ -5820,11 +6399,19 @@ export class TonApiClient {
                  * @example ["0:9a33970f617bcd71acf2cd28357c067aa31859c02820d8f01d74c88063a8f4d8"]
                  */
                 args?: string[];
+                /**
+                 * A temporary fix to switch to a scheme with direct ordering of arguments.
+                 * If equal to false, then the method takes arguments in direct order,
+                 * e.g. for get_nft_content(int index, cell individual_content) we pass a list of arguments [index, individual_content].
+                 * If equal to true, then the method takes arguments in reverse order, e.g. [individual_content, index].
+                 * @default true
+                 */
+                fix_order?: boolean;
             },
             params: RequestParams = {}
         ) => {
             const accountId = accountId_Address.toRawString();
-            const req = this.http.request<MethodExecutionResult, Error>({
+            const req = this.http.request<ExecGetMethodForBlockchainAccountData, Error>({
                 path: `/v2/blockchain/accounts/${accountId}/methods/${methodName}`,
                 method: 'GET',
                 query: query,
@@ -5832,7 +6419,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<MethodExecutionResult>(req, {
+            return prepareResponse<ExecGetMethodForBlockchainAccountData>(req, {
                 $ref: '#/components/schemas/MethodExecutionResult'
             });
         },
@@ -5850,10 +6437,11 @@ export class TonApiClient {
                 boc?: Cell;
                 /** @maxItems 10 */
                 batch?: Cell[];
+                meta?: Record<string, string>;
             },
             params: RequestParams = {}
         ) => {
-            const req = this.http.request<void, Error>({
+            const req = this.http.request<SendBlockchainMessageData, Error>({
                 path: `/v2/blockchain/message`,
                 method: 'POST',
                 body: prepareRequestData(data, {
@@ -5864,13 +6452,14 @@ export class TonApiClient {
                             type: 'array',
                             maxItems: 10,
                             items: { type: 'string', format: 'cell' }
-                        }
+                        },
+                        meta: { type: 'object', additionalProperties: { type: 'string' } }
                     }
                 }),
                 ...params
             });
 
-            return prepareResponse<void>(req);
+            return prepareResponse<SendBlockchainMessageData>(req);
         },
 
         /**
@@ -5881,14 +6470,14 @@ export class TonApiClient {
          * @request GET:/v2/blockchain/config
          */
         getBlockchainConfig: (params: RequestParams = {}) => {
-            const req = this.http.request<BlockchainConfig, Error>({
+            const req = this.http.request<GetBlockchainConfigData, Error>({
                 path: `/v2/blockchain/config`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<BlockchainConfig>(req, {
+            return prepareResponse<GetBlockchainConfigData>(req, {
                 $ref: '#/components/schemas/BlockchainConfig'
             });
         },
@@ -5901,14 +6490,14 @@ export class TonApiClient {
          * @request GET:/v2/blockchain/config/raw
          */
         getRawBlockchainConfig: (params: RequestParams = {}) => {
-            const req = this.http.request<RawBlockchainConfig, Error>({
+            const req = this.http.request<GetRawBlockchainConfigData, Error>({
                 path: `/v2/blockchain/config/raw`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<RawBlockchainConfig>(req, {
+            return prepareResponse<GetRawBlockchainConfigData>(req, {
                 $ref: '#/components/schemas/RawBlockchainConfig'
             });
         },
@@ -5922,14 +6511,14 @@ export class TonApiClient {
          */
         blockchainAccountInspect: (accountId_Address: Address, params: RequestParams = {}) => {
             const accountId = accountId_Address.toRawString();
-            const req = this.http.request<BlockchainAccountInspect, Error>({
+            const req = this.http.request<BlockchainAccountInspectData, Error>({
                 path: `/v2/blockchain/accounts/${accountId}/inspect`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<BlockchainAccountInspect>(req, {
+            return prepareResponse<BlockchainAccountInspectData>(req, {
                 $ref: '#/components/schemas/BlockchainAccountInspect'
             });
         },
@@ -5943,16 +6532,14 @@ export class TonApiClient {
          * @deprecated
          */
         status: (requestParams: RequestParams = {}) => {
-            const req = this.http.request<ServiceStatus, Error>({
+            const req = this.http.request<StatusData, Error>({
                 path: `/v2/status`,
                 method: 'GET',
                 format: 'json',
                 ...requestParams
             });
 
-            return prepareResponse<ServiceStatus>(req, {
-                $ref: '#/components/schemas/ServiceStatus'
-            });
+            return prepareResponse<StatusData>(req, { $ref: '#/components/schemas/ServiceStatus' });
         }
     };
     accounts = {
@@ -5973,7 +6560,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const req = this.http.request<Accounts, Error>({
+            const req = this.http.request<GetAccountsData, Error>({
                 path: `/v2/accounts/_bulk`,
                 method: 'POST',
                 query: query,
@@ -5988,7 +6575,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<Accounts>(req, { $ref: '#/components/schemas/Accounts' });
+            return prepareResponse<GetAccountsData>(req, { $ref: '#/components/schemas/Accounts' });
         },
 
         /**
@@ -6000,14 +6587,14 @@ export class TonApiClient {
          */
         getAccount: (accountId_Address: Address, params: RequestParams = {}) => {
             const accountId = accountId_Address.toRawString();
-            const req = this.http.request<Account, Error>({
+            const req = this.http.request<GetAccountData, Error>({
                 path: `/v2/accounts/${accountId}`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<Account>(req, { $ref: '#/components/schemas/Account' });
+            return prepareResponse<GetAccountData>(req, { $ref: '#/components/schemas/Account' });
         },
 
         /**
@@ -6019,14 +6606,16 @@ export class TonApiClient {
          */
         accountDnsBackResolve: (accountId_Address: Address, params: RequestParams = {}) => {
             const accountId = accountId_Address.toRawString();
-            const req = this.http.request<DomainNames, Error>({
+            const req = this.http.request<AccountDnsBackResolveData, Error>({
                 path: `/v2/accounts/${accountId}/dns/backresolve`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<DomainNames>(req, { $ref: '#/components/schemas/DomainNames' });
+            return prepareResponse<AccountDnsBackResolveData>(req, {
+                $ref: '#/components/schemas/DomainNames'
+            });
         },
 
         /**
@@ -6053,7 +6642,7 @@ export class TonApiClient {
             params: RequestParams = {}
         ) => {
             const accountId = accountId_Address.toRawString();
-            const req = this.http.request<JettonsBalances, Error>({
+            const req = this.http.request<GetAccountJettonsBalancesData, Error>({
                 path: `/v2/accounts/${accountId}/jettons`,
                 method: 'GET',
                 query: query,
@@ -6061,7 +6650,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<JettonsBalances>(req, {
+            return prepareResponse<GetAccountJettonsBalancesData>(req, {
                 $ref: '#/components/schemas/JettonsBalances'
             });
         },
@@ -6092,7 +6681,7 @@ export class TonApiClient {
         ) => {
             const accountId = accountId_Address.toRawString();
             const jettonId = jettonId_Address.toRawString();
-            const req = this.http.request<JettonBalance, Error>({
+            const req = this.http.request<GetAccountJettonBalanceData, Error>({
                 path: `/v2/accounts/${accountId}/jettons/${jettonId}`,
                 method: 'GET',
                 query: query,
@@ -6100,7 +6689,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<JettonBalance>(req, {
+            return prepareResponse<GetAccountJettonBalanceData>(req, {
                 $ref: '#/components/schemas/JettonBalance'
             });
         },
@@ -6143,7 +6732,7 @@ export class TonApiClient {
             params: RequestParams = {}
         ) => {
             const accountId = accountId_Address.toRawString();
-            const req = this.http.request<AccountEvents, Error>({
+            const req = this.http.request<GetAccountJettonsHistoryData, Error>({
                 path: `/v2/accounts/${accountId}/jettons/history`,
                 method: 'GET',
                 query: query,
@@ -6151,7 +6740,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<AccountEvents>(req, {
+            return prepareResponse<GetAccountJettonsHistoryData>(req, {
                 $ref: '#/components/schemas/AccountEvents'
             });
         },
@@ -6196,7 +6785,7 @@ export class TonApiClient {
         ) => {
             const accountId = accountId_Address.toRawString();
             const jettonId = jettonId_Address.toRawString();
-            const req = this.http.request<AccountEvents, Error>({
+            const req = this.http.request<GetAccountJettonHistoryByIdData, Error>({
                 path: `/v2/accounts/${accountId}/jettons/${jettonId}/history`,
                 method: 'GET',
                 query: query,
@@ -6204,7 +6793,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<AccountEvents>(req, {
+            return prepareResponse<GetAccountJettonHistoryByIdData>(req, {
                 $ref: '#/components/schemas/AccountEvents'
             });
         },
@@ -6245,7 +6834,7 @@ export class TonApiClient {
             params: RequestParams = {}
         ) => {
             const accountId = accountId_Address.toRawString();
-            const req = this.http.request<NftItems, Error>({
+            const req = this.http.request<GetAccountNftItemsData, Error>({
                 path: `/v2/accounts/${accountId}/nfts`,
                 method: 'GET',
                 query: query && {
@@ -6256,7 +6845,9 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<NftItems>(req, { $ref: '#/components/schemas/NftItems' });
+            return prepareResponse<GetAccountNftItemsData>(req, {
+                $ref: '#/components/schemas/NftItems'
+            });
         },
 
         /**
@@ -6307,7 +6898,7 @@ export class TonApiClient {
             params: RequestParams = {}
         ) => {
             const accountId = accountId_Address.toRawString();
-            const req = this.http.request<AccountEvents, Error>({
+            const req = this.http.request<GetAccountEventsData, Error>({
                 path: `/v2/accounts/${accountId}/events`,
                 method: 'GET',
                 query: query,
@@ -6315,7 +6906,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<AccountEvents>(req, {
+            return prepareResponse<GetAccountEventsData>(req, {
                 $ref: '#/components/schemas/AccountEvents'
             });
         },
@@ -6340,7 +6931,7 @@ export class TonApiClient {
             params: RequestParams = {}
         ) => {
             const accountId = accountId_Address.toRawString();
-            const req = this.http.request<AccountEvent, Error>({
+            const req = this.http.request<GetAccountEventData, Error>({
                 path: `/v2/accounts/${accountId}/events/${eventId}`,
                 method: 'GET',
                 query: query,
@@ -6348,7 +6939,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<AccountEvent>(req, {
+            return prepareResponse<GetAccountEventData>(req, {
                 $ref: '#/components/schemas/AccountEvent'
             });
         },
@@ -6380,7 +6971,7 @@ export class TonApiClient {
             params: RequestParams = {}
         ) => {
             const accountId = accountId_Address.toRawString();
-            const req = this.http.request<TraceIDs, Error>({
+            const req = this.http.request<GetAccountTracesData, Error>({
                 path: `/v2/accounts/${accountId}/traces`,
                 method: 'GET',
                 query: query,
@@ -6388,7 +6979,9 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<TraceIDs>(req, { $ref: '#/components/schemas/TraceIDs' });
+            return prepareResponse<GetAccountTracesData>(req, {
+                $ref: '#/components/schemas/TraceIDs'
+            });
         },
 
         /**
@@ -6400,14 +6993,14 @@ export class TonApiClient {
          */
         getAccountSubscriptions: (accountId_Address: Address, params: RequestParams = {}) => {
             const accountId = accountId_Address.toRawString();
-            const req = this.http.request<Subscriptions, Error>({
+            const req = this.http.request<GetAccountSubscriptionsData, Error>({
                 path: `/v2/accounts/${accountId}/subscriptions`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<Subscriptions>(req, {
+            return prepareResponse<GetAccountSubscriptionsData>(req, {
                 $ref: '#/components/schemas/Subscriptions'
             });
         },
@@ -6421,13 +7014,13 @@ export class TonApiClient {
          */
         reindexAccount: (accountId_Address: Address, params: RequestParams = {}) => {
             const accountId = accountId_Address.toRawString();
-            const req = this.http.request<void, Error>({
+            const req = this.http.request<ReindexAccountData, Error>({
                 path: `/v2/accounts/${accountId}/reindex`,
                 method: 'POST',
                 ...params
             });
 
-            return prepareResponse<void>(req);
+            return prepareResponse<ReindexAccountData>(req);
         },
 
         /**
@@ -6447,7 +7040,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const req = this.http.request<FoundAccounts, Error>({
+            const req = this.http.request<SearchAccountsData, Error>({
                 path: `/v2/accounts/search`,
                 method: 'GET',
                 query: query,
@@ -6455,7 +7048,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<FoundAccounts>(req, {
+            return prepareResponse<SearchAccountsData>(req, {
                 $ref: '#/components/schemas/FoundAccounts'
             });
         },
@@ -6480,7 +7073,7 @@ export class TonApiClient {
             params: RequestParams = {}
         ) => {
             const accountId = accountId_Address.toRawString();
-            const req = this.http.request<DnsExpiring, Error>({
+            const req = this.http.request<GetAccountDnsExpiringData, Error>({
                 path: `/v2/accounts/${accountId}/dns/expiring`,
                 method: 'GET',
                 query: query,
@@ -6488,7 +7081,9 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<DnsExpiring>(req, { $ref: '#/components/schemas/DnsExpiring' });
+            return prepareResponse<GetAccountDnsExpiringData>(req, {
+                $ref: '#/components/schemas/DnsExpiring'
+            });
         },
 
         /**
@@ -6500,23 +7095,14 @@ export class TonApiClient {
          */
         getAccountPublicKey: (accountId_Address: Address, params: RequestParams = {}) => {
             const accountId = accountId_Address.toRawString();
-            const req = this.http.request<
-                {
-                    /** @example "NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODQ3..." */
-                    public_key: string;
-                },
-                Error
-            >({
+            const req = this.http.request<GetAccountPublicKeyData, Error>({
                 path: `/v2/accounts/${accountId}/publickey`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<{
-                /** @example "NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODQ3..." */
-                public_key: string;
-            }>(req, {
+            return prepareResponse<GetAccountPublicKeyData>(req, {
                 type: 'object',
                 required: ['public_key'],
                 properties: { public_key: { type: 'string' } }
@@ -6532,14 +7118,16 @@ export class TonApiClient {
          */
         getAccountMultisigs: (accountId_Address: Address, params: RequestParams = {}) => {
             const accountId = accountId_Address.toRawString();
-            const req = this.http.request<Multisigs, Error>({
+            const req = this.http.request<GetAccountMultisigsData, Error>({
                 path: `/v2/accounts/${accountId}/multisigs`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<Multisigs>(req, { $ref: '#/components/schemas/Multisigs' });
+            return prepareResponse<GetAccountMultisigsData>(req, {
+                $ref: '#/components/schemas/Multisigs'
+            });
         },
 
         /**
@@ -6568,16 +7156,7 @@ export class TonApiClient {
             params: RequestParams = {}
         ) => {
             const accountId = accountId_Address.toRawString();
-            const req = this.http.request<
-                {
-                    /**
-                     * @format int64
-                     * @example 1000000000
-                     */
-                    balance_change: number;
-                },
-                Error
-            >({
+            const req = this.http.request<GetAccountDiffData, Error>({
                 path: `/v2/accounts/${accountId}/diff`,
                 method: 'GET',
                 query: query,
@@ -6585,13 +7164,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<{
-                /**
-                 * @format int64
-                 * @example 1000000000
-                 */
-                balance_change: number;
-            }>(req, {
+            return prepareResponse<GetAccountDiffData>(req, {
                 type: 'object',
                 required: ['balance_change'],
                 properties: { balance_change: { type: 'integer', format: 'int64' } }
@@ -6608,49 +7181,14 @@ export class TonApiClient {
          */
         addressParse: (accountId_Address: Address, requestParams: RequestParams = {}) => {
             const accountId = accountId_Address.toRawString();
-            const req = this.http.request<
-                {
-                    /**
-                     * @format address
-                     * @example "0:6e731f2e28b73539a7f85ac47ca104d5840b229351189977bb6151d36b5e3f5e"
-                     */
-                    raw_form: Address;
-                    bounceable: {
-                        b64: string;
-                        b64url: string;
-                    };
-                    non_bounceable: {
-                        b64: string;
-                        b64url: string;
-                    };
-                    given_type: string;
-                    test_only: boolean;
-                },
-                Error
-            >({
+            const req = this.http.request<AddressParseData, Error>({
                 path: `/v2/address/${accountId}/parse`,
                 method: 'GET',
                 format: 'json',
                 ...requestParams
             });
 
-            return prepareResponse<{
-                /**
-                 * @format address
-                 * @example "0:6e731f2e28b73539a7f85ac47ca104d5840b229351189977bb6151d36b5e3f5e"
-                 */
-                raw_form: Address;
-                bounceable: {
-                    b64: string;
-                    b64url: string;
-                };
-                non_bounceable: {
-                    b64: string;
-                    b64url: string;
-                };
-                given_type: string;
-                test_only: boolean;
-            }>(req, {
+            return prepareResponse<AddressParseData>(req, {
                 type: 'object',
                 required: ['raw_form', 'bounceable', 'non_bounceable', 'given_type', 'test_only'],
                 properties: {
@@ -6710,7 +7248,7 @@ export class TonApiClient {
             params: RequestParams = {}
         ) => {
             const accountId = accountId_Address.toRawString();
-            const req = this.http.request<AccountEvents, Error>({
+            const req = this.http.request<GetAccountNftHistoryData, Error>({
                 path: `/v2/accounts/${accountId}/nfts/history`,
                 method: 'GET',
                 query: query,
@@ -6718,7 +7256,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<AccountEvents>(req, {
+            return prepareResponse<GetAccountNftHistoryData>(req, {
                 $ref: '#/components/schemas/AccountEvents'
             });
         },
@@ -6750,7 +7288,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const req = this.http.request<NftCollections, Error>({
+            const req = this.http.request<GetNftCollectionsData, Error>({
                 path: `/v2/nfts/collections`,
                 method: 'GET',
                 query: query,
@@ -6758,7 +7296,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<NftCollections>(req, {
+            return prepareResponse<GetNftCollectionsData>(req, {
                 $ref: '#/components/schemas/NftCollections'
             });
         },
@@ -6772,14 +7310,14 @@ export class TonApiClient {
          */
         getNftCollection: (accountId_Address: Address, params: RequestParams = {}) => {
             const accountId = accountId_Address.toRawString();
-            const req = this.http.request<NftCollection, Error>({
+            const req = this.http.request<GetNftCollectionData, Error>({
                 path: `/v2/nfts/collections/${accountId}`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<NftCollection>(req, {
+            return prepareResponse<GetNftCollectionData>(req, {
                 $ref: '#/components/schemas/NftCollection'
             });
         },
@@ -6797,7 +7335,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const req = this.http.request<NftCollections, Error>({
+            const req = this.http.request<GetNftCollectionItemsByAddressesData, Error>({
                 path: `/v2/nfts/collections/_bulk`,
                 method: 'POST',
                 body: prepareRequestData(data, {
@@ -6811,7 +7349,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<NftCollections>(req, {
+            return prepareResponse<GetNftCollectionItemsByAddressesData>(req, {
                 $ref: '#/components/schemas/NftCollections'
             });
         },
@@ -6841,7 +7379,7 @@ export class TonApiClient {
             params: RequestParams = {}
         ) => {
             const accountId = accountId_Address.toRawString();
-            const req = this.http.request<NftItems, Error>({
+            const req = this.http.request<GetItemsFromCollectionData, Error>({
                 path: `/v2/nfts/collections/${accountId}/items`,
                 method: 'GET',
                 query: query,
@@ -6849,7 +7387,9 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<NftItems>(req, { $ref: '#/components/schemas/NftItems' });
+            return prepareResponse<GetItemsFromCollectionData>(req, {
+                $ref: '#/components/schemas/NftItems'
+            });
         },
 
         /**
@@ -6865,7 +7405,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const req = this.http.request<NftItems, Error>({
+            const req = this.http.request<GetNftItemsByAddressesData, Error>({
                 path: `/v2/nfts/_bulk`,
                 method: 'POST',
                 body: prepareRequestData(data, {
@@ -6879,7 +7419,9 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<NftItems>(req, { $ref: '#/components/schemas/NftItems' });
+            return prepareResponse<GetNftItemsByAddressesData>(req, {
+                $ref: '#/components/schemas/NftItems'
+            });
         },
 
         /**
@@ -6891,14 +7433,16 @@ export class TonApiClient {
          */
         getNftItemByAddress: (accountId_Address: Address, params: RequestParams = {}) => {
             const accountId = accountId_Address.toRawString();
-            const req = this.http.request<NftItem, Error>({
+            const req = this.http.request<GetNftItemByAddressData, Error>({
                 path: `/v2/nfts/${accountId}`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<NftItem>(req, { $ref: '#/components/schemas/NftItem' });
+            return prepareResponse<GetNftItemByAddressData>(req, {
+                $ref: '#/components/schemas/NftItem'
+            });
         },
 
         /**
@@ -6939,7 +7483,7 @@ export class TonApiClient {
             params: RequestParams = {}
         ) => {
             const accountId = accountId_Address.toRawString();
-            const req = this.http.request<AccountEvents, Error>({
+            const req = this.http.request<GetNftHistoryByIdData, Error>({
                 path: `/v2/nfts/${accountId}/history`,
                 method: 'GET',
                 query: query,
@@ -6947,7 +7491,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<AccountEvents>(req, {
+            return prepareResponse<GetNftHistoryByIdData>(req, {
                 $ref: '#/components/schemas/AccountEvents'
             });
         }
@@ -6961,14 +7505,16 @@ export class TonApiClient {
          * @request GET:/v2/dns/{domain_name}
          */
         getDnsInfo: (domainName: string, params: RequestParams = {}) => {
-            const req = this.http.request<DomainInfo, Error>({
+            const req = this.http.request<GetDnsInfoData, Error>({
                 path: `/v2/dns/${domainName}`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<DomainInfo>(req, { $ref: '#/components/schemas/DomainInfo' });
+            return prepareResponse<GetDnsInfoData>(req, {
+                $ref: '#/components/schemas/DomainInfo'
+            });
         },
 
         /**
@@ -6979,14 +7525,14 @@ export class TonApiClient {
          * @request GET:/v2/dns/{domain_name}/resolve
          */
         dnsResolve: (domainName: string, params: RequestParams = {}) => {
-            const req = this.http.request<DnsRecord, Error>({
+            const req = this.http.request<DnsResolveData, Error>({
                 path: `/v2/dns/${domainName}/resolve`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<DnsRecord>(req, { $ref: '#/components/schemas/DnsRecord' });
+            return prepareResponse<DnsResolveData>(req, { $ref: '#/components/schemas/DnsRecord' });
         },
 
         /**
@@ -6997,14 +7543,16 @@ export class TonApiClient {
          * @request GET:/v2/dns/{domain_name}/bids
          */
         getDomainBids: (domainName: string, params: RequestParams = {}) => {
-            const req = this.http.request<DomainBids, Error>({
+            const req = this.http.request<GetDomainBidsData, Error>({
                 path: `/v2/dns/${domainName}/bids`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<DomainBids>(req, { $ref: '#/components/schemas/DomainBids' });
+            return prepareResponse<GetDomainBidsData>(req, {
+                $ref: '#/components/schemas/DomainBids'
+            });
         },
 
         /**
@@ -7024,7 +7572,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const req = this.http.request<Auctions, Error>({
+            const req = this.http.request<GetAllAuctionsData, Error>({
                 path: `/v2/dns/auctions`,
                 method: 'GET',
                 query: query,
@@ -7032,7 +7580,9 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<Auctions>(req, { $ref: '#/components/schemas/Auctions' });
+            return prepareResponse<GetAllAuctionsData>(req, {
+                $ref: '#/components/schemas/Auctions'
+            });
         }
     };
     traces = {
@@ -7044,14 +7594,14 @@ export class TonApiClient {
          * @request GET:/v2/traces/{trace_id}
          */
         getTrace: (traceId: string, params: RequestParams = {}) => {
-            const req = this.http.request<Trace, Error>({
+            const req = this.http.request<GetTraceData, Error>({
                 path: `/v2/traces/${traceId}`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<Trace>(req, { $ref: '#/components/schemas/Trace' });
+            return prepareResponse<GetTraceData>(req, { $ref: '#/components/schemas/Trace' });
         }
     };
     events = {
@@ -7063,14 +7613,14 @@ export class TonApiClient {
          * @request GET:/v2/events/{event_id}
          */
         getEvent: (eventId: string, params: RequestParams = {}) => {
-            const req = this.http.request<Event, Error>({
+            const req = this.http.request<GetEventData, Error>({
                 path: `/v2/events/${eventId}`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<Event>(req, { $ref: '#/components/schemas/Event' });
+            return prepareResponse<GetEventData>(req, { $ref: '#/components/schemas/Event' });
         }
     };
     inscriptions = {
@@ -7099,7 +7649,7 @@ export class TonApiClient {
             params: RequestParams = {}
         ) => {
             const accountId = accountId_Address.toRawString();
-            const req = this.http.request<InscriptionBalances, Error>({
+            const req = this.http.request<GetAccountInscriptionsData, Error>({
                 path: `/v2/experimental/accounts/${accountId}/inscriptions`,
                 method: 'GET',
                 query: query,
@@ -7107,7 +7657,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<InscriptionBalances>(req, {
+            return prepareResponse<GetAccountInscriptionsData>(req, {
                 $ref: '#/components/schemas/InscriptionBalances'
             });
         },
@@ -7139,7 +7689,7 @@ export class TonApiClient {
             params: RequestParams = {}
         ) => {
             const accountId = accountId_Address.toRawString();
-            const req = this.http.request<AccountEvents, Error>({
+            const req = this.http.request<GetAccountInscriptionsHistoryData, Error>({
                 path: `/v2/experimental/accounts/${accountId}/inscriptions/history`,
                 method: 'GET',
                 query: query,
@@ -7147,7 +7697,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<AccountEvents>(req, {
+            return prepareResponse<GetAccountInscriptionsHistoryData>(req, {
                 $ref: '#/components/schemas/AccountEvents'
             });
         },
@@ -7180,7 +7730,7 @@ export class TonApiClient {
             params: RequestParams = {}
         ) => {
             const accountId = accountId_Address.toRawString();
-            const req = this.http.request<AccountEvents, Error>({
+            const req = this.http.request<GetAccountInscriptionsHistoryByTickerData, Error>({
                 path: `/v2/experimental/accounts/${accountId}/inscriptions/${ticker}/history`,
                 method: 'GET',
                 query: query,
@@ -7188,7 +7738,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<AccountEvents>(req, {
+            return prepareResponse<GetAccountInscriptionsHistoryByTickerData>(req, {
                 $ref: '#/components/schemas/AccountEvents'
             });
         },
@@ -7220,15 +7770,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const req = this.http.request<
-                {
-                    /** @example "comment" */
-                    comment: string;
-                    /** @example "0:0000000000000" */
-                    destination: string;
-                },
-                Error
-            >({
+            const req = this.http.request<GetInscriptionOpTemplateData, Error>({
                 path: `/v2/experimental/inscriptions/op-template`,
                 method: 'GET',
                 query: query,
@@ -7236,12 +7778,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<{
-                /** @example "comment" */
-                comment: string;
-                /** @example "0:0000000000000" */
-                destination: string;
-            }>(req, {
+            return prepareResponse<GetInscriptionOpTemplateData>(req, {
                 type: 'object',
                 required: ['comment', 'destination'],
                 properties: { comment: { type: 'string' }, destination: { type: 'string' } }
@@ -7276,7 +7813,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const req = this.http.request<Jettons, Error>({
+            const req = this.http.request<GetJettonsData, Error>({
                 path: `/v2/jettons`,
                 method: 'GET',
                 query: query,
@@ -7284,7 +7821,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<Jettons>(req, { $ref: '#/components/schemas/Jettons' });
+            return prepareResponse<GetJettonsData>(req, { $ref: '#/components/schemas/Jettons' });
         },
 
         /**
@@ -7296,14 +7833,16 @@ export class TonApiClient {
          */
         getJettonInfo: (accountId_Address: Address, params: RequestParams = {}) => {
             const accountId = accountId_Address.toRawString();
-            const req = this.http.request<JettonInfo, Error>({
+            const req = this.http.request<GetJettonInfoData, Error>({
                 path: `/v2/jettons/${accountId}`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<JettonInfo>(req, { $ref: '#/components/schemas/JettonInfo' });
+            return prepareResponse<GetJettonInfoData>(req, {
+                $ref: '#/components/schemas/JettonInfo'
+            });
         },
 
         /**
@@ -7319,7 +7858,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const req = this.http.request<Jettons, Error>({
+            const req = this.http.request<GetJettonInfosByAddressesData, Error>({
                 path: `/v2/jettons/_bulk`,
                 method: 'POST',
                 body: prepareRequestData(data, {
@@ -7333,7 +7872,9 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<Jettons>(req, { $ref: '#/components/schemas/Jettons' });
+            return prepareResponse<GetJettonInfosByAddressesData>(req, {
+                $ref: '#/components/schemas/Jettons'
+            });
         },
 
         /**
@@ -7361,7 +7902,7 @@ export class TonApiClient {
             params: RequestParams = {}
         ) => {
             const accountId = accountId_Address.toRawString();
-            const req = this.http.request<JettonHolders, Error>({
+            const req = this.http.request<GetJettonHoldersData, Error>({
                 path: `/v2/jettons/${accountId}/holders`,
                 method: 'GET',
                 query: query,
@@ -7369,7 +7910,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<JettonHolders>(req, {
+            return prepareResponse<GetJettonHoldersData>(req, {
                 $ref: '#/components/schemas/JettonHolders'
             });
         },
@@ -7388,14 +7929,14 @@ export class TonApiClient {
         ) => {
             const accountId = accountId_Address.toRawString();
             const jettonId = jettonId_Address.toRawString();
-            const req = this.http.request<JettonTransferPayload, Error>({
+            const req = this.http.request<GetJettonTransferPayloadData, Error>({
                 path: `/v2/jettons/${jettonId}/transfer/${accountId}/payload`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<JettonTransferPayload>(req, {
+            return prepareResponse<GetJettonTransferPayloadData>(req, {
                 $ref: '#/components/schemas/JettonTransferPayload'
             });
         },
@@ -7408,14 +7949,16 @@ export class TonApiClient {
          * @request GET:/v2/events/{event_id}/jettons
          */
         getJettonsEvents: (eventId: string, params: RequestParams = {}) => {
-            const req = this.http.request<Event, Error>({
+            const req = this.http.request<GetJettonsEventsData, Error>({
                 path: `/v2/events/${eventId}/jettons`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<Event>(req, { $ref: '#/components/schemas/Event' });
+            return prepareResponse<GetJettonsEventsData>(req, {
+                $ref: '#/components/schemas/Event'
+            });
         }
     };
     staking = {
@@ -7428,14 +7971,14 @@ export class TonApiClient {
          */
         getAccountNominatorsPools: (accountId_Address: Address, params: RequestParams = {}) => {
             const accountId = accountId_Address.toRawString();
-            const req = this.http.request<AccountStaking, Error>({
+            const req = this.http.request<GetAccountNominatorsPoolsData, Error>({
                 path: `/v2/staking/nominator/${accountId}/pools`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<AccountStaking>(req, {
+            return prepareResponse<GetAccountNominatorsPoolsData>(req, {
                 $ref: '#/components/schemas/AccountStaking'
             });
         },
@@ -7449,23 +7992,14 @@ export class TonApiClient {
          */
         getStakingPoolInfo: (accountId_Address: Address, params: RequestParams = {}) => {
             const accountId = accountId_Address.toRawString();
-            const req = this.http.request<
-                {
-                    implementation: PoolImplementation;
-                    pool: PoolInfo;
-                },
-                Error
-            >({
+            const req = this.http.request<GetStakingPoolInfoData, Error>({
                 path: `/v2/staking/pool/${accountId}`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<{
-                implementation: PoolImplementation;
-                pool: PoolInfo;
-            }>(req, {
+            return prepareResponse<GetStakingPoolInfoData>(req, {
                 type: 'object',
                 required: ['implementation', 'pool'],
                 properties: {
@@ -7484,21 +8018,14 @@ export class TonApiClient {
          */
         getStakingPoolHistory: (accountId_Address: Address, params: RequestParams = {}) => {
             const accountId = accountId_Address.toRawString();
-            const req = this.http.request<
-                {
-                    apy: ApyHistory[];
-                },
-                Error
-            >({
+            const req = this.http.request<GetStakingPoolHistoryData, Error>({
                 path: `/v2/staking/pool/${accountId}/history`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<{
-                apy: ApyHistory[];
-            }>(req, {
+            return prepareResponse<GetStakingPoolHistoryData>(req, {
                 type: 'object',
                 required: ['apy'],
                 properties: {
@@ -7530,13 +8057,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const req = this.http.request<
-                {
-                    pools: PoolInfo[];
-                    implementations: Record<string, PoolImplementation>;
-                },
-                Error
-            >({
+            const req = this.http.request<GetStakingPoolsData, Error>({
                 path: `/v2/staking/pools`,
                 method: 'GET',
                 query: query && {
@@ -7547,10 +8068,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<{
-                pools: PoolInfo[];
-                implementations: Record<string, PoolImplementation>;
-            }>(req, {
+            return prepareResponse<GetStakingPoolsData>(req, {
                 type: 'object',
                 required: ['pools', 'implementations'],
                 properties: {
@@ -7572,21 +8090,14 @@ export class TonApiClient {
          * @request GET:/v2/storage/providers
          */
         getStorageProviders: (params: RequestParams = {}) => {
-            const req = this.http.request<
-                {
-                    providers: StorageProvider[];
-                },
-                Error
-            >({
+            const req = this.http.request<GetStorageProvidersData, Error>({
                 path: `/v2/storage/providers`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<{
-                providers: StorageProvider[];
-            }>(req, {
+            return prepareResponse<GetStorageProvidersData>(req, {
                 type: 'object',
                 required: ['providers'],
                 properties: {
@@ -7623,12 +8134,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const req = this.http.request<
-                {
-                    rates: Record<string, TokenRates>;
-                },
-                Error
-            >({
+            const req = this.http.request<GetRatesData, Error>({
                 path: `/v2/rates`,
                 method: 'GET',
                 query: query,
@@ -7636,9 +8142,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<{
-                rates: Record<string, TokenRates>;
-            }>(req, {
+            return prepareResponse<GetRatesData>(req, {
                 type: 'object',
                 required: ['rates'],
                 properties: {
@@ -7688,12 +8192,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const req = this.http.request<
-                {
-                    points: ChartPoints[];
-                },
-                Error
-            >({
+            const req = this.http.request<GetChartRatesData, Error>({
                 path: `/v2/rates/chart`,
                 method: 'GET',
                 query: query && {
@@ -7704,9 +8203,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<{
-                points: ChartPoints[];
-            }>(req, {
+            return prepareResponse<GetChartRatesData>(req, {
                 type: 'object',
                 required: ['points'],
                 properties: {
@@ -7723,21 +8220,14 @@ export class TonApiClient {
          * @request GET:/v2/rates/markets
          */
         getMarketsRates: (params: RequestParams = {}) => {
-            const req = this.http.request<
-                {
-                    markets: MarketTonRates[];
-                },
-                Error
-            >({
+            const req = this.http.request<GetMarketsRatesData, Error>({
                 path: `/v2/rates/markets`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<{
-                markets: MarketTonRates[];
-            }>(req, {
+            return prepareResponse<GetMarketsRatesData>(req, {
                 type: 'object',
                 required: ['markets'],
                 properties: {
@@ -7758,23 +8248,14 @@ export class TonApiClient {
          * @request GET:/v2/tonconnect/payload
          */
         getTonConnectPayload: (params: RequestParams = {}) => {
-            const req = this.http.request<
-                {
-                    /** @example "84jHVNLQmZsAAAAAZB0Zryi2wqVJI-KaKNXOvCijEi46YyYzkaSHyJrMPBMOkVZa" */
-                    payload: string;
-                },
-                Error
-            >({
+            const req = this.http.request<GetTonConnectPayloadData, Error>({
                 path: `/v2/tonconnect/payload`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<{
-                /** @example "84jHVNLQmZsAAAAAZB0Zryi2wqVJI-KaKNXOvCijEi46YyYzkaSHyJrMPBMOkVZa" */
-                payload: string;
-            }>(req, {
+            return prepareResponse<GetTonConnectPayloadData>(req, {
                 type: 'object',
                 required: ['payload'],
                 properties: { payload: { type: 'string' } }
@@ -7795,7 +8276,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const req = this.http.request<AccountInfoByStateInit, Error>({
+            const req = this.http.request<GetAccountInfoByStateInitData, Error>({
                 path: `/v2/tonconnect/stateinit`,
                 method: 'POST',
                 body: prepareRequestData(data, {
@@ -7807,7 +8288,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<AccountInfoByStateInit>(req, {
+            return prepareResponse<GetAccountInfoByStateInitData>(req, {
                 $ref: '#/components/schemas/AccountInfoByStateInit'
             });
         }
@@ -7847,13 +8328,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const req = this.http.request<
-                {
-                    /** @example "NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODQ3..." */
-                    token: string;
-                },
-                Error
-            >({
+            const req = this.http.request<TonConnectProofData, Error>({
                 path: `/v2/wallet/auth/proof`,
                 method: 'POST',
                 body: prepareRequestData(data, {
@@ -7885,10 +8360,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<{
-                /** @example "NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODQ3..." */
-                token: string;
-            }>(req, {
+            return prepareResponse<TonConnectProofData>(req, {
                 type: 'object',
                 required: ['token'],
                 properties: { token: { type: 'string' } }
@@ -7904,14 +8376,16 @@ export class TonApiClient {
          */
         getAccountSeqno: (accountId_Address: Address, params: RequestParams = {}) => {
             const accountId = accountId_Address.toRawString();
-            const req = this.http.request<Seqno, Error>({
+            const req = this.http.request<GetAccountSeqnoData, Error>({
                 path: `/v2/wallet/${accountId}/seqno`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<Seqno>(req, { $ref: '#/components/schemas/Seqno' });
+            return prepareResponse<GetAccountSeqnoData>(req, {
+                $ref: '#/components/schemas/Seqno'
+            });
         },
 
         /**
@@ -7922,14 +8396,16 @@ export class TonApiClient {
          * @request GET:/v2/pubkeys/{public_key}/wallets
          */
         getWalletsByPublicKey: (publicKey: string, params: RequestParams = {}) => {
-            const req = this.http.request<Accounts, Error>({
+            const req = this.http.request<GetWalletsByPublicKeyData, Error>({
                 path: `/v2/pubkeys/${publicKey}/wallets`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<Accounts>(req, { $ref: '#/components/schemas/Accounts' });
+            return prepareResponse<GetWalletsByPublicKeyData>(req, {
+                $ref: '#/components/schemas/Accounts'
+            });
         }
     };
     gasless = {
@@ -7941,14 +8417,14 @@ export class TonApiClient {
          * @request GET:/v2/gasless/config
          */
         gaslessConfig: (params: RequestParams = {}) => {
-            const req = this.http.request<GaslessConfig, Error>({
+            const req = this.http.request<GaslessConfigData, Error>({
                 path: `/v2/gasless/config`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<GaslessConfig>(req, {
+            return prepareResponse<GaslessConfigData>(req, {
                 $ref: '#/components/schemas/GaslessConfig'
             });
         },
@@ -7974,7 +8450,7 @@ export class TonApiClient {
             params: RequestParams = {}
         ) => {
             const masterId = masterId_Address.toRawString();
-            const req = this.http.request<SignRawParams, Error>({
+            const req = this.http.request<GaslessEstimateData, Error>({
                 path: `/v2/gasless/estimate/${masterId}`,
                 method: 'POST',
                 body: prepareRequestData(data, {
@@ -7997,7 +8473,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<SignRawParams>(req, {
+            return prepareResponse<GaslessEstimateData>(req, {
                 $ref: '#/components/schemas/SignRawParams'
             });
         },
@@ -8018,7 +8494,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const req = this.http.request<void, Error>({
+            const req = this.http.request<GaslessSendData, Error>({
                 path: `/v2/gasless/send`,
                 method: 'POST',
                 body: prepareRequestData(data, {
@@ -8032,7 +8508,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<void>(req);
+            return prepareResponse<GaslessSendData>(req);
         }
     };
     liteServer = {
@@ -8044,27 +8520,14 @@ export class TonApiClient {
          * @request GET:/v2/liteserver/get_masterchain_info
          */
         getRawMasterchainInfo: (params: RequestParams = {}) => {
-            const req = this.http.request<
-                {
-                    last: BlockRaw;
-                    /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                    state_root_hash: string;
-                    init: InitStateRaw;
-                },
-                Error
-            >({
+            const req = this.http.request<GetRawMasterchainInfoData, Error>({
                 path: `/v2/liteserver/get_masterchain_info`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<{
-                last: BlockRaw;
-                /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                state_root_hash: string;
-                init: InitStateRaw;
-            }>(req, {
+            return prepareResponse<GetRawMasterchainInfoData>(req, {
                 type: 'object',
                 required: ['last', 'state_root_hash', 'init'],
                 properties: {
@@ -8093,40 +8556,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const req = this.http.request<
-                {
-                    /**
-                     * @format int32
-                     * @example 0
-                     */
-                    mode: number;
-                    /**
-                     * @format int32
-                     * @example 257
-                     */
-                    version: number;
-                    /**
-                     * @format int64
-                     * @example 7
-                     */
-                    capabilities: number;
-                    last: BlockRaw;
-                    /**
-                     * @format int32
-                     * @example 1687938199
-                     */
-                    last_utime: number;
-                    /**
-                     * @format int32
-                     * @example 1687938204
-                     */
-                    now: number;
-                    /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                    state_root_hash: string;
-                    init: InitStateRaw;
-                },
-                Error
-            >({
+            const req = this.http.request<GetRawMasterchainInfoExtData, Error>({
                 path: `/v2/liteserver/get_masterchain_info_ext`,
                 method: 'GET',
                 query: query,
@@ -8134,37 +8564,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<{
-                /**
-                 * @format int32
-                 * @example 0
-                 */
-                mode: number;
-                /**
-                 * @format int32
-                 * @example 257
-                 */
-                version: number;
-                /**
-                 * @format int64
-                 * @example 7
-                 */
-                capabilities: number;
-                last: BlockRaw;
-                /**
-                 * @format int32
-                 * @example 1687938199
-                 */
-                last_utime: number;
-                /**
-                 * @format int32
-                 * @example 1687938204
-                 */
-                now: number;
-                /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                state_root_hash: string;
-                init: InitStateRaw;
-            }>(req, {
+            return prepareResponse<GetRawMasterchainInfoExtData>(req, {
                 type: 'object',
                 required: [
                     'mode',
@@ -8197,29 +8597,14 @@ export class TonApiClient {
          * @request GET:/v2/liteserver/get_time
          */
         getRawTime: (params: RequestParams = {}) => {
-            const req = this.http.request<
-                {
-                    /**
-                     * @format int32
-                     * @example 1687146728
-                     */
-                    time: number;
-                },
-                Error
-            >({
+            const req = this.http.request<GetRawTimeData, Error>({
                 path: `/v2/liteserver/get_time`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<{
-                /**
-                 * @format int32
-                 * @example 1687146728
-                 */
-                time: number;
-            }>(req, {
+            return prepareResponse<GetRawTimeData>(req, {
                 type: 'object',
                 required: ['time'],
                 properties: { time: { type: 'integer', format: 'int32' } }
@@ -8234,25 +8619,14 @@ export class TonApiClient {
          * @request GET:/v2/liteserver/get_block/{block_id}
          */
         getRawBlockchainBlock: (blockId: string, params: RequestParams = {}) => {
-            const req = this.http.request<
-                {
-                    id: BlockRaw;
-                    /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                    data: string;
-                },
-                Error
-            >({
+            const req = this.http.request<GetRawBlockchainBlockData, Error>({
                 path: `/v2/liteserver/get_block/${blockId}`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<{
-                id: BlockRaw;
-                /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                data: string;
-            }>(req, {
+            return prepareResponse<GetRawBlockchainBlockData>(req, {
                 type: 'object',
                 required: ['id', 'data'],
                 properties: {
@@ -8270,33 +8644,14 @@ export class TonApiClient {
          * @request GET:/v2/liteserver/get_state/{block_id}
          */
         getRawBlockchainBlockState: (blockId: string, params: RequestParams = {}) => {
-            const req = this.http.request<
-                {
-                    id: BlockRaw;
-                    /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                    root_hash: string;
-                    /** @example "A6A0BD6608672B11B79538A50B2204E748305C12AA0DED9C16CF0006CE3AF8DB" */
-                    file_hash: string;
-                    /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                    data: string;
-                },
-                Error
-            >({
+            const req = this.http.request<GetRawBlockchainBlockStateData, Error>({
                 path: `/v2/liteserver/get_state/${blockId}`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<{
-                id: BlockRaw;
-                /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                root_hash: string;
-                /** @example "A6A0BD6608672B11B79538A50B2204E748305C12AA0DED9C16CF0006CE3AF8DB" */
-                file_hash: string;
-                /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                data: string;
-            }>(req, {
+            return prepareResponse<GetRawBlockchainBlockStateData>(req, {
                 type: 'object',
                 required: ['id', 'root_hash', 'file_hash', 'data'],
                 properties: {
@@ -8327,19 +8682,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const req = this.http.request<
-                {
-                    id: BlockRaw;
-                    /**
-                     * @format int32
-                     * @example 0
-                     */
-                    mode: number;
-                    /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                    header_proof: string;
-                },
-                Error
-            >({
+            const req = this.http.request<GetRawBlockchainBlockHeaderData, Error>({
                 path: `/v2/liteserver/get_block_header/${blockId}`,
                 method: 'GET',
                 query: query,
@@ -8347,16 +8690,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<{
-                id: BlockRaw;
-                /**
-                 * @format int32
-                 * @example 0
-                 */
-                mode: number;
-                /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                header_proof: string;
-            }>(req, {
+            return prepareResponse<GetRawBlockchainBlockHeaderData>(req, {
                 type: 'object',
                 required: ['id', 'mode', 'header_proof'],
                 properties: {
@@ -8381,16 +8715,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const req = this.http.request<
-                {
-                    /**
-                     * @format int32
-                     * @example 200
-                     */
-                    code: number;
-                },
-                Error
-            >({
+            const req = this.http.request<SendRawMessageData, Error>({
                 path: `/v2/liteserver/send_message`,
                 method: 'POST',
                 body: prepareRequestData(data, {
@@ -8402,13 +8727,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<{
-                /**
-                 * @format int32
-                 * @example 200
-                 */
-                code: number;
-            }>(req, {
+            return prepareResponse<SendRawMessageData>(req, {
                 type: 'object',
                 required: ['code'],
                 properties: { code: { type: 'integer', format: 'int32' } }
@@ -8434,19 +8753,7 @@ export class TonApiClient {
             params: RequestParams = {}
         ) => {
             const accountId = accountId_Address.toRawString();
-            const req = this.http.request<
-                {
-                    id: BlockRaw;
-                    shardblk: BlockRaw;
-                    /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                    shard_proof: string;
-                    /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                    proof: string;
-                    /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                    state: string;
-                },
-                Error
-            >({
+            const req = this.http.request<GetRawAccountStateData, Error>({
                 path: `/v2/liteserver/get_account_state/${accountId}`,
                 method: 'GET',
                 query: query,
@@ -8454,16 +8761,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<{
-                id: BlockRaw;
-                shardblk: BlockRaw;
-                /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                shard_proof: string;
-                /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                proof: string;
-                /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                state: string;
-            }>(req, {
+            return prepareResponse<GetRawAccountStateData>(req, {
                 type: 'object',
                 required: ['id', 'shardblk', 'shard_proof', 'proof', 'state'],
                 properties: {
@@ -8506,17 +8804,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const req = this.http.request<
-                {
-                    id: BlockRaw;
-                    shardblk: BlockRaw;
-                    /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                    shard_proof: string;
-                    /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                    shard_descr: string;
-                },
-                Error
-            >({
+            const req = this.http.request<GetRawShardInfoData, Error>({
                 path: `/v2/liteserver/get_shard_info/${blockId}`,
                 method: 'GET',
                 query: query,
@@ -8524,14 +8812,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<{
-                id: BlockRaw;
-                shardblk: BlockRaw;
-                /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                shard_proof: string;
-                /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                shard_descr: string;
-            }>(req, {
+            return prepareResponse<GetRawShardInfoData>(req, {
                 type: 'object',
                 required: ['id', 'shardblk', 'shard_proof', 'shard_descr'],
                 properties: {
@@ -8551,29 +8832,14 @@ export class TonApiClient {
          * @request GET:/v2/liteserver/get_all_shards_info/{block_id}
          */
         getAllRawShardsInfo: (blockId: string, params: RequestParams = {}) => {
-            const req = this.http.request<
-                {
-                    id: BlockRaw;
-                    /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                    proof: string;
-                    /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                    data: string;
-                },
-                Error
-            >({
+            const req = this.http.request<GetAllRawShardsInfoData, Error>({
                 path: `/v2/liteserver/get_all_shards_info/${blockId}`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<{
-                id: BlockRaw;
-                /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                proof: string;
-                /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                data: string;
-            }>(req, {
+            return prepareResponse<GetAllRawShardsInfoData>(req, {
                 type: 'object',
                 required: ['id', 'proof', 'data'],
                 properties: {
@@ -8615,14 +8881,7 @@ export class TonApiClient {
             params: RequestParams = {}
         ) => {
             const accountId = accountId_Address.toRawString();
-            const req = this.http.request<
-                {
-                    ids: BlockRaw[];
-                    /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                    transactions: string;
-                },
-                Error
-            >({
+            const req = this.http.request<GetRawTransactionsData, Error>({
                 path: `/v2/liteserver/get_transactions/${accountId}`,
                 method: 'GET',
                 query: query,
@@ -8630,11 +8889,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<{
-                ids: BlockRaw[];
-                /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                transactions: string;
-            }>(req, {
+            return prepareResponse<GetRawTransactionsData>(req, {
                 type: 'object',
                 required: ['ids', 'transactions'],
                 properties: {
@@ -8681,34 +8936,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const req = this.http.request<
-                {
-                    id: BlockRaw;
-                    /**
-                     * @format int32
-                     * @example 100
-                     */
-                    req_count: number;
-                    /** @example true */
-                    incomplete: boolean;
-                    ids: {
-                        /**
-                         * @format int32
-                         * @example 0
-                         */
-                        mode: number;
-                        /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                        account?: string;
-                        /** @format bigint */
-                        lt?: bigint;
-                        /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                        hash?: string;
-                    }[];
-                    /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                    proof: string;
-                },
-                Error
-            >({
+            const req = this.http.request<GetRawListBlockTransactionsData, Error>({
                 path: `/v2/liteserver/list_block_transactions/${blockId}`,
                 method: 'GET',
                 query: query && {
@@ -8719,31 +8947,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<{
-                id: BlockRaw;
-                /**
-                 * @format int32
-                 * @example 100
-                 */
-                req_count: number;
-                /** @example true */
-                incomplete: boolean;
-                ids: {
-                    /**
-                     * @format int32
-                     * @example 0
-                     */
-                    mode: number;
-                    /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                    account?: string;
-                    /** @format bigint */
-                    lt?: bigint;
-                    /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                    hash?: string;
-                }[];
-                /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                proof: string;
-            }>(req, {
+            return prepareResponse<GetRawListBlockTransactionsData>(req, {
                 type: 'object',
                 required: ['id', 'req_count', 'incomplete', 'ids', 'proof'],
                 properties: {
@@ -8796,51 +9000,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const req = this.http.request<
-                {
-                    /** @example true */
-                    complete: boolean;
-                    from: BlockRaw;
-                    to: BlockRaw;
-                    steps: {
-                        lite_server_block_link_back: {
-                            /** @example false */
-                            to_key_block: boolean;
-                            from: BlockRaw;
-                            to: BlockRaw;
-                            /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                            dest_proof: string;
-                            /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                            proof: string;
-                            /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                            state_proof: string;
-                        };
-                        lite_server_block_link_forward: {
-                            /** @example false */
-                            to_key_block: boolean;
-                            from: BlockRaw;
-                            to: BlockRaw;
-                            /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                            dest_proof: string;
-                            /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                            config_proof: string;
-                            signatures: {
-                                /** @format int64 */
-                                validator_set_hash: number;
-                                /** @format int32 */
-                                catchain_seqno: number;
-                                signatures: {
-                                    /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                                    node_id_short: string;
-                                    /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                                    signature: string;
-                                }[];
-                            };
-                        };
-                    }[];
-                },
-                Error
-            >({
+            const req = this.http.request<GetRawBlockProofData, Error>({
                 path: `/v2/liteserver/get_block_proof`,
                 method: 'GET',
                 query: query,
@@ -8848,48 +9008,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<{
-                /** @example true */
-                complete: boolean;
-                from: BlockRaw;
-                to: BlockRaw;
-                steps: {
-                    lite_server_block_link_back: {
-                        /** @example false */
-                        to_key_block: boolean;
-                        from: BlockRaw;
-                        to: BlockRaw;
-                        /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                        dest_proof: string;
-                        /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                        proof: string;
-                        /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                        state_proof: string;
-                    };
-                    lite_server_block_link_forward: {
-                        /** @example false */
-                        to_key_block: boolean;
-                        from: BlockRaw;
-                        to: BlockRaw;
-                        /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                        dest_proof: string;
-                        /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                        config_proof: string;
-                        signatures: {
-                            /** @format int64 */
-                            validator_set_hash: number;
-                            /** @format int32 */
-                            catchain_seqno: number;
-                            signatures: {
-                                /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                                node_id_short: string;
-                                /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                                signature: string;
-                            }[];
-                        };
-                    };
-                }[];
-            }>(req, {
+            return prepareResponse<GetRawBlockProofData>(req, {
                 type: 'object',
                 required: ['complete', 'from', 'to', 'steps'],
                 properties: {
@@ -8997,21 +9116,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const req = this.http.request<
-                {
-                    /**
-                     * @format int32
-                     * @example 0
-                     */
-                    mode: number;
-                    id: BlockRaw;
-                    /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                    state_proof: string;
-                    /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                    config_proof: string;
-                },
-                Error
-            >({
+            const req = this.http.request<GetRawConfigData, Error>({
                 path: `/v2/liteserver/get_config_all/${blockId}`,
                 method: 'GET',
                 query: query,
@@ -9019,18 +9124,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<{
-                /**
-                 * @format int32
-                 * @example 0
-                 */
-                mode: number;
-                id: BlockRaw;
-                /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                state_proof: string;
-                /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                config_proof: string;
-            }>(req, {
+            return prepareResponse<GetRawConfigData>(req, {
                 type: 'object',
                 required: ['mode', 'id', 'state_proof', 'config_proof'],
                 properties: {
@@ -9050,31 +9144,14 @@ export class TonApiClient {
          * @request GET:/v2/liteserver/get_shard_block_proof/{block_id}
          */
         getRawShardBlockProof: (blockId: string, params: RequestParams = {}) => {
-            const req = this.http.request<
-                {
-                    masterchain_id: BlockRaw;
-                    links: {
-                        id: BlockRaw;
-                        /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                        proof: string;
-                    }[];
-                },
-                Error
-            >({
+            const req = this.http.request<GetRawShardBlockProofData, Error>({
                 path: `/v2/liteserver/get_shard_block_proof/${blockId}`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<{
-                masterchain_id: BlockRaw;
-                links: {
-                    id: BlockRaw;
-                    /** @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85" */
-                    proof: string;
-                }[];
-            }>(req, {
+            return prepareResponse<GetRawShardBlockProofData>(req, {
                 type: 'object',
                 required: ['masterchain_id', 'links'],
                 properties: {
@@ -9102,33 +9179,14 @@ export class TonApiClient {
          * @request GET:/v2/liteserver/get_out_msg_queue_sizes
          */
         getOutMsgQueueSizes: (params: RequestParams = {}) => {
-            const req = this.http.request<
-                {
-                    /** @format uint32 */
-                    ext_msg_queue_size_limit: number;
-                    shards: {
-                        id: BlockRaw;
-                        /** @format uint32 */
-                        size: number;
-                    }[];
-                },
-                Error
-            >({
+            const req = this.http.request<GetOutMsgQueueSizesData, Error>({
                 path: `/v2/liteserver/get_out_msg_queue_sizes`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<{
-                /** @format uint32 */
-                ext_msg_queue_size_limit: number;
-                shards: {
-                    id: BlockRaw;
-                    /** @format uint32 */
-                    size: number;
-                }[];
-            }>(req, {
+            return prepareResponse<GetOutMsgQueueSizesData>(req, {
                 type: 'object',
                 required: ['ext_msg_queue_size_limit', 'shards'],
                 properties: {
@@ -9158,14 +9216,16 @@ export class TonApiClient {
          */
         getMultisigAccount: (accountId_Address: Address, params: RequestParams = {}) => {
             const accountId = accountId_Address.toRawString();
-            const req = this.http.request<Multisig, Error>({
+            const req = this.http.request<GetMultisigAccountData, Error>({
                 path: `/v2/multisig/${accountId}`,
                 method: 'GET',
                 format: 'json',
                 ...params
             });
 
-            return prepareResponse<Multisig>(req, { $ref: '#/components/schemas/Multisig' });
+            return prepareResponse<GetMultisigAccountData>(req, {
+                $ref: '#/components/schemas/Multisig'
+            });
         }
     };
     emulation = {
@@ -9183,7 +9243,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const req = this.http.request<DecodedMessage, Error>({
+            const req = this.http.request<DecodeMessageData, Error>({
                 path: `/v2/message/decode`,
                 method: 'POST',
                 body: prepareRequestData(data, {
@@ -9195,7 +9255,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<DecodedMessage>(req, {
+            return prepareResponse<DecodeMessageData>(req, {
                 $ref: '#/components/schemas/DecodedMessage'
             });
         },
@@ -9217,7 +9277,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const req = this.http.request<Event, Error>({
+            const req = this.http.request<EmulateMessageToEventData, Error>({
                 path: `/v2/events/emulate`,
                 method: 'POST',
                 query: query,
@@ -9230,7 +9290,9 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<Event>(req, { $ref: '#/components/schemas/Event' });
+            return prepareResponse<EmulateMessageToEventData>(req, {
+                $ref: '#/components/schemas/Event'
+            });
         },
 
         /**
@@ -9250,7 +9312,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const req = this.http.request<Trace, Error>({
+            const req = this.http.request<EmulateMessageToTraceData, Error>({
                 path: `/v2/traces/emulate`,
                 method: 'POST',
                 query: query,
@@ -9263,7 +9325,9 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<Trace>(req, { $ref: '#/components/schemas/Trace' });
+            return prepareResponse<EmulateMessageToTraceData>(req, {
+                $ref: '#/components/schemas/Trace'
+            });
         },
 
         /**
@@ -9293,7 +9357,7 @@ export class TonApiClient {
             },
             params: RequestParams = {}
         ) => {
-            const req = this.http.request<MessageConsequences, Error>({
+            const req = this.http.request<EmulateMessageToWalletData, Error>({
                 path: `/v2/wallet/emulate`,
                 method: 'POST',
                 body: prepareRequestData(data, {
@@ -9322,7 +9386,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<MessageConsequences>(req, {
+            return prepareResponse<EmulateMessageToWalletData>(req, {
                 $ref: '#/components/schemas/MessageConsequences'
             });
         },
@@ -9346,7 +9410,7 @@ export class TonApiClient {
             params: RequestParams = {}
         ) => {
             const accountId = accountId_Address.toRawString();
-            const req = this.http.request<AccountEvent, Error>({
+            const req = this.http.request<EmulateMessageToAccountEventData, Error>({
                 path: `/v2/accounts/${accountId}/events/emulate`,
                 method: 'POST',
                 query: query,
@@ -9359,7 +9423,7 @@ export class TonApiClient {
                 ...params
             });
 
-            return prepareResponse<AccountEvent>(req, {
+            return prepareResponse<EmulateMessageToAccountEventData>(req, {
                 $ref: '#/components/schemas/AccountEvent'
             });
         }

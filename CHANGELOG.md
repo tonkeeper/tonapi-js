@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.3.1] - 2025-01-09
+
+### Added
+- Support for prefixItems from openapi 3.1.0 in schema
+- Example for using Emulation in the client
+
+### Fixed
+- Corrected type mismatch for operations with inline response schemas (not defined via $ref in components) in OpenAPI. Key transformations from snake_case to camelCase are now properly reflected in the types, making them usable.
+- Resolved an internal issue that caused generation failures when the response format was not application/json.
+
 ## [0.3.0] - 2024-11-19
 
 ### Fixed

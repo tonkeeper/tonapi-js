@@ -86,6 +86,36 @@ tags:
       url: https://docs.tonconsole.com/tonapi/rest-api/utilities
 
 paths:
+  /v2/openapi.json:
+    get:
+      description: Get the openapi.json file
+      operationId: getOpenapiJson
+      tags:
+        - Utilities
+      responses:
+        '200':
+          description: openapi.josn
+          content:
+            application/json:
+              schema: { } # Free-form JSON value
+        'default':
+          $ref: '#/components/responses/Error'
+  /v2/openapi.yml:
+    get:
+      description: Get the openapi.yml file
+      operationId: getOpenapiYml
+      tags:
+        - Utilities
+      responses:
+        '200':
+          description: openapi.yml
+          content:
+            application/yaml:
+              schema:
+                type: string
+                format: binary
+        'default':
+          $ref: '#/components/responses/Error'
   /v2/status:
     get:
       description: Status
@@ -396,6 +426,17 @@ paths:
             items:
               type: string
             example: [ "0:9a33970f617bcd71acf2cd28357c067aa31859c02820d8f01d74c88063a8f4d8" ]
+        - name: fix_order
+          in: query
+          required: false
+          schema:
+            type: boolean
+            description: |-
+              A temporary fix to switch to a scheme with direct ordering of arguments. 
+              If equal to false, then the method takes arguments in direct order,
+              e.g. for get_nft_content(int index, cell individual_content) we pass a list of arguments [index, individual_content].
+              If equal to true, then the method takes arguments in reverse order, e.g. [individual_content, index].
+            default: true
       responses:
         '200':
           description: method execution result
@@ -3145,6 +3186,10 @@ components:
                 items:
                   type: string
                   format: cell
+              meta:
+                type: object
+                additionalProperties:
+                  type: string
     EmulationBoc:
       description: bag-of-cells serialized to base64/hex and additional parameters to configure emulation
       required: true
@@ -3712,6 +3757,10 @@ components:
           format: int64
           x-js-format: bigint
           example: 60000000
+        value_extra:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExtraCurrency'
         fwd_fee:
           type: integer
           format: int64
@@ -4589,6 +4638,10 @@ components:
           format: int64
           example: 123456789
           x-js-format: bigint
+        extra_balance:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExtraCurrency'
         currencies_balance:
           description: "{'USD': 1, 'IDR': 1000}"
           type: object
@@ -5385,6 +5438,9 @@ components:
           $ref: '#/components/schemas/JettonVerificationType'
         custom_payload_api_uri: # todo: maybe remove
           type: string
+        score:
+          type: integer
+          format: int32
     JettonBalance:
       type: object
       required:
@@ -5700,6 +5756,7 @@ components:
             type: object
             required:
               - account
+              - qty
               - quantity
               - jetton
             properties:
@@ -5707,8 +5764,13 @@ components:
                 $ref: '#/components/schemas/AccountAddress'
               jetton:
                 $ref: '#/components/schemas/JettonPreview'
+              qty:
+                type: string
+                x-js-format: bigint
+                example: "200"
               quantity:
                 type: integer
+                deprecated: true
                 format: int64
                 x-js-format: bigint
                 example: 10
@@ -5725,6 +5787,7 @@ components:
           example: "TonTransfer"
           enum:
             - TonTransfer
+            - ExtraCurrencyTransfer
             - JettonTransfer
             - JettonBurn
             - JettonMint
@@ -5753,6 +5816,8 @@ components:
             - failed
         TonTransfer:
           $ref: '#/components/schemas/TonTransferAction'
+        ExtraCurrencyTransfer:
+          $ref: '#/components/schemas/ExtraCurrencyTransferAction'
         ContractDeploy:
           $ref: '#/components/schemas/ContractDeployAction'
         JettonTransfer:
@@ -5823,6 +5888,51 @@ components:
           $ref: '#/components/schemas/EncryptedComment'
         refund:
           $ref: '#/components/schemas/Refund'
+    EcPreview:
+      type: object
+      required:
+        - id
+        - symbol
+        - decimals
+        - image
+      properties:
+        id:
+          type: integer
+          example: 239
+          format: int32
+        symbol:
+          type: string
+          example: FMS
+        decimals:
+          type: integer
+          example: 5
+        image:
+          type: string
+          example: https://cache.tonapi.io/images/extra.jpg
+    ExtraCurrencyTransferAction:
+      type: object
+      required:
+        - sender
+        - recipient
+        - amount
+        - currency
+      properties:
+        sender:
+          $ref: '#/components/schemas/AccountAddress'
+        recipient:
+          $ref: '#/components/schemas/AccountAddress'
+        amount:
+          type: string
+          x-js-format: bigint
+          example: "1000000000"
+          description: amount in quanta of tokens
+        comment:
+          type: string
+          example: "Hi! This is your salary. \nFrom accounting with love."
+        encrypted_comment:
+          $ref: '#/components/schemas/EncryptedComment'
+        currency:
+          $ref: '#/components/schemas/EcPreview'
     SmartContractAction:
       type: object
       required:
@@ -6942,6 +7052,9 @@ components:
           type: integer
           format: int32
           example: 2000
+        score:
+          type: integer
+          format: int32
     JettonHolders:
       type: object
       required:
@@ -7213,14 +7326,15 @@ components:
                 $ref: '#/components/schemas/NftItem'
     ChartPoints:
       type: array
-      items:
+      prefixItems:
         - type: integer
           format: int64
           description: Unix timestamp of the data point
         - type: number
           description: Decimal price of the token in the requested currency
+      items: false
       additionalItems: false
-      example: [ 1668436763, 97.21323234 ]
+      example: [[ 1668436763, 97.21323234 ]]
     AccountInfoByStateInit:
       type: object
       required:
@@ -7304,6 +7418,7 @@ components:
         - code
         - code_hash
         - methods
+        - compiler
       properties:
         code:
           type: string
@@ -7313,21 +7428,15 @@ components:
         methods:
           type: array
           items:
-            type: object
-            required:
-              - id
-              - method
-            properties:
-              id:
-                type: integer
-                format: int64
-              method:
-                type: string
-                example: "get_something"
+            $ref: '#/components/schemas/Method'
         compiler:
           type: string
           enum:
             - func
+            - fift
+            - tact
+        source:
+          $ref: '#/components/schemas/Source'
     PoolImplementationType:
       type: string
       enum:
@@ -7378,6 +7487,61 @@ components:
           type: integer
           format: int64
           example: 1668436763
+    ExtraCurrency:
+      type: object
+      required:
+        - amount
+        - preview
+      properties:
+        amount:
+          type: string
+          x-js-format: bigint
+          example: "1000000000"
+        preview:
+          $ref: '#/components/schemas/EcPreview'
+    SourceFile:
+      type: object
+      required:
+        - name
+        - content
+        - is_entrypoint
+        - is_std_lib
+        - include_in_command
+      properties:
+        name:
+          type: string
+        content:
+          type: string
+        is_entrypoint:
+          type: boolean
+          example: false
+        is_std_lib:
+          type: boolean
+          example: false
+        include_in_command:
+          type: boolean
+          example: false
+    Source:
+      type: object
+      required:
+        - files
+      properties:
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/SourceFile'
+    Method:
+      type: object
+      required:
+        - id
+        - method
+      properties:
+        id:
+          type: integer
+          format: int64
+        method:
+          type: string
+          example: "get_something"
   
   responses:
     Error:
