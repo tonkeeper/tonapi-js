@@ -1,53 +1,45 @@
-import { Cell, WalletContractV4 } from '@ton/ton';
+import { WalletContractV4 } from '@ton/ton';
 import { Address, beginCell, internal, toNano, SendMode, external, storeMessage } from '@ton/core';
 import { mnemonicNew, mnemonicToPrivateKey } from '@ton/crypto';
 import { TonApiClient } from '@ton-api/client';
 
-const client = new TonApiClient({
+// if you need to send lots of requests in parallel,
+// make sure you use a tonapi token.
+const ta = new TonApiClient({
     baseUrl: 'https://tonapi.io'
     // apiKey: 'YOUR_API_KEY',
 });
 
 // Emulate transaction from wallet_v4 address
-
 const emulateTransaction = async () => {
+    // Sender's wallet address
     const senderAddress = Address.parse('UQAQxxpzxmEVU0Lu8U0zNTxBzXIWPvo263TIN1OQM9YvxsnV');
+    const recipientAddress = Address.parse('UQDNzlh0XSZdb5_Qrlx5QjyZHVAO74v5oMeVVrtF_5Vt1rIt');
 
-    const { seqno } = await client.wallet.getAccountSeqno(senderAddress);
-    const { public_key } = await client.accounts.getAccountPublicKey(senderAddress); // FIX: undefined
+    // Get wallet's seqno and public key
+    const { seqno } = await ta.wallet.getAccountSeqno(senderAddress);
+    const { publicKey: publicKeyHex } = await ta.accounts.getAccountPublicKey(senderAddress);
 
-    const workchain = 0;
-    const publicKey = Buffer.from(public_key, 'hex');
+    const wallet = WalletContractV4.create({
+        workchain: 0,
+        publicKey: Buffer.from(publicKeyHex, 'hex')
+    });
 
-    const wallet = WalletContractV4.create({ workchain, publicKey });
+    // Create dummy private key
+    const dummyKey = (await mnemonicToPrivateKey(await mnemonicNew())).secretKey;
 
-    const dummyKey = (await mnemonicToPrivateKey(await mnemonicNew())).secretKey; // create dummy mnemonic
-
-    // generate body for transfer NFT
+    // Generate payload for NFT transfer
     const body = beginCell()
-        .storeUint(0x5fcc3d14, 32)
-        .storeUint(0, 64)
-        .storeAddress(Address.parse('UQDNzlh0XSZdb5_Qrlx5QjyZHVAO74v5oMeVVrtF_5Vt1rIt'))
-        .storeAddress(senderAddress)
+        .storeUint(0x5fcc3d14, 32) // Operation code for NFT transfer
+        .storeUint(0, 64) // Query ID
+        .storeAddress(recipientAddress) // Recipient address
+        .storeAddress(senderAddress) // Sender address
         .storeUint(0, 1)
-        .storeCoins(toNano('0.0000001'))
-        .storeBit(0)
+        .storeCoins(toNano('0.0000001')) // Small transfer fee
+        .storeBit(0) // No custom payload
         .endCell();
 
-    const externalMessage = (body: Cell) => {
-        return beginCell()
-            .store(
-                storeMessage(
-                    external({
-                        to: senderAddress,
-                        init: undefined,
-                        body: body
-                    })
-                )
-            )
-            .endCell();
-    };
-
+    // Create transfer for emulation
     const tr = wallet.createTransfer({
         seqno,
         secretKey: dummyKey,
@@ -61,11 +53,23 @@ const emulateTransaction = async () => {
         ]
     });
 
-    const boc = externalMessage(tr);
+    // Create external message for emulation
+    const bocExternalMessage = beginCell()
+        .store(
+            storeMessage(
+                external({
+                    to: senderAddress,
+                    init: undefined,
+                    body: tr
+                })
+            )
+        )
+        .endCell();
 
-    const emulateTrace = await client.emulation.emulateMessageToEvent(
-        { boc },
-        { ignore_signature_check: true } // ignore signature for execute message from other account
+    // Emulate transaction
+    const emulateTrace = await ta.emulation.emulateMessageToEvent(
+        { boc: bocExternalMessage },
+        { ignore_signature_check: true } // Ignore signature for execute message from other account
     );
 
     console.log(emulateTrace);
