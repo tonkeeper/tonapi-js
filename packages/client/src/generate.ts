@@ -119,6 +119,7 @@ const generateApiParams: GenerateApiParams = {
     singleHttpClient: true,
     cleanOutput: false,
     generateClient: true,
+    extractResponseBody: true,
     primitiveTypeConstructs: (struct: PrimitiveTypeStruct) => ({
         ...struct,
         integer: {
@@ -141,11 +142,11 @@ const generateApiParams: GenerateApiParams = {
         },
         onPreParseSchema(originalSchema) {
             if (originalSchema.type === 'array' && originalSchema.prefixItems) {
-                const { prefixItems, ...rest } = originalSchema
+                const { prefixItems, ...rest } = originalSchema;
                 return {
                     ...rest,
                     items: prefixItems
-                }
+                };
             }
 
             return {
