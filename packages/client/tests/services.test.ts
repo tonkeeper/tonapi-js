@@ -1,26 +1,28 @@
 import { Address } from '@ton/core';
 import { ta } from './utils/client';
-// import fetchMock from 'jest-fetch-mock';
-// import { JSONStringify } from './utils/jsonbig';
+import fetchMock from 'jest-fetch-mock';
+import { getChartRates } from './__mock__/services';
 
-// beforeEach(() => {
-//     fetchMock.enableMocks();
-//     fetchMock.resetMocks();
-// });
+beforeEach(() => {
+    fetchMock.enableMocks();
+    fetchMock.resetMocks();
+});
 
-// afterAll(() => {
-//     fetchMock.disableMocks();
-// });
+afterAll(() => {
+    fetchMock.disableMocks();
+});
 
 test('getChartRates test', async () => {
-    // fetchMock.mockResponseOnce(execGetMethodForBlockchainAccount);
+    fetchMock.mockResponseOnce(getChartRates);
 
-    const addressString = 'Ef_X4pRKtgXOXYMOXNgXNRdlhkNKJ9bTKMfqvj6HDIiQG98F';
+    const addressString = 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs';
     const addressObject = Address.parse(addressString);
-    const points = await ta.rates.getChartRates({
-        token: Address.parse('EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs'),
-        currency: 'rub',
-    }).then(res => res.points);
+    const points = await ta.rates
+        .getChartRates({
+            token: addressObject,
+            currency: 'rub'
+        })
+        .then(res => res.points);
 
     expect(points).toBeDefined();
     expect(Array.isArray(points)).toBe(true);
