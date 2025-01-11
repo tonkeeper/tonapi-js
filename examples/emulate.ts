@@ -67,7 +67,7 @@ const emulateTransaction = async () => {
         .endCell();
 
     // Emulate transaction
-    const emulateTrace = await ta.emulation.emulateMessageToEvent(
+    const emulateTrace = await ta.emulation.emulateMessageToTrace(
         { boc: bocExternalMessage },
         { ignore_signature_check: true } // Ignore signature for execute message from other account
     );
