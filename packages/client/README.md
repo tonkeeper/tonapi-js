@@ -88,6 +88,33 @@ ta.jettons.getJettonInfo(jettonAddress)
     .catch(error => console.error('Error fetching jetton info:', error));
 ```
 
+### Send message to blockchain
+
+```javascript
+import { beginCell, external, storeMessage, Address } from '@ton/core';
+
+const accountAddress = Address.parse('JETTON_ADDRESS_HERE');
+const exampleMessage = beginCell()
+    .storeUint(0, 64)
+    .endCell();
+    
+
+const messageBoc = beginCell()
+    .store(
+        storeMessage(
+            external({
+                to: address,
+                body: exampleMessage
+            })
+        )
+    )
+    .endCell();
+
+ta.blockchain.sendBlockchainMessage({
+    boc: messageBoc
+});
+```
+
 ## License
 
 MIT
