@@ -127,3 +127,44 @@ export const getChartRates = JSONStringify({
         [1735982890, 110.47636566666667]
     ]
 });
+
+export const getRates = JSONStringify({
+    rates: {
+        TON: {
+            prices: {
+                USD: 4.978899999999999,
+                EUR: 4.737624325601428
+            },
+            diff_24h: {
+                USD: '−1.54%',
+                EUR: '−1.68%'
+            },
+            diff_7d: {
+                USD: '−2.17%',
+                EUR: '−2.97%'
+            },
+            diff_30d: {
+                USD: '−14.32%',
+                EUR: '−14.99%'
+            }
+        },
+        TOKEN_WITH_UNDERSCORE: {
+            prices: {
+                USD: 5.236852471857632,
+                EUR: 4.983076514944805
+            },
+            diff_24h: {
+                USD: '−1.54%',
+                EUR: '−1.67%'
+            },
+            diff_7d: {
+                USD: '−2.10%',
+                EUR: '−2.90%'
+            },
+            diff_30d: {
+                USD: '−14.04%',
+                EUR: '−14.71%'
+            }
+        }
+    }
+});

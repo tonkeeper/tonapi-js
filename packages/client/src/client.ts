@@ -5882,15 +5882,26 @@ function prepareResponseData<U>(obj: any, orSchema?: any): U {
         }
     }
 
-    // case of non tuple-item object
+    // Case of non tuple-item object
     if (obj !== null && typeof obj === 'object') {
         return Object.keys(obj).reduce(
             (acc, key) => {
-                const objSchema = schema?.properties && schema.properties[key];
+                if (!schema) {
+                    // If schema is undefined, do not convert keys
+                    acc[key] = prepareResponseData(obj[key], undefined);
+                    return acc;
+                }
 
-                const camelCaseKey = snakeToCamel(key);
+                const objSchema = schema.properties && schema.properties[key];
+                const isDefinedProperty = !!objSchema;
 
-                acc[camelCaseKey] = prepareResponseData(obj[key], objSchema);
+                // Only convert to camelCase if it's a defined property
+                const camelCaseKey = isDefinedProperty ? snakeToCamel(key) : key;
+
+                // Use the specific property schema or the additionalProperties schema
+                const propertySchema = isDefinedProperty ? objSchema : schema.additionalProperties;
+
+                acc[camelCaseKey] = prepareResponseData(obj[key], propertySchema);
                 return acc;
             },
             {} as Record<string, unknown>
