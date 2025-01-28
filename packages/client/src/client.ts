@@ -3256,6 +3256,8 @@ export interface FullRequestParams extends Omit<RequestInit, 'body'> {
     type?: ContentType;
     /** query params */
     query?: QueryParamsType;
+    /** query implode */
+    queryImplode?: string[];
     /** format of response (i.e. response.json() -> format: "json") */
     format?: ResponseFormat;
     /** request body */
@@ -3378,18 +3380,28 @@ class HttpClient {
         return this.encodeQueryParam(key, query[key]);
     }
 
-    protected addArrayQueryParam(query: QueryParamsType, key: string) {
-        const value = query[key];
-        return value.map((v: any) => this.encodeQueryParam(key, v)).join('&');
+    protected addImplodeArrayQueryParam(query: QueryParamsType, key: string) {
+        const value = query[key]
+            .map((val: any) => encodeURIComponent(typeof val === 'number' ? val : `${val}`))
+            .join(',');
+
+        return this.encodeQueryParam(key, value);
     }
 
-    protected toQueryString(rawQuery?: QueryParamsType): string {
+    protected addArrayQueryParam(query: QueryParamsType, key: string, implodeParams?: string[]) {
+        const value = query[key];
+        return implodeParams?.includes(key)
+            ? this.addImplodeArrayQueryParam(query, key)
+            : value.map((v: any) => this.encodeQueryParam(key, v)).join('&');
+    }
+
+    protected toQueryString(rawQuery?: QueryParamsType, implodeParams?: string[]): string {
         const query = rawQuery || {};
         const keys = Object.keys(query).filter(key => 'undefined' !== typeof query[key]);
         return keys
             .map(key =>
                 Array.isArray(query[key])
-                    ? this.addArrayQueryParam(query, key)
+                    ? this.addArrayQueryParam(query, key, implodeParams)
                     : this.addQueryParam(query, key)
             )
             .join('&');
@@ -3465,13 +3477,14 @@ class HttpClient {
         path,
         type,
         query,
+        queryImplode,
         format,
         baseUrl,
         cancelToken,
         ...params
     }: FullRequestParams): Promise<T> => {
         const requestParams = this.mergeRequestParams(params);
-        const queryString = query && this.toQueryString(query);
+        const queryString = query && this.toQueryString(query, queryImplode);
         const contentType = type ?? ContentType.Json;
         const payloadFormatter = this.contentFormatters[contentType];
         const responseFormat = format || requestParams.format;
@@ -6657,6 +6670,7 @@ export class TonApiClient {
                 path: `/v2/accounts/${accountId}/jettons`,
                 method: 'GET',
                 query: query,
+                queryImplode: ['currencies', 'supported_extensions'],
                 format: 'json',
                 ...params
             });
@@ -6696,6 +6710,7 @@ export class TonApiClient {
                 path: `/v2/accounts/${accountId}/jettons/${jettonId}`,
                 method: 'GET',
                 query: query,
+                queryImplode: ['currencies', 'supported_extensions'],
                 format: 'json',
                 ...params
             });
@@ -6913,6 +6928,7 @@ export class TonApiClient {
                 path: `/v2/accounts/${accountId}/events`,
                 method: 'GET',
                 query: query,
+                queryImplode: ['initiator'],
                 format: 'json',
                 ...params
             });
@@ -8149,6 +8165,7 @@ export class TonApiClient {
                 path: `/v2/rates`,
                 method: 'GET',
                 query: query,
+                queryImplode: ['tokens', 'currencies'],
                 format: 'json',
                 ...params
             });
@@ -8954,6 +8971,7 @@ export class TonApiClient {
                     ...query,
                     account_id: query.account_id?.toRawString()
                 },
+                queryImplode: ['account_id'],
                 format: 'json',
                 ...params
             });

@@ -167,7 +167,7 @@ const generateApiParams: GenerateApiParams = {
 };
 
 async function main() {
-    await downloadSchema(openapiUrl, openapiPath);
+    // await downloadSchema(openapiUrl, openapiPath);
     generateApi(generateApiParams);
 }
 

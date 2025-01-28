@@ -92,7 +92,10 @@ const queryTmplValue = queryAddressParams.length === 0 ? queryTmpl : `${queryTmp
     ...${queryTmpl},
     ${queryAddressParams.map(param => `${param.name}: ${queryTmpl}.${param.name}?.toRawString()`).join(',\n')}
 }`
-
+const queryImplodeParams = route.routeParams.query.
+    filter(param => param.explode === false)
+    .map(param => param.name)
+const queryImplodeTmpl = queryImplodeParams.length === 0 ? null : JSON.stringify(queryImplodeParams)
 %>
 /**
 <%~ routeDocs.description %>
@@ -108,6 +111,7 @@ const queryTmplValue = queryAddressParams.length === 0 ? queryTmpl : `${queryTmp
         path: `<%~ path %>`,
         method: '<%~ _.upperCase(method) %>',
         <%~ queryTmpl ? `query: ${queryTmplValue},` : '' %>
+        <%~ queryImplodeTmpl ? `queryImplode: ${queryImplodeTmpl},` : '' %>
         <%~ bodyTmpl ? `body: prepareRequestData(${bodyTmpl}${requestBodyTmpl}),` : '' %>
         <%~ securityTmpl ? `secure: ${securityTmpl},` : '' %>
         <%~ bodyContentKindTmpl ? `type: ${bodyContentKindTmpl},` : '' %>
