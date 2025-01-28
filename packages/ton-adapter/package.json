@@ -1,6 +1,6 @@
 {
   "name": "@ton-api/ton-adapter",
-  "version": "0.3.1",
+  "version": "0.4.0-beta.0",
   "description": "TonApi adapter for @ton/ton",
   "files": [
     "dist"
@@ -49,11 +49,12 @@
     }
   ],
   "peerDependencies": {
-    "@ton-api/client": "^0.3.1",
+    "@ton-api/client": "^0.4.0-beta.0",
+    "prepublishOnly": "npm run build && git diff --quiet || (echo 'Error: Uncommitted changes detected.' && exit 1)",
     "@ton/core": ">=0.59.0"
   },
   "devDependencies": {
-    "@ton-api/client": "^0.3.1",
+    "@ton-api/client": "^0.4.0-beta.0",
     "@ton/core": "^0.59.0",
     "@ton/ton": "^15.1.0",
     "@types/node": "^20.11.16",
