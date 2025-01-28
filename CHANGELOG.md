@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
+## [0.4.0] - 2025-01-29
+
+### Fixed
+- **Key Formatting (like Addresses)**: address keys and other additional fields retain their original formatting without converting to camelCase, maintaining data consistency and preventing key mismatches (https://github.com/tonkeeper/tonapi-js/issues/222)
+- **Memory Leak**: Fixed a memory leak caused by the `clone` method in API requests, enhancing performance and stability. (https://github.com/tonkeeper/tonapi-js/issues/212)
+- **Query Parameter Handling**: add support for `explode: false` in query parameters, ensuring accurate API request generation. (https://github.com/tonkeeper/tonapi-js/issues/221)
 
 ## [0.3.1] - 2025-01-09
 
