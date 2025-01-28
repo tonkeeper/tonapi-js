@@ -84,6 +84,10 @@ tags:
     externalDocs:
       description: Additional documentation
       url: https://docs.tonconsole.com/tonapi/rest-api/utilities
+  - name: ExtraCurrency
+    externalDocs:
+      description: Additional documentation
+      url: https://docs.tonconsole.com/tonapi/rest-api/extra-currency
 
 paths:
   /v2/openapi.json:
@@ -94,7 +98,7 @@ paths:
         - Utilities
       responses:
         '200':
-          description: openapi.josn
+          description: openapi.json
           content:
             application/json:
               schema: { } # Free-form JSON value
@@ -1103,6 +1107,59 @@ paths:
                     example: 1000000000
         'default':
           $ref: '#/components/responses/Error'
+          
+  /v2/accounts/{account_id}/extra-currency/{id}/history:
+    get:
+      description: Get the transfer history of extra currencies for an account.
+      operationId: getAccountExtraCurrencyHistoryByID
+      tags:
+        - Accounts
+      parameters:
+        - $ref: '#/components/parameters/accountIDParameter'
+        - $ref: '#/components/parameters/ecIDParameter'
+        - $ref: '#/components/parameters/i18n'
+        - name: before_lt
+          in: query
+          description: "omit this parameter to get last events"
+          required: false
+          schema:
+            type: integer
+            format: int64
+            example: 25758317000002
+            x-js-format: bigint
+        - name: limit
+          in: query
+          required: true
+          schema:
+            type: integer
+            example: 100
+            maximum: 1000
+            minimum: 1
+        - name: start_date
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+            maximum: 2114380800
+            example: 1668436763
+        - name: end_date
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+            maximum: 2114380800
+            example: 1668436763
+      responses:
+        '200':
+          description: account extra currency history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountEvents'
+        'default':
+          $ref: '#/components/responses/Error'
   
   /v2/dns/{domain_name}:
     get:
@@ -1667,6 +1724,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Event'
+        'default':
+          $ref: '#/components/responses/Error'
+   
+  /v2/extra-currency/{id}:
+    get:
+      description: Get extra currency info by id
+      operationId: getExtraCurrencyInfo
+      tags:
+        - ExtraCurrency
+      parameters:
+        - $ref: '#/components/parameters/ecIDParameter'
+      responses:
+        '200':
+          description: extra currency info
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EcPreview'
         'default':
           $ref: '#/components/responses/Error'
 
@@ -2957,6 +3032,15 @@ components:
       schema:
         type: string
         example: 97264395BD65A255A429B11326C84128B7D70FFED7949ABAE3036D506BA38621
+    ecIDParameter:
+      in: path
+      name: id
+      required: true
+      description: "extra currency id"
+      schema:
+        type: integer
+        example: 239
+        format: int32
     publicKeyParameter:
       in: path
       name: public_key
@@ -3182,7 +3266,7 @@ components:
                 format: cell
               batch:
                 type: array
-                maxItems: 10
+                maxItems: 5
                 items:
                   type: string
                   format: cell
@@ -5417,6 +5501,7 @@ components:
         - decimals
         - verification
         - image
+        - score
       properties:
         address:
           type: string
@@ -5888,6 +5973,15 @@ components:
           $ref: '#/components/schemas/EncryptedComment'
         refund:
           $ref: '#/components/schemas/Refund'
+    ExtraCurrencies:
+      type: object
+      required:
+        - extra_currencies
+      properties:
+        extra_currencies:
+          type: array
+          items:
+            $ref: '#/components/schemas/EcPreview'
     EcPreview:
       type: object
       required:
@@ -7052,9 +7146,6 @@ components:
           type: integer
           format: int32
           example: 2000
-        score:
-          type: integer
-          format: int32
     JettonHolders:
       type: object
       required:
@@ -7292,6 +7383,7 @@ components:
               - address
               - name
               - preview
+              - trust
             properties:
               address:
                 type: string
@@ -7302,6 +7394,8 @@ components:
               preview:
                 type: string
                 example: "https://cache.tonapi.io/images/media.jpg"
+              trust:
+                $ref: '#/components/schemas/TrustType'
     DnsExpiring:
       type: object
       required:
