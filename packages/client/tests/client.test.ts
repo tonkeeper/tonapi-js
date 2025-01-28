@@ -118,6 +118,7 @@ test('Client x-tonapi-client header test', async () => {
 });
 
 test('Client custom fetch is called', async () => {
+    fetchMock.enableMocks();
     const customFetch = jest.fn(
         (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
             return fetch(input, init);
