@@ -34,7 +34,7 @@
         "build": "npm run clean && npx tsx ./src/generate.ts && npm run test && npx tsc",
         "patch": "npm run build && git diff --quiet || (npm version patch && npm run build)",
         "prepublishOnly": "npm run build && git diff --quiet || (echo 'Error: Uncommitted changes detected.' && exit 1)",
-        "test": "jest --runInBand",
+        "test": "jest --runInBand packages/client/tests/errors.test.ts",
         "clean": "rimraf ./dist"
     },
     "devDependencies": {

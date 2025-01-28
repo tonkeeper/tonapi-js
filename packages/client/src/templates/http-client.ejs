@@ -239,11 +239,7 @@ class HttpClient {
         baseUrl,
         cancelToken,
         ...params
-<% if (config.unwrapResponseData) { %>
     }: FullRequestParams): Promise<T> => {
-<% } else { %>
-    }: FullRequestParams): Promise<HttpResponse<T, E>> => {
-<% } %>
         const requestParams = this.mergeRequestParams(params);
         const queryString = query && this.toQueryString(query, queryImplode);
         const contentType = type ?? ContentType.Json;
@@ -251,51 +247,50 @@ class HttpClient {
         const responseFormat = format || requestParams.format;
 
         return this.customFetch(
-        `${baseUrl || this.baseUrl || ""}${path}${queryString ? `?${queryString}` : ""}`,
-        {
-            ...requestParams,
-            headers: {
-            ...(requestParams.headers || {}),
-            ...(contentType && contentType !== ContentType.FormData ? { "Content-Type": contentType } : {}),
-            },
-            signal: (cancelToken ? this.createAbortSignal(cancelToken) : requestParams.signal) || null,
-            body: typeof body === "undefined" || body === null ? null : payloadFormatter(body),
-        }
-        ).then(async (response) => {
-            const r = response.clone() as HttpResponse<T, E>;
-            r.data = (null as unknown) as T;
-            r.error = (null as unknown) as E;
+            `${baseUrl || this.baseUrl || ''}${path}${queryString ? `?${queryString}` : ''}`,
+            {
+                ...requestParams,
+                headers: {
+                    ...(requestParams.headers || {}),
+                    ...(contentType && contentType !== ContentType.FormData
+                        ? { 'Content-Type': contentType }
+                        : {})
+                },
+                signal:
+                    (cancelToken ? this.createAbortSignal(cancelToken) : requestParams.signal) ||
+                    null,
+                body: typeof body === 'undefined' || body === null ? null : payloadFormatter(body)
+            }
+        ).then(async response => {
+            const r = response as HttpResponse<T, E>;
+            r.data = null as unknown as T;
+            r.error = null as unknown as E;
 
-            const customResponseFormat = responseFormat === 'json' ? 'text' : responseFormat
-            
-            const data = !customResponseFormat
-              ? r
-              : await response[customResponseFormat!]()
-                  .then((data) => {
-                    if (r.ok) {
-                      r.data = responseFormat === 'json' ? JSONParse(data as string) : data;;
-                    } else {
-                      r.error = data as E;
-                    }
-                    return r;
-                })
-                .catch((e) => {
-                    r.error = e;
-                    return r;
-                });
+            const customResponseFormat = responseFormat === 'json' ? 'text' : responseFormat;
+
+            const result = !customResponseFormat
+                ? r
+                : await response[customResponseFormat!]()
+                        .then(data => {
+                            if (r.ok) {
+                                r.data = responseFormat === 'json' ? JSONParse(data as string) : data;
+                                return r;
+                            }
+                            r.error = data as E;
+                            
+                            return r;
+                        })
+                        .catch(e => {
+                            r.error = e;
+                            return r;
+                        });
 
             if (cancelToken) {
                 this.abortControllers.delete(cancelToken);
             }
 
-<% if (!config.disableThrowOnError) { %>
-            if (!response.ok) throw data;
-<% } %>
-<% if (config.unwrapResponseData) { %>
-            return data.data;
-<% } else { %>
-            return data;
-<% } %>
+            if (!response.ok) throw result;
+            return result.data;
         });
     };
 }

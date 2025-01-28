@@ -26,6 +26,7 @@ test('should handle an error response with a JSON message', async () => {
 });
 
 test('should handle an error response with a string message', async () => {
+    // string wrapped in JSON is strange, but it's case to handle
     fetchMock.mockResponseOnce(JSON.stringify('Simple error message'), { status: 500 });
 
     await expect(ta.utilities.status()).rejects.toThrow('Simple error message');
@@ -82,5 +83,5 @@ test('should handle a JSON error response without an error field', async () => {
     const mockError = { message: 'Some error without error field' };
     fetchMock.mockResponseOnce(JSON.stringify(mockError), { status: 400 });
 
-    await expect(ta.utilities.status()).rejects.toThrow('Unknown error');
+    await expect(ta.utilities.status()).rejects.toThrow(`Wrong error response: {\"message\":\"Some error without error field\"}`);
 });
