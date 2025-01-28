@@ -24,8 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [0.3.0] - 2024-11-19
 
 ### Fixed
-- Fixed issue where errors without a json method or with invalid JSON responses caused unhandled exceptions.
-- Properly apply custom fetch from ApiConfig #201
+- Fixed issue where errors without a json method or with invalid JSON responses caused unhandled exceptions  [#37](https://github.com/tonkeeper/tonapi-js/pull/37)
+- Properly apply custom fetch from ApiConfig [#201](https://github.com/tonkeeper/tonapi-js/issues/201)
 
 ## [0.2.0] - 2024-10-18
 
