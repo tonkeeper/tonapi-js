@@ -71,6 +71,10 @@ function prepareResponseData<U>(obj: any, orSchema?: any): U {
         return Address.parse(obj as string) as U;
       }
 
+      if (schema.format === "maybe-address") {
+        return (obj === "" ? null : Address.parse(obj as string)) as U;
+      }
+
       if (schema.format === "cell") {
         return obj && (cellParse(obj as string) as U);
       }

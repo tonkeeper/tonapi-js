@@ -1,6 +1,6 @@
 import { Address } from '@ton/core';
 import { ta } from './utils/client';
-import { getAccounts, getBlockchainRawAccount } from './__mock__/address';
+import { getAccounts, getBlockchainRawAccount, getJettonHolders } from './__mock__/address';
 import { vi, test, expect, afterEach } from 'vitest';
 import { mockFetch } from './utils/mockFetch';
 
@@ -44,4 +44,20 @@ test('Address in request body test', async () => {
             })
         })
     );
+});
+
+test('Maybe address in response body test', async () => {
+    mockFetch(getJettonHolders);
+
+    const res = await ta.jettons.getJettonHolders(Address.parse('EQDDGeJzJm0yEtCDPQbspKf9wtoyhF2n96r3Rs2DnL7oUIJq'));
+
+    res.addresses.forEach((holder, index) => {
+        const tAddr = getJettonHolders.addresses[index].owner.address;
+        if (holder.owner.address === null) {
+            expect(tAddr).toBe("");
+        } else {
+            expect(holder.owner.address.toRawString()).toBe(tAddr);
+        }
+    });
+    expect(res).toBeDefined();
 });

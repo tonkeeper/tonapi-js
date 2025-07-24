@@ -36,6 +36,29 @@ export interface AccountAddress {
     isWallet: boolean;
 }
 
+export interface MaybeAccountAddress {
+    /**
+     * Address can be a valid address or empty string.
+     * @format maybe-address
+     * @example "0:10C1073837B93FDAAD594284CE8B8EFF7B9CF25427440EB2FC682762E1471365"
+     */
+    address: Address | null;
+    /**
+     * Display name. Data collected from different sources like moderation lists, dns, collections names and over.
+     * @example "Ton foundation"
+     */
+    name?: string;
+    /**
+     * Is this account was marked as part of scammers activity
+     * @example true
+     */
+    isScam: boolean;
+    /** @example "https://ton.org/logo.png" */
+    icon?: string;
+    /** @example true */
+    isWallet: boolean;
+}
+
 export interface BlockCurrencyCollection {
     /**
      * @format bigint
@@ -2485,7 +2508,7 @@ export interface JettonHolders {
          * @example "0:10C1073837B93FDAAD594284CE8B8EFF7B9CF25427440EB2FC682762E1471365"
          */
         address: Address;
-        owner: AccountAddress;
+        owner: MaybeAccountAddress;
         /**
          * balance in the smallest jetton's units
          * @format bigint
@@ -3556,6 +3579,17 @@ const components = {
         required: ['address', 'is_scam', 'is_wallet'],
         properties: {
             address: { type: 'string', format: 'address' },
+            name: { type: 'string' },
+            is_scam: { type: 'boolean' },
+            icon: { type: 'string' },
+            is_wallet: { type: 'boolean' }
+        }
+    },
+    '#/components/schemas/MaybeAccountAddress': {
+        type: 'object',
+        required: ['address', 'is_scam', 'is_wallet'],
+        properties: {
+            address: { type: 'string', format: 'maybe-address' },
             name: { type: 'string' },
             is_scam: { type: 'boolean' },
             icon: { type: 'string' },
@@ -5538,7 +5572,7 @@ const components = {
                     required: ['address', 'owner', 'balance'],
                     properties: {
                         address: { type: 'string', format: 'address' },
-                        owner: { $ref: '#/components/schemas/AccountAddress' },
+                        owner: { $ref: '#/components/schemas/MaybeAccountAddress' },
                         balance: { type: 'string', 'x-js-format': 'bigint' }
                     }
                 }
@@ -5842,6 +5876,10 @@ function prepareResponseData<U>(obj: any, orSchema?: any): U {
         if (schema.type === 'string') {
             if (schema.format === 'address') {
                 return Address.parse(obj as string) as U;
+            }
+
+            if (schema.format === 'maybe-address') {
+                return (obj === '' ? null : Address.parse(obj as string)) as U;
             }
 
             if (schema.format === 'cell') {

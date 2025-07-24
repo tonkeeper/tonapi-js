@@ -120,3 +120,37 @@ export const getAccounts = {
         }
     ]
 };
+
+export const getJettonHolders = {
+    addresses: [
+        {
+            address: '0:f3002f825e32be87b7ca420cd3803ab4d2b66541464ccfcdc6ad56ad3a5ea39e',
+            owner: {
+                address: '0:7f80df878a1172f5da0859cef8db18fb907bde5dbf1b3d916812e257dc86f2ee',
+                is_scam: false,
+                is_wallet: true
+            },
+            balance: '2638041069'
+        },
+        {
+            address: '0:92e04145668bbcb8045d62f3cbb72b7e23a7d1e014d0355d49e29d24612cbd3b',
+            owner: {
+                address: '',
+                name: 'NoneAddr',
+                is_scam: false,
+                is_wallet: false
+            },
+            balance: '109087'
+        },
+        {
+            address: '0:fea8b46d48079582861fb453c24fae8b35a772247490a12afd66ad4fced4745d',
+            owner: {
+                address: '0:d31533928f4cb816ea5a95537d8fb2f36ba2be5dc8d02b54e774bd431b115b37',
+                is_scam: false,
+                is_wallet: true
+            },
+            balance: '55441'
+        }
+    ],
+    total: 3
+};

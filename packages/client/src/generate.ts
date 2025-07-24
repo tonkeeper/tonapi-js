@@ -131,6 +131,7 @@ const generateApiParams: GenerateApiParams = {
             address: 'Address',
             cell: 'Cell',
             bigint: 'bigint',
+            'maybe-address': 'Address | null',
             'cell-base64': 'Cell',
             'tuple-item': 'TupleItem'
         }
