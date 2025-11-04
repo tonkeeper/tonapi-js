@@ -54,14 +54,11 @@ const ta = new TonApiClient({
 });
 
 // Use the API
-async function fetchAccountEvents() {
-    const address = Address.parse('YOUR_ADDRESS_HERE');
-    const events = await ta.accounts.getAccountEvents(address, { limit: 50 })
-    
-    console.log('Account events:', events)
-}
 
-fetchAccountEvents();
+const address = Address.parse('YOUR_ADDRESS_HERE');
+const events = await ta.accounts.getAccountEvents(address, { limit: 50 })
+
+console.log('Account events:', events)
 ```
 
 ## Documentation
