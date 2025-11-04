@@ -329,7 +329,8 @@ export enum AccStatusChange {
 export enum ComputeSkipReason {
     CskipNoState = 'cskip_no_state',
     CskipBadState = 'cskip_bad_state',
-    CskipNoGas = 'cskip_no_gas'
+    CskipNoGas = 'cskip_no_gas',
+    CskipSuspended = 'cskip_suspended'
 }
 
 /** @example "cskip_no_state" */
@@ -890,7 +891,7 @@ export interface BlockchainRawAccount {
      * @example 123456789
      */
     balance: bigint;
-    extraBalance?: Record<string, string>;
+    extraBalance?: ExtraCurrency[];
     /**
      * @format cell
      * @example "b5ee9c72410104010087000114ff00f4a413f4a0f2c80b0102012002030002d200dfa5ffff76a268698fe9ffe8e42c5267858f90e785ffe4f6aa6467c444ffb365ffc10802faf0807d014035e7a064b87d804077e7857fc10803dfd2407d014035e7a064b86467cd8903a32b9ba4410803ade68afd014035e7a045ea432b6363796103bb7b9363210c678b64b87d807d8040c249b3e4"
@@ -918,6 +919,92 @@ export interface BlockchainRawAccount {
         /** @format cell */
         root: Cell;
     }[];
+}
+
+export interface BlockchainLibrary {
+    /**
+     * @format cell
+     * @example "b5ee9c7201010101005f0000baff0020dd2082014c97ba218201339cbab19c71b0ed44d0d31fd70bffe304e0a4f260810200d71820d70b1fed44d0d31fd3ffd15112baf2a122f901541044f910f2a2f80001d31f3120d74a96d307d402fb00ded1a4c8cb1fcbffc9ed54"
+     */
+    boc: Cell;
+}
+
+export interface WalletStats {
+    /**
+     * @format int32
+     * @example 123456789
+     */
+    nftsCount: number;
+    /**
+     * @format int32
+     * @example 123456789
+     */
+    jettonsCount: number;
+    /**
+     * @format int32
+     * @example 123456789
+     */
+    multisigCount: number;
+    /**
+     * @format int32
+     * @example 123456789
+     */
+    stakingCount: number;
+}
+
+export interface WalletPlugin {
+    /**
+     * @format address
+     * @example "0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf"
+     */
+    address: Address;
+    /** @example "subscription_v1" */
+    type: string;
+    status: AccountStatus;
+}
+
+export interface Wallets {
+    accounts: Wallet[];
+}
+
+export interface Wallet {
+    /**
+     * @format address
+     * @example "0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf"
+     */
+    address: Address;
+    isWallet: boolean;
+    /**
+     * @format bigint
+     * @example 123456789
+     */
+    balance: bigint;
+    stats: WalletStats;
+    plugins: WalletPlugin[];
+    status: AccountStatus;
+    /**
+     * unix timestamp
+     * @format int64
+     * @example 1720860269
+     */
+    lastActivity: number;
+    /** @example "Ton foundation" */
+    name?: string;
+    /** @example "https://ton.org/logo.png" */
+    icon?: string;
+    /**
+     * @deprecated
+     * @example ["get_item_data"]
+     */
+    getMethods: string[];
+    isSuspended?: boolean;
+    signatureDisabled?: boolean;
+    interfaces?: string[];
+    /**
+     * @format bigint
+     * @example 25713146000001
+     */
+    lastLt: bigint;
 }
 
 export interface Account {
@@ -997,7 +1084,12 @@ export interface SignRawMessage {
     stateInit?: Cell;
 }
 
+export interface GaslessTx {
+    protocolName: string;
+}
+
 export interface SignRawParams {
+    protocolName: string;
     /**
      * @format address
      * @example "0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf"
@@ -1020,6 +1112,7 @@ export interface SignRawParams {
      */
     validUntil: number;
     messages: SignRawMessage[];
+    emulation?: MessageConsequences;
 }
 
 export interface MethodExecutionResult {
@@ -1405,6 +1498,7 @@ export interface DomainBids {
 
 export enum JettonVerificationType {
     Whitelist = 'whitelist',
+    Graylist = 'graylist',
     Blacklist = 'blacklist',
     None = 'none'
 }
@@ -1458,14 +1552,42 @@ export interface JettonsBalances {
     balances: JettonBalance[];
 }
 
+/** @example "jetton" */
+export enum CurrencyType {
+    Native = 'native',
+    ExtraCurrency = 'extra_currency',
+    Jetton = 'jetton',
+    Fiat = 'fiat'
+}
+
+export interface VaultDepositInfo {
+    price: Price;
+    /**
+     * @format address
+     * @example "0:0BB5A9F69043EEBDDA5AD2E946EB953242BD8F603FE795D90698CEEC6BFC60A0"
+     */
+    vault: Address;
+}
+
 export interface Price {
+    currencyType: CurrencyType;
     /**
      * @format bigint
      * @example "123000000000"
      */
     value: bigint;
+    /** @example 9 */
+    decimals: number;
     /** @example "TON" */
     tokenName: string;
+    verification: TrustType;
+    /** @example "https://cache.tonapi.io/images/jetton.jpg" */
+    image: string;
+    /**
+     * @format address
+     * @example "0:0BB5A9F69043EEBDDA5AD2E946EB953242BD8F603FE795D90698CEEC6BFC60A0"
+     */
+    jetton?: Address;
 }
 
 export interface ImagePreview {
@@ -1531,7 +1653,7 @@ export interface NftItem {
     /** @example "crypto.ton" */
     dns?: string;
     /**
-     * please use trust field
+     * Please use trust field
      * @deprecated
      */
     approvedBy: NftApprovedBy;
@@ -1554,11 +1676,7 @@ export interface Multisig {
      * @example "0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf"
      */
     address: Address;
-    /**
-     * @format int64
-     * @example 1
-     */
-    seqno: number;
+    seqno: string;
     /** @format int32 */
     threshold: number;
     signers: Address[];
@@ -1572,11 +1690,7 @@ export interface MultisigOrder {
      * @example "0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf"
      */
     address: Address;
-    /**
-     * @format int64
-     * @example 1
-     */
-    orderSeqno: number;
+    orderSeqno: string;
     /** @format int32 */
     threshold: number;
     /** @example false */
@@ -1591,6 +1705,17 @@ export interface MultisigOrder {
     /** @format int64 */
     creationDate: number;
     signedBy: Address[];
+    /**
+     * @format address
+     * @example "0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf"
+     */
+    multisigAddress: Address;
+    changingParameters?: {
+        /** @format int32 */
+        threshold: number;
+        signers: Address[];
+        proposers: Address[];
+    };
 }
 
 export interface Refund {
@@ -1634,11 +1759,11 @@ export interface Action {
     type:
         | 'TonTransfer'
         | 'ExtraCurrencyTransfer'
+        | 'ContractDeploy'
         | 'JettonTransfer'
         | 'JettonBurn'
         | 'JettonMint'
         | 'NftItemTransfer'
-        | 'ContractDeploy'
         | 'Subscribe'
         | 'UnSubscribe'
         | 'AuctionBid'
@@ -1646,13 +1771,19 @@ export interface Action {
         | 'DepositStake'
         | 'WithdrawStake'
         | 'WithdrawStakeRequest'
+        | 'ElectionsDepositStake'
+        | 'ElectionsRecoverStake'
         | 'JettonSwap'
         | 'SmartContractExec'
-        | 'ElectionsRecoverStake'
-        | 'ElectionsDepositStake'
         | 'DomainRenew'
-        | 'InscriptionTransfer'
-        | 'InscriptionMint'
+        | 'Purchase'
+        | 'AddExtension'
+        | 'RemoveExtension'
+        | 'SetSignatureAllowedAction'
+        | 'GasRelay'
+        | 'DepositTokenStake'
+        | 'WithdrawTokenStakeRequest'
+        | 'LiquidityDeposit'
         | 'Unknown';
     /** @example "ok" */
     status: 'ok' | 'failed';
@@ -1678,8 +1809,14 @@ export interface Action {
     JettonSwap?: JettonSwapAction;
     SmartContractExec?: SmartContractAction;
     DomainRenew?: DomainRenewAction;
-    InscriptionTransfer?: InscriptionTransferAction;
-    InscriptionMint?: InscriptionMintAction;
+    Purchase?: PurchaseAction;
+    AddExtension?: AddExtensionAction;
+    RemoveExtension?: RemoveExtensionAction;
+    SetSignatureAllowedAction?: SetSignatureAllowedAction;
+    GasRelay?: GasRelayAction;
+    DepositTokenStake?: DepositTokenStakeAction;
+    WithdrawTokenStakeRequest?: WithdrawTokenStakeRequestAction;
+    LiquidityDeposit?: LiquidityDepositAction;
     /** shortly describes what this action is about. */
     simplePreview: ActionSimplePreview;
     baseTransactions: string[];
@@ -1765,42 +1902,46 @@ export interface DomainRenewAction {
     renewer: AccountAddress;
 }
 
-export interface InscriptionMintAction {
-    recipient: AccountAddress;
+export interface GasRelayAction {
     /**
-     * amount in minimal particles
      * @format bigint
-     * @example "123456789"
+     * @example 1000000000
      */
     amount: bigint;
-    /** @example "ton20" */
-    type: 'ton20' | 'gram20';
-    /** @example "nano" */
-    ticker: string;
-    /** @example 9 */
-    decimals: number;
+    relayer: AccountAddress;
+    target: AccountAddress;
 }
 
-export interface InscriptionTransferAction {
-    sender: AccountAddress;
-    recipient: AccountAddress;
+export interface PurchaseAction {
+    source: AccountAddress;
+    destination: AccountAddress;
+    /** @example "03cfc582-b1c3-410a-a9a7-1f3afe326b3b" */
+    invoiceId: string;
+    amount: Price;
+    metadata: Metadata;
+}
+
+export interface AddExtensionAction {
+    wallet: AccountAddress;
     /**
-     * amount in minimal particles
-     * @format bigint
-     * @example "123456789"
+     * @format address
+     * @example "0:10C1073837B93FDAAD594284CE8B8EFF7B9CF25427440EB2FC682762E1471365"
      */
-    amount: bigint;
+    extension: Address;
+}
+
+export interface RemoveExtensionAction {
+    wallet: AccountAddress;
     /**
-     * @example "Hi! This is your salary.
-     * From accounting with love."
+     * @format address
+     * @example "0:10C1073837B93FDAAD594284CE8B8EFF7B9CF25427440EB2FC682762E1471365"
      */
-    comment?: string;
-    /** @example "ton20" */
-    type: 'ton20' | 'gram20';
-    /** @example "nano" */
-    ticker: string;
-    /** @example 9 */
-    decimals: number;
+    extension: Address;
+}
+
+export interface SetSignatureAllowedAction {
+    wallet: AccountAddress;
+    allowed: boolean;
 }
 
 export interface NftItemTransferAction {
@@ -1901,11 +2042,14 @@ export interface SubscriptionAction {
      */
     subscription: Address;
     beneficiary: AccountAddress;
+    admin: AccountAddress;
     /**
+     * @deprecated
      * @format bigint
      * @example 1000000000
      */
-    amount: bigint;
+    amount?: bigint;
+    price: Price;
     /** @example false */
     initial: boolean;
 }
@@ -1918,6 +2062,7 @@ export interface UnSubscriptionAction {
      */
     subscription: Address;
     beneficiary: AccountAddress;
+    admin: AccountAddress;
 }
 
 export interface AuctionBidAction {
@@ -1983,7 +2128,8 @@ export interface ElectionsDepositStakeAction {
 }
 
 export interface JettonSwapAction {
-    dex: 'stonfi' | 'dedust' | 'megatonfi';
+    /** @example "stonfi" */
+    dex: string;
     /**
      * @format bigint
      * @example "1660050553"
@@ -2016,6 +2162,24 @@ export interface NftPurchaseAction {
     nft: NftItem;
     seller: AccountAddress;
     buyer: AccountAddress;
+}
+
+export interface DepositTokenStakeAction {
+    staker: AccountAddress;
+    protocol: Protocol;
+    stakeMeta?: Price;
+}
+
+export interface WithdrawTokenStakeRequestAction {
+    staker: AccountAddress;
+    protocol: Protocol;
+    stakeMeta?: Price;
+}
+
+export interface LiquidityDepositAction {
+    protocol: Protocol;
+    from: AccountAddress;
+    tokens: VaultDepositInfo[];
 }
 
 /** shortly describes what this action is about. */
@@ -2065,6 +2229,13 @@ export interface AccountEvent {
      * @example 3
      */
     extra: number;
+    /**
+     * @format float
+     * @min 0
+     * @max 1
+     * @example 0.5
+     */
+    progress: number;
 }
 
 export interface AccountEvents {
@@ -2074,6 +2245,46 @@ export interface AccountEvents {
      * @example 25713146000001
      */
     nextFrom: number;
+}
+
+export interface Purchase {
+    /** @example "e8b0e3fee4a26bd2317ac1f9952fcdc87dc08fdb617656b5202416323337372e" */
+    eventId: string;
+    /** @example "03cfc582-b1c3-410a-a9a7-1f3afe326b3b" */
+    invoiceId: string;
+    source: AccountAddress;
+    destination: AccountAddress;
+    /**
+     * @format bigint
+     * @example 25713146000001
+     */
+    lt: bigint;
+    /**
+     * @format int64
+     * @example 1645544908
+     */
+    utime: number;
+    amount: Price;
+    metadata: Metadata;
+}
+
+export interface AccountPurchases {
+    purchases: Purchase[];
+    /**
+     * @format int64
+     * @example 25713146000001
+     */
+    nextFrom: number;
+}
+
+export interface Metadata {
+    /** hex encoded bytes */
+    encryptedBinary: string;
+    /**
+     * hex encoded bytes
+     * @example "dead.....beef"
+     */
+    decryptionKey?: string;
 }
 
 export interface TraceID {
@@ -2097,60 +2308,34 @@ export interface ApyHistory {
 
 export interface Subscription {
     /**
-     * @format address
-     * @example "0:dea8f638b789172ce36d10a20318125e52c649aa84893cd77858224fe2b9b0ee"
+     * type of subscription
+     * @example "v2"
      */
-    address: Address;
+    type: string;
+    status: 'not_ready' | 'active' | 'suspended' | 'cancelled';
     /**
-     * @format address
-     * @example "0:567DE86AF2B6A557D7085807CF7C26338124987A5179344F0D0FA2657EB710F1"
-     */
-    walletAddress: Address;
-    /**
-     * @format address
-     * @example "0:c704dadfabac88eab58e340de03080df81ff76636431f48624ad6e26fb2da0a4"
-     */
-    beneficiaryAddress: Address;
-    /**
-     * @format int64
-     * @example 1000000000
-     */
-    amount: number;
-    /**
+     * payment period in seconds
      * @format int64
      * @example 2592000
      */
     period: number;
-    /**
-     * @format int64
-     * @example 1653996832
-     */
-    startTime: number;
-    /**
-     * @format int64
-     * @example 10800
-     */
-    timeout: number;
+    /** common identifier */
+    subscriptionId: string;
+    paymentPerPeriod: Price;
+    wallet: AccountAddress;
     /**
      * @format int64
      * @example 1653996834
      */
-    lastPaymentTime: number;
+    nextChargeAt: number;
+    metadata: Metadata;
     /**
-     * @format int64
-     * @example 0
+     * @format address
+     * @example "0:dea8f638b789172ce36d10a20318125e52c649aa84893cd77858224fe2b9b0ee"
      */
-    lastRequestTime: number;
-    /**
-     * @format int64
-     * @example 217477
-     */
-    subscriptionId: number;
-    /**
-     * @format int32
-     * @example 0
-     */
-    failedAttempts: number;
+    address?: Address;
+    beneficiary?: AccountAddress;
+    admin?: AccountAddress;
 }
 
 export interface Subscriptions {
@@ -2287,6 +2472,11 @@ export interface Risk {
     ton: bigint;
     jettons: JettonQuantity[];
     nfts: NftItem[];
+    /**
+     * Estimated equivalent value of all assets at risk in selected currency (for example USD)
+     * @format float
+     */
+    totalEquivalent?: number;
 }
 
 export interface JettonQuantity {
@@ -2408,6 +2598,13 @@ export interface Event {
      * @example false
      */
     inProgress: boolean;
+    /**
+     * @format float
+     * @min 0
+     * @max 1
+     * @example 0.5
+     */
+    progress: number;
 }
 
 export interface JettonMetadata {
@@ -2434,24 +2631,6 @@ export interface JettonMetadata {
     catalogs?: string[];
     /** @example "https://claim-api.tonapi.io/jettons/TESTMINT" */
     customPayloadApiUri?: string;
-}
-
-export interface InscriptionBalances {
-    inscriptions: InscriptionBalance[];
-}
-
-export interface InscriptionBalance {
-    /** @example "ton20" */
-    type: 'ton20' | 'gram20';
-    /** @example "nano" */
-    ticker: string;
-    /**
-     * @format bigint
-     * @example "1000000000"
-     */
-    balance: bigint;
-    /** @example 9 */
-    decimals: number;
 }
 
 export interface Jettons {
@@ -2737,6 +2916,7 @@ export interface EncryptedComment {
 export interface BlockchainAccountInspect {
     /** @format cell */
     code: Cell;
+    disassembledCode?: string;
     codeHash: string;
     methods: Method[];
     compiler: 'func' | 'fift' | 'tact';
@@ -2803,6 +2983,124 @@ export interface Method {
     method: string;
 }
 
+export interface NftOperations {
+    operations: NftOperation[];
+    /**
+     * @format bigint
+     * @example 25713146000001
+     */
+    nextFrom?: bigint;
+}
+
+export interface NftOperation {
+    /** @example "transfer" */
+    operation: string;
+    /**
+     * @format int64
+     * @example 1234567890
+     */
+    utime: number;
+    /**
+     * @format bigint
+     * @example 25713146000001
+     */
+    lt: bigint;
+    /** @example "0xdeadbeaf" */
+    transactionHash: string;
+    source?: AccountAddress;
+    destination?: AccountAddress;
+    item: NftItem;
+}
+
+export interface JettonOperations {
+    operations: JettonOperation[];
+    /**
+     * @format bigint
+     * @example 25713146000001
+     */
+    nextFrom?: bigint;
+}
+
+export interface JettonOperation {
+    /** @example "transfer" */
+    operation: 'transfer' | 'mint' | 'burn';
+    /**
+     * @format int64
+     * @example 1234567890
+     */
+    utime: number;
+    /**
+     * @format bigint
+     * @example 25713146000001
+     */
+    lt: bigint;
+    /** @example "cbf3e3d70ecf6f69643dd430761cd6004de2cacbdbc3029b0abd30ca3cc1c67e" */
+    transactionHash: string;
+    source?: AccountAddress;
+    destination?: AccountAddress;
+    /**
+     * @format bigint
+     * @example "1000000000"
+     */
+    amount: bigint;
+    jetton: JettonPreview;
+    /** @example "8fa19eec7bd6d00d0d76048cebe31e34082a859410c9fcf7d55ef4ff8f7fcb47" */
+    traceId: string;
+    /**
+     * @format bigint
+     * @example "17286061481122318000"
+     */
+    queryId: bigint;
+    payload?: any;
+}
+
+/**
+ * Data type of the argument value:
+ * - `nan`: Not-a-Number value
+ * - `null`: Null value
+ * - `tinyint`: Decimal integer (e.g., `100500`)
+ * - `int257`: 257-bit integer in hex format with 0x prefix (e.g., `0xfa01d78381ae32`)
+ * - `slice`: TON blockchain address (e.g., `0:6e731f2e...`)
+ * - `cell_boc_base64`: Base64-encoded cell BOC (Binary Object Code) (e.g., `te6ccgEBAQEAAgAAAA==`)
+ * - `slice_boc_hex`: Hex-encoded slice BOC (e.g., `b5ee9c72...`)
+ * @example "int257"
+ */
+export enum ExecGetMethodArgType {
+    Nan = 'nan',
+    Null = 'null',
+    Tinyint = 'tinyint',
+    Int257 = 'int257',
+    Slice = 'slice',
+    CellBocBase64 = 'cell_boc_base64',
+    SliceBocHex = 'slice_boc_hex'
+}
+
+export interface ExecGetMethodArg {
+    /**
+     * Data type of the argument value:
+     * - `nan`: Not-a-Number value
+     * - `null`: Null value
+     * - `tinyint`: Decimal integer (e.g., `100500`)
+     * - `int257`: 257-bit integer in hex format with 0x prefix (e.g., `0xfa01d78381ae32`)
+     * - `slice`: TON blockchain address (e.g., `0:6e731f2e...`)
+     * - `cell_boc_base64`: Base64-encoded cell BOC (Binary Object Code) (e.g., `te6ccgEBAQEAAgAAAA==`)
+     * - `slice_boc_hex`: Hex-encoded slice BOC (e.g., `b5ee9c72...`)
+     */
+    type: ExecGetMethodArgType;
+    /**
+     * String representation of the value according to the specified type
+     * @example "0xfa01d78381ae32"
+     */
+    value: string;
+}
+
+export interface Protocol {
+    /** @example "Ethena" */
+    name: string;
+    /** @example "https://cache.tonapi.io/images/jetton.jpg" */
+    image?: string;
+}
+
 export type GetOpenapiJsonData = any;
 
 /** @format binary */
@@ -2813,6 +3111,9 @@ export type StatusData = ServiceStatus;
 export type GetReducedBlockchainBlocksData = ReducedBlocks;
 
 export type GetBlockchainBlockData = BlockchainBlock;
+
+/** @format binary */
+export type DownloadBlockchainBlockBocData = File;
 
 export type GetBlockchainMasterchainShardsData = BlockchainBlockShards;
 
@@ -2840,6 +3141,8 @@ export type GetBlockchainAccountTransactionsData = Transactions;
 
 export type ExecGetMethodForBlockchainAccountData = MethodExecutionResult;
 
+export type ExecGetMethodWithBodyForBlockchainAccountData = MethodExecutionResult;
+
 export type SendBlockchainMessageData = any;
 
 export type GetBlockchainConfigData = BlockchainConfig;
@@ -2847,6 +3150,8 @@ export type GetBlockchainConfigData = BlockchainConfig;
 export type GetRawBlockchainConfigData = RawBlockchainConfig;
 
 export type BlockchainAccountInspectData = BlockchainAccountInspect;
+
+export type GetLibraryByHashData = BlockchainLibrary;
 
 export interface AddressParseData {
     /**
@@ -2876,13 +3181,13 @@ export type GetAccountJettonsBalancesData = JettonsBalances;
 
 export type GetAccountJettonBalanceData = JettonBalance;
 
-export type GetAccountJettonsHistoryData = AccountEvents;
+export type GetAccountJettonsHistoryData = JettonOperations;
 
 export type GetAccountJettonHistoryByIdData = AccountEvents;
 
 export type GetAccountNftItemsData = NftItems;
 
-export type GetAccountNftHistoryData = AccountEvents;
+export type GetAccountNftHistoryData = NftOperations;
 
 export type GetAccountEventsData = AccountEvents;
 
@@ -2941,19 +3246,6 @@ export type GetTraceData = Trace;
 
 export type GetEventData = Event;
 
-export type GetAccountInscriptionsData = InscriptionBalances;
-
-export type GetAccountInscriptionsHistoryData = AccountEvents;
-
-export type GetAccountInscriptionsHistoryByTickerData = AccountEvents;
-
-export interface GetInscriptionOpTemplateData {
-    /** @example "comment" */
-    comment: string;
-    /** @example "0:0000000000000" */
-    destination: string;
-}
-
 export type GetJettonsData = Jettons;
 
 export type GetJettonInfoData = JettonInfo;
@@ -2965,6 +3257,8 @@ export type GetJettonHoldersData = JettonHolders;
 export type GetJettonTransferPayloadData = JettonTransferPayload;
 
 export type GetJettonsEventsData = Event;
+
+export type GetJettonAccountHistoryByIdData = JettonOperations;
 
 export type GetExtraCurrencyInfoData = EcPreview;
 
@@ -2993,7 +3287,7 @@ export interface GetRatesData {
 }
 
 export interface GetChartRatesData {
-    points: ChartPoints[];
+    points: ChartPoints;
 }
 
 export interface GetMarketsRatesData {
@@ -3014,13 +3308,15 @@ export interface TonConnectProofData {
 
 export type GetAccountSeqnoData = Seqno;
 
+export type GetWalletInfoData = Wallet;
+
 export type GaslessConfigData = GaslessConfig;
 
 export type GaslessEstimateData = SignRawParams;
 
-export type GaslessSendData = any;
+export type GaslessSendData = GaslessTx;
 
-export type GetWalletsByPublicKeyData = Accounts;
+export type GetWalletsByPublicKeyData = Wallets;
 
 export interface GetRawMasterchainInfoData {
     last: BlockRaw;
@@ -3241,6 +3537,8 @@ export interface GetOutMsgQueueSizesData {
 
 export type GetMultisigAccountData = Multisig;
 
+export type GetMultisigOrderData = MultisigOrder;
+
 export type DecodeMessageData = DecodedMessage;
 
 export type EmulateMessageToEventData = Event;
@@ -3250,6 +3548,8 @@ export type EmulateMessageToTraceData = Trace;
 export type EmulateMessageToWalletData = MessageConsequences;
 
 export type EmulateMessageToAccountEventData = AccountEvent;
+
+export type GetPurchaseHistoryData = AccountPurchases;
 
 export type QueryParamsType = Record<string | number, any>;
 export type ResponseFormat = keyof Omit<Body, 'body' | 'bodyUsed'>;
@@ -3799,7 +4099,7 @@ const components = {
     },
     '#/components/schemas/ComputeSkipReason': {
         type: 'string',
-        enum: ['cskip_no_state', 'cskip_bad_state', 'cskip_no_gas']
+        enum: ['cskip_no_state', 'cskip_bad_state', 'cskip_no_gas', 'cskip_suspended']
     },
     '#/components/schemas/BouncePhaseType': {
         type: 'string',
@@ -4186,7 +4486,7 @@ const components = {
         properties: {
             address: { type: 'string', format: 'address' },
             balance: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            extra_balance: { type: 'object', additionalProperties: { type: 'string' } },
+            extra_balance: { type: 'array', items: { $ref: '#/components/schemas/ExtraCurrency' } },
             code: { type: 'string', format: 'cell' },
             data: { type: 'string', format: 'cell' },
             last_transaction_lt: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
@@ -4205,6 +4505,65 @@ const components = {
                     }
                 }
             }
+        }
+    },
+    '#/components/schemas/BlockchainLibrary': {
+        type: 'object',
+        required: ['boc'],
+        properties: { boc: { type: 'string', format: 'cell' } }
+    },
+    '#/components/schemas/WalletStats': {
+        type: 'object',
+        required: ['nfts_count', 'jettons_count', 'multisig_count', 'staking_count'],
+        properties: {
+            nfts_count: { type: 'integer', format: 'int32' },
+            jettons_count: { type: 'integer', format: 'int32' },
+            multisig_count: { type: 'integer', format: 'int32' },
+            staking_count: { type: 'integer', format: 'int32' }
+        }
+    },
+    '#/components/schemas/WalletPlugin': {
+        type: 'object',
+        required: ['address', 'type', 'status'],
+        properties: {
+            address: { type: 'string', format: 'address' },
+            type: { type: 'string' },
+            status: { $ref: '#/components/schemas/AccountStatus' }
+        }
+    },
+    '#/components/schemas/Wallets': {
+        type: 'object',
+        required: ['accounts'],
+        properties: { accounts: { type: 'array', items: { $ref: '#/components/schemas/Wallet' } } }
+    },
+    '#/components/schemas/Wallet': {
+        type: 'object',
+        required: [
+            'address',
+            'balance',
+            'stats',
+            'plugins',
+            'status',
+            'last_activity',
+            'get_methods',
+            'is_wallet',
+            'last_lt'
+        ],
+        properties: {
+            address: { type: 'string', format: 'address' },
+            is_wallet: { type: 'boolean' },
+            balance: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            stats: { $ref: '#/components/schemas/WalletStats' },
+            plugins: { type: 'array', items: { $ref: '#/components/schemas/WalletPlugin' } },
+            status: { $ref: '#/components/schemas/AccountStatus' },
+            last_activity: { type: 'integer', format: 'int64' },
+            name: { type: 'string' },
+            icon: { type: 'string' },
+            get_methods: { type: 'array', deprecated: true, items: { type: 'string' } },
+            is_suspended: { type: 'boolean' },
+            signature_disabled: { type: 'boolean' },
+            interfaces: { type: 'array', items: { type: 'string' } },
+            last_lt: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' }
         }
     },
     '#/components/schemas/Account': {
@@ -4257,15 +4616,29 @@ const components = {
             stateInit: { type: 'string', format: 'cell' }
         }
     },
+    '#/components/schemas/GaslessTx': {
+        type: 'object',
+        required: ['protocol_name'],
+        properties: { protocol_name: { type: 'string' } }
+    },
     '#/components/schemas/SignRawParams': {
         type: 'object',
-        required: ['messages', 'relay_address', 'commission', 'from', 'valid_until'],
+        required: [
+            'messages',
+            'relay_address',
+            'commission',
+            'from',
+            'valid_until',
+            'protocol_name'
+        ],
         properties: {
+            protocol_name: { type: 'string' },
             relay_address: { type: 'string', format: 'address' },
             commission: { type: 'string', 'x-js-format': 'bigint' },
             from: { type: 'string', format: 'address' },
             valid_until: { type: 'integer', format: 'int64' },
-            messages: { type: 'array', items: { $ref: '#/components/schemas/SignRawMessage' } }
+            messages: { type: 'array', items: { $ref: '#/components/schemas/SignRawMessage' } },
+            emulation: { $ref: '#/components/schemas/MessageConsequences' }
         }
     },
     '#/components/schemas/MethodExecutionResult': {
@@ -4658,7 +5031,7 @@ const components = {
     },
     '#/components/schemas/JettonVerificationType': {
         type: 'string',
-        enum: ['whitelist', 'blacklist', 'none']
+        enum: ['whitelist', 'graylist', 'blacklist', 'none']
     },
     '#/components/schemas/JettonPreview': {
         type: 'object',
@@ -4700,12 +5073,29 @@ const components = {
             balances: { type: 'array', items: { $ref: '#/components/schemas/JettonBalance' } }
         }
     },
+    '#/components/schemas/CurrencyType': {
+        type: 'string',
+        enum: ['native', 'extra_currency', 'jetton', 'fiat']
+    },
+    '#/components/schemas/VaultDepositInfo': {
+        type: 'object',
+        required: ['price', 'vault'],
+        properties: {
+            price: { $ref: '#/components/schemas/Price' },
+            vault: { type: 'string', format: 'address' }
+        }
+    },
     '#/components/schemas/Price': {
         type: 'object',
-        required: ['value', 'token_name'],
+        required: ['currency_type', 'value', 'decimals', 'token_name', 'verification', 'image'],
         properties: {
+            currency_type: { $ref: '#/components/schemas/CurrencyType' },
             value: { type: 'string', 'x-js-format': 'bigint' },
-            token_name: { type: 'string' }
+            decimals: { type: 'integer' },
+            token_name: { type: 'string' },
+            verification: { $ref: '#/components/schemas/TrustType' },
+            image: { type: 'string' },
+            jetton: { type: 'string', format: 'address' }
         }
     },
     '#/components/schemas/ImagePreview': {
@@ -4753,9 +5143,9 @@ const components = {
             previews: { type: 'array', items: { $ref: '#/components/schemas/ImagePreview' } },
             dns: { type: 'string' },
             approved_by: {
+                allOf: { '0': { $ref: '#/components/schemas/NftApprovedBy' } },
                 deprecated: true,
-                description: 'please use trust field',
-                $ref: '#/components/schemas/NftApprovedBy'
+                description: 'Please use trust field'
             },
             include_cnft: { type: 'boolean' },
             trust: { $ref: '#/components/schemas/TrustType' }
@@ -4780,7 +5170,7 @@ const components = {
         required: ['address', 'seqno', 'threshold', 'signers', 'proposers', 'orders'],
         properties: {
             address: { type: 'string', format: 'address' },
-            seqno: { type: 'integer', format: 'int64' },
+            seqno: { type: 'string' },
             threshold: { type: 'integer', format: 'int32' },
             signers: { type: 'array', items: { type: 'string', format: 'address' } },
             proposers: { type: 'array', items: { type: 'string', format: 'address' } },
@@ -4799,11 +5189,12 @@ const components = {
             'expiration_date',
             'risk',
             'creation_date',
-            'signed_by'
+            'signed_by',
+            'multisig_address'
         ],
         properties: {
             address: { type: 'string', format: 'address' },
-            order_seqno: { type: 'integer', format: 'int64' },
+            order_seqno: { type: 'string' },
             threshold: { type: 'integer', format: 'int32' },
             sent_for_execution: { type: 'boolean' },
             signers: { type: 'array', items: { type: 'string', format: 'address' } },
@@ -4811,7 +5202,17 @@ const components = {
             expiration_date: { type: 'integer', format: 'int64' },
             risk: { $ref: '#/components/schemas/Risk' },
             creation_date: { type: 'integer', format: 'int64' },
-            signed_by: { type: 'array', items: { type: 'string', format: 'address' } }
+            signed_by: { type: 'array', items: { type: 'string', format: 'address' } },
+            multisig_address: { type: 'string', format: 'address' },
+            changing_parameters: {
+                type: 'object',
+                required: ['threshold', 'signers', 'proposers'],
+                properties: {
+                    threshold: { type: 'integer', format: 'int32' },
+                    signers: { type: 'array', items: { type: 'string', format: 'address' } },
+                    proposers: { type: 'array', items: { type: 'string', format: 'address' } }
+                }
+            }
         }
     },
     '#/components/schemas/Refund': {
@@ -4858,11 +5259,11 @@ const components = {
                 enum: [
                     'TonTransfer',
                     'ExtraCurrencyTransfer',
+                    'ContractDeploy',
                     'JettonTransfer',
                     'JettonBurn',
                     'JettonMint',
                     'NftItemTransfer',
-                    'ContractDeploy',
                     'Subscribe',
                     'UnSubscribe',
                     'AuctionBid',
@@ -4870,13 +5271,19 @@ const components = {
                     'DepositStake',
                     'WithdrawStake',
                     'WithdrawStakeRequest',
+                    'ElectionsDepositStake',
+                    'ElectionsRecoverStake',
                     'JettonSwap',
                     'SmartContractExec',
-                    'ElectionsRecoverStake',
-                    'ElectionsDepositStake',
                     'DomainRenew',
-                    'InscriptionTransfer',
-                    'InscriptionMint',
+                    'Purchase',
+                    'AddExtension',
+                    'RemoveExtension',
+                    'SetSignatureAllowedAction',
+                    'GasRelay',
+                    'DepositTokenStake',
+                    'WithdrawTokenStakeRequest',
+                    'LiquidityDeposit',
                     'Unknown'
                 ]
             },
@@ -4900,8 +5307,16 @@ const components = {
             JettonSwap: { $ref: '#/components/schemas/JettonSwapAction' },
             SmartContractExec: { $ref: '#/components/schemas/SmartContractAction' },
             DomainRenew: { $ref: '#/components/schemas/DomainRenewAction' },
-            InscriptionTransfer: { $ref: '#/components/schemas/InscriptionTransferAction' },
-            InscriptionMint: { $ref: '#/components/schemas/InscriptionMintAction' },
+            Purchase: { $ref: '#/components/schemas/PurchaseAction' },
+            AddExtension: { $ref: '#/components/schemas/AddExtensionAction' },
+            RemoveExtension: { $ref: '#/components/schemas/RemoveExtensionAction' },
+            SetSignatureAllowedAction: { $ref: '#/components/schemas/SetSignatureAllowedAction' },
+            GasRelay: { $ref: '#/components/schemas/GasRelayAction' },
+            DepositTokenStake: { $ref: '#/components/schemas/DepositTokenStakeAction' },
+            WithdrawTokenStakeRequest: {
+                $ref: '#/components/schemas/WithdrawTokenStakeRequestAction'
+            },
+            LiquidityDeposit: { $ref: '#/components/schemas/LiquidityDepositAction' },
             simple_preview: { $ref: '#/components/schemas/ActionSimplePreview' },
             base_transactions: { type: 'array', items: { type: 'string' } }
         }
@@ -4968,28 +5383,48 @@ const components = {
             renewer: { $ref: '#/components/schemas/AccountAddress' }
         }
     },
-    '#/components/schemas/InscriptionMintAction': {
+    '#/components/schemas/GasRelayAction': {
         type: 'object',
-        required: ['type', 'ticker', 'recipient', 'amount', 'decimals'],
+        required: ['amount', 'relayer', 'target'],
         properties: {
-            recipient: { $ref: '#/components/schemas/AccountAddress' },
-            amount: { type: 'string', 'x-js-format': 'bigint' },
-            type: { type: 'string', enum: ['ton20', 'gram20'] },
-            ticker: { type: 'string' },
-            decimals: { type: 'integer' }
+            amount: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            relayer: { $ref: '#/components/schemas/AccountAddress' },
+            target: { $ref: '#/components/schemas/AccountAddress' }
         }
     },
-    '#/components/schemas/InscriptionTransferAction': {
+    '#/components/schemas/PurchaseAction': {
         type: 'object',
-        required: ['sender', 'recipient', 'amount', 'type', 'ticker', 'decimals'],
+        required: ['source', 'destination', 'invoice_id', 'amount', 'metadata'],
         properties: {
-            sender: { $ref: '#/components/schemas/AccountAddress' },
-            recipient: { $ref: '#/components/schemas/AccountAddress' },
-            amount: { type: 'string', 'x-js-format': 'bigint' },
-            comment: { type: 'string' },
-            type: { type: 'string', enum: ['ton20', 'gram20'] },
-            ticker: { type: 'string' },
-            decimals: { type: 'integer' }
+            source: { $ref: '#/components/schemas/AccountAddress' },
+            destination: { $ref: '#/components/schemas/AccountAddress' },
+            invoice_id: { type: 'string' },
+            amount: { $ref: '#/components/schemas/Price' },
+            metadata: { $ref: '#/components/schemas/Metadata' }
+        }
+    },
+    '#/components/schemas/AddExtensionAction': {
+        type: 'object',
+        required: ['wallet', 'extension'],
+        properties: {
+            wallet: { $ref: '#/components/schemas/AccountAddress' },
+            extension: { type: 'string', format: 'address' }
+        }
+    },
+    '#/components/schemas/RemoveExtensionAction': {
+        type: 'object',
+        required: ['wallet', 'extension'],
+        properties: {
+            wallet: { $ref: '#/components/schemas/AccountAddress' },
+            extension: { type: 'string', format: 'address' }
+        }
+    },
+    '#/components/schemas/SetSignatureAllowedAction': {
+        type: 'object',
+        required: ['wallet', 'allowed'],
+        properties: {
+            wallet: { $ref: '#/components/schemas/AccountAddress' },
+            allowed: { type: 'boolean' }
         }
     },
     '#/components/schemas/NftItemTransferAction': {
@@ -5050,22 +5485,25 @@ const components = {
     },
     '#/components/schemas/SubscriptionAction': {
         type: 'object',
-        required: ['subscriber', 'subscription', 'beneficiary', 'amount', 'initial'],
+        required: ['subscriber', 'subscription', 'beneficiary', 'admin', 'price', 'initial'],
         properties: {
             subscriber: { $ref: '#/components/schemas/AccountAddress' },
             subscription: { type: 'string', format: 'address' },
             beneficiary: { $ref: '#/components/schemas/AccountAddress' },
-            amount: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            admin: { $ref: '#/components/schemas/AccountAddress' },
+            amount: { deprecated: true, type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            price: { $ref: '#/components/schemas/Price' },
             initial: { type: 'boolean' }
         }
     },
     '#/components/schemas/UnSubscriptionAction': {
         type: 'object',
-        required: ['subscriber', 'subscription', 'beneficiary'],
+        required: ['subscriber', 'subscription', 'beneficiary', 'admin'],
         properties: {
             subscriber: { $ref: '#/components/schemas/AccountAddress' },
             subscription: { type: 'string', format: 'address' },
-            beneficiary: { $ref: '#/components/schemas/AccountAddress' }
+            beneficiary: { $ref: '#/components/schemas/AccountAddress' },
+            admin: { $ref: '#/components/schemas/AccountAddress' }
         }
     },
     '#/components/schemas/AuctionBidAction': {
@@ -5129,7 +5567,7 @@ const components = {
         type: 'object',
         required: ['dex', 'amount_in', 'amount_out', 'user_wallet', 'router'],
         properties: {
-            dex: { type: 'string', enum: ['stonfi', 'dedust', 'megatonfi'] },
+            dex: { type: 'string' },
             amount_in: { type: 'string', 'x-js-format': 'bigint' },
             amount_out: { type: 'string', 'x-js-format': 'bigint' },
             ton_in: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
@@ -5149,6 +5587,33 @@ const components = {
             nft: { $ref: '#/components/schemas/NftItem' },
             seller: { $ref: '#/components/schemas/AccountAddress' },
             buyer: { $ref: '#/components/schemas/AccountAddress' }
+        }
+    },
+    '#/components/schemas/DepositTokenStakeAction': {
+        type: 'object',
+        required: ['staker', 'protocol'],
+        properties: {
+            staker: { $ref: '#/components/schemas/AccountAddress' },
+            protocol: { $ref: '#/components/schemas/Protocol' },
+            stake_meta: { $ref: '#/components/schemas/Price' }
+        }
+    },
+    '#/components/schemas/WithdrawTokenStakeRequestAction': {
+        type: 'object',
+        required: ['staker', 'protocol'],
+        properties: {
+            staker: { $ref: '#/components/schemas/AccountAddress' },
+            protocol: { $ref: '#/components/schemas/Protocol' },
+            stake_meta: { $ref: '#/components/schemas/Price' }
+        }
+    },
+    '#/components/schemas/LiquidityDepositAction': {
+        type: 'object',
+        required: ['protocol', 'from', 'tokens'],
+        properties: {
+            protocol: { $ref: '#/components/schemas/Protocol' },
+            from: { $ref: '#/components/schemas/AccountAddress' },
+            tokens: { type: 'array', items: { $ref: '#/components/schemas/VaultDepositInfo' } }
         }
     },
     '#/components/schemas/ActionSimplePreview': {
@@ -5173,7 +5638,8 @@ const components = {
             'is_scam',
             'lt',
             'in_progress',
-            'extra'
+            'extra',
+            'progress'
         ],
         properties: {
             event_id: { type: 'string' },
@@ -5183,7 +5649,8 @@ const components = {
             is_scam: { type: 'boolean' },
             lt: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             in_progress: { type: 'boolean' },
-            extra: { type: 'integer', format: 'int64' }
+            extra: { type: 'integer', format: 'int64' },
+            progress: { type: 'number', format: 'float', minimum: 0, maximum: 1 }
         }
     },
     '#/components/schemas/AccountEvents': {
@@ -5193,6 +5660,42 @@ const components = {
             events: { type: 'array', items: { $ref: '#/components/schemas/AccountEvent' } },
             next_from: { type: 'integer', format: 'int64' }
         }
+    },
+    '#/components/schemas/Purchase': {
+        type: 'object',
+        required: [
+            'event_id',
+            'invoice_id',
+            'source',
+            'destination',
+            'lt',
+            'utime',
+            'amount',
+            'metadata'
+        ],
+        properties: {
+            event_id: { type: 'string' },
+            invoice_id: { type: 'string' },
+            source: { $ref: '#/components/schemas/AccountAddress' },
+            destination: { $ref: '#/components/schemas/AccountAddress' },
+            lt: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            utime: { type: 'integer', format: 'int64' },
+            amount: { $ref: '#/components/schemas/Price' },
+            metadata: { $ref: '#/components/schemas/Metadata' }
+        }
+    },
+    '#/components/schemas/AccountPurchases': {
+        type: 'object',
+        required: ['purchases', 'next_from'],
+        properties: {
+            purchases: { type: 'array', items: { $ref: '#/components/schemas/Purchase' } },
+            next_from: { type: 'integer', format: 'int64' }
+        }
+    },
+    '#/components/schemas/Metadata': {
+        type: 'object',
+        required: ['encrypted_binary'],
+        properties: { encrypted_binary: { type: 'string' }, decryption_key: { type: 'string' } }
     },
     '#/components/schemas/TraceID': {
         type: 'object',
@@ -5212,30 +5715,27 @@ const components = {
     '#/components/schemas/Subscription': {
         type: 'object',
         required: [
-            'address',
-            'wallet_address',
-            'beneficiary_address',
-            'amount',
+            'type',
+            'status',
             'period',
-            'start_time',
-            'timeout',
-            'last_payment_time',
-            'last_request_time',
             'subscription_id',
-            'failed_attempts'
+            'payment_per_period',
+            'wallet',
+            'next_charge_at',
+            'metadata'
         ],
         properties: {
-            address: { type: 'string', format: 'address' },
-            wallet_address: { type: 'string', format: 'address' },
-            beneficiary_address: { type: 'string', format: 'address' },
-            amount: { type: 'integer', format: 'int64' },
+            type: { type: 'string' },
+            status: { type: 'string', enum: ['not_ready', 'active', 'suspended', 'cancelled'] },
             period: { type: 'integer', format: 'int64' },
-            start_time: { type: 'integer', format: 'int64' },
-            timeout: { type: 'integer', format: 'int64' },
-            last_payment_time: { type: 'integer', format: 'int64' },
-            last_request_time: { type: 'integer', format: 'int64' },
-            subscription_id: { type: 'integer', format: 'int64' },
-            failed_attempts: { type: 'integer', format: 'int32' }
+            subscription_id: { type: 'string' },
+            payment_per_period: { $ref: '#/components/schemas/Price' },
+            wallet: { $ref: '#/components/schemas/AccountAddress' },
+            next_charge_at: { type: 'integer', format: 'int64' },
+            metadata: { $ref: '#/components/schemas/Metadata' },
+            address: { type: 'string', format: 'address' },
+            beneficiary: { $ref: '#/components/schemas/AccountAddress' },
+            admin: { $ref: '#/components/schemas/AccountAddress' }
         }
     },
     '#/components/schemas/Subscriptions': {
@@ -5351,7 +5851,8 @@ const components = {
             transfer_all_remaining_balance: { type: 'boolean' },
             ton: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             jettons: { type: 'array', items: { $ref: '#/components/schemas/JettonQuantity' } },
-            nfts: { type: 'array', items: { $ref: '#/components/schemas/NftItem' } }
+            nfts: { type: 'array', items: { $ref: '#/components/schemas/NftItem' } },
+            total_equivalent: { type: 'number', format: 'float' }
         }
     },
     '#/components/schemas/JettonQuantity': {
@@ -5452,7 +5953,8 @@ const components = {
             'value_flow',
             'is_scam',
             'lt',
-            'in_progress'
+            'in_progress',
+            'progress'
         ],
         properties: {
             event_id: { type: 'string' },
@@ -5461,7 +5963,8 @@ const components = {
             value_flow: { type: 'array', items: { $ref: '#/components/schemas/ValueFlow' } },
             is_scam: { type: 'boolean' },
             lt: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            in_progress: { type: 'boolean' }
+            in_progress: { type: 'boolean' },
+            progress: { type: 'number', format: 'float', minimum: 0, maximum: 1 }
         }
     },
     '#/components/schemas/JettonMetadata': {
@@ -5478,26 +5981,6 @@ const components = {
             websites: { type: 'array', items: { type: 'string' } },
             catalogs: { type: 'array', items: { type: 'string' } },
             custom_payload_api_uri: { type: 'string' }
-        }
-    },
-    '#/components/schemas/InscriptionBalances': {
-        type: 'object',
-        required: ['inscriptions'],
-        properties: {
-            inscriptions: {
-                type: 'array',
-                items: { $ref: '#/components/schemas/InscriptionBalance' }
-            }
-        }
-    },
-    '#/components/schemas/InscriptionBalance': {
-        type: 'object',
-        required: ['type', 'ticker', 'balance', 'decimals'],
-        properties: {
-            type: { type: 'string', enum: ['ton20', 'gram20'] },
-            ticker: { type: 'string' },
-            balance: { type: 'string', 'x-js-format': 'bigint' },
-            decimals: { type: 'integer' }
         }
     },
     '#/components/schemas/Jettons': {
@@ -5722,6 +6205,7 @@ const components = {
         required: ['code', 'code_hash', 'methods', 'compiler'],
         properties: {
             code: { type: 'string', format: 'cell' },
+            disassembled_code: { type: 'string' },
             code_hash: { type: 'string' },
             methods: { type: 'array', items: { $ref: '#/components/schemas/Method' } },
             compiler: { type: 'string', enum: ['func', 'fift', 'tact'] },
@@ -5778,6 +6262,78 @@ const components = {
         type: 'object',
         required: ['id', 'method'],
         properties: { id: { type: 'integer', format: 'int64' }, method: { type: 'string' } }
+    },
+    '#/components/schemas/NftOperations': {
+        type: 'object',
+        required: ['operations'],
+        properties: {
+            operations: { type: 'array', items: { $ref: '#/components/schemas/NftOperation' } },
+            next_from: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' }
+        }
+    },
+    '#/components/schemas/NftOperation': {
+        type: 'object',
+        required: ['operation', 'utime', 'lt', 'transaction_hash', 'item'],
+        properties: {
+            operation: { type: 'string' },
+            utime: { type: 'integer', format: 'int64' },
+            lt: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            transaction_hash: { type: 'string' },
+            source: { $ref: '#/components/schemas/AccountAddress' },
+            destination: { $ref: '#/components/schemas/AccountAddress' },
+            item: { $ref: '#/components/schemas/NftItem' }
+        }
+    },
+    '#/components/schemas/JettonOperations': {
+        type: 'object',
+        required: ['operations'],
+        properties: {
+            operations: { type: 'array', items: { $ref: '#/components/schemas/JettonOperation' } },
+            next_from: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' }
+        }
+    },
+    '#/components/schemas/JettonOperation': {
+        type: 'object',
+        required: [
+            'operation',
+            'utime',
+            'lt',
+            'jetton',
+            'transaction_hash',
+            'amount',
+            'trace_id',
+            'query_id'
+        ],
+        properties: {
+            operation: { type: 'string', enum: ['transfer', 'mint', 'burn'] },
+            utime: { type: 'integer', format: 'int64' },
+            lt: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            transaction_hash: { type: 'string' },
+            source: { $ref: '#/components/schemas/AccountAddress' },
+            destination: { $ref: '#/components/schemas/AccountAddress' },
+            amount: { type: 'string', 'x-js-format': 'bigint' },
+            jetton: { $ref: '#/components/schemas/JettonPreview' },
+            trace_id: { type: 'string' },
+            query_id: { type: 'string', 'x-js-format': 'bigint' },
+            payload: {}
+        }
+    },
+    '#/components/schemas/ExecGetMethodArgType': {
+        type: 'string',
+        enum: ['nan', 'null', 'tinyint', 'int257', 'slice', 'cell_boc_base64', 'slice_boc_hex']
+    },
+    '#/components/schemas/ExecGetMethodArg': {
+        type: 'object',
+        required: ['type', 'value'],
+        properties: {
+            type: { $ref: '#/components/schemas/ExecGetMethodArgType' },
+            value: { type: 'string' }
+        }
+    },
+    '#/components/schemas/Protocol': {
+        type: 'object',
+        required: ['name'],
+        properties: { name: { type: 'string' }, image: { type: 'string' } }
     }
 };
 type ComponentRef = keyof typeof components;
@@ -6137,6 +6693,23 @@ export class TonApiClient {
         },
 
         /**
+         * @description Download blockchain block BOC
+         *
+         * @tags Blockchain
+         * @name DownloadBlockchainBlockBoc
+         * @request GET:/v2/blockchain/blocks/{block_id}/boc
+         */
+        downloadBlockchainBlockBoc: (blockId: string, params: RequestParams = {}) => {
+            const req = this.http.request<DownloadBlockchainBlockBocData, Error>({
+                path: `/v2/blockchain/blocks/${blockId}/boc`,
+                method: 'GET',
+                ...params
+            });
+
+            return prepareResponse<DownloadBlockchainBlockBocData>(req);
+        },
+
+        /**
          * @description Get blockchain block shards
          *
          * @tags Blockchain
@@ -6424,25 +6997,17 @@ export class TonApiClient {
             methodName: string,
             query?: {
                 /**
-                 * Supported values:
-                 * "NaN" for NaN type,
-                 * "Null" for Null type,
-                 * 10-base digits for tiny int type (Example: 100500),
-                 * 0x-prefixed hex digits for int257 (Example: 0xfa01d78381ae32),
-                 * all forms of addresses for slice type (Example: 0:6e731f2e28b73539a7f85ac47ca104d5840b229351189977bb6151d36b5e3f5e),
-                 * single-root base64-encoded BOC for cell (Example: "te6ccgEBAQEAAgAAAA=="),
-                 * single-root hex-encoded BOC for slice (Example: b5ee9c72010101010002000000)
+                 * Array of method arguments in string format. Supported value formats:
+                 * - "NaN" for Not-a-Number type
+                 * - "Null" for Null type
+                 * - Decimal integers for tinyint type (e.g., "100500")
+                 * - 0x-prefixed hex strings for int257 type (e.g., "0xfa01d78381ae32")
+                 * - TON blockchain addresses for slice type (e.g., "0:6e731f2e28b73539a7f85ac47ca104d5840b229351189977bb6151d36b5e3f5e")
+                 * - Base64-encoded BOC for cell type (e.g., "te6ccgEBAQEAAgAAAA==")
+                 * - Hex-encoded BOC for slice type (e.g., "b5ee9c72010101010002000000")
                  * @example ["0:9a33970f617bcd71acf2cd28357c067aa31859c02820d8f01d74c88063a8f4d8"]
                  */
                 args?: string[];
-                /**
-                 * A temporary fix to switch to a scheme with direct ordering of arguments.
-                 * If equal to false, then the method takes arguments in direct order,
-                 * e.g. for get_nft_content(int index, cell individual_content) we pass a list of arguments [index, individual_content].
-                 * If equal to true, then the method takes arguments in reverse order, e.g. [individual_content, index].
-                 * @default true
-                 */
-                fix_order?: boolean;
             },
             params: RequestParams = {}
         ) => {
@@ -6456,6 +7021,44 @@ export class TonApiClient {
             });
 
             return prepareResponse<ExecGetMethodForBlockchainAccountData>(req, {
+                $ref: '#/components/schemas/MethodExecutionResult'
+            });
+        },
+
+        /**
+         * @description Execute get method for account
+         *
+         * @tags Blockchain
+         * @name ExecGetMethodWithBodyForBlockchainAccount
+         * @request POST:/v2/blockchain/accounts/{account_id}/methods/{method_name}
+         */
+        execGetMethodWithBodyForBlockchainAccount: (
+            accountId_Address: Address,
+            methodName: string,
+            data: {
+                args: ExecGetMethodArg[];
+            },
+            params: RequestParams = {}
+        ) => {
+            const accountId = accountId_Address.toRawString();
+            const req = this.http.request<ExecGetMethodWithBodyForBlockchainAccountData, Error>({
+                path: `/v2/blockchain/accounts/${accountId}/methods/${methodName}`,
+                method: 'POST',
+                body: prepareRequestData(data, {
+                    type: 'object',
+                    required: ['args'],
+                    properties: {
+                        args: {
+                            type: 'array',
+                            items: { $ref: '#/components/schemas/ExecGetMethodArg' }
+                        }
+                    }
+                }),
+                format: 'json',
+                ...params
+            });
+
+            return prepareResponse<ExecGetMethodWithBodyForBlockchainAccountData>(req, {
                 $ref: '#/components/schemas/MethodExecutionResult'
             });
         },
@@ -6556,6 +7159,26 @@ export class TonApiClient {
 
             return prepareResponse<BlockchainAccountInspectData>(req, {
                 $ref: '#/components/schemas/BlockchainAccountInspect'
+            });
+        },
+
+        /**
+         * @description Get library cell
+         *
+         * @tags Blockchain
+         * @name GetLibraryByHash
+         * @request GET:/v2/blockchain/libraries/{hash}
+         */
+        getLibraryByHash: (hash: string, params: RequestParams = {}) => {
+            const req = this.http.request<GetLibraryByHashData, Error>({
+                path: `/v2/blockchain/libraries/${hash}`,
+                method: 'GET',
+                format: 'json',
+                ...params
+            });
+
+            return prepareResponse<GetLibraryByHashData>(req, {
+                $ref: '#/components/schemas/BlockchainLibrary'
             });
         },
 
@@ -6754,18 +7377,6 @@ export class TonApiClient {
                  * @example 100
                  */
                 limit: number;
-                /**
-                 * @format int64
-                 * @max 2114380800
-                 * @example 1668436763
-                 */
-                start_date?: number;
-                /**
-                 * @format int64
-                 * @max 2114380800
-                 * @example 1668436763
-                 */
-                end_date?: number;
             },
             params: RequestParams = {}
         ) => {
@@ -6779,16 +7390,17 @@ export class TonApiClient {
             });
 
             return prepareResponse<GetAccountJettonsHistoryData>(req, {
-                $ref: '#/components/schemas/AccountEvents'
+                $ref: '#/components/schemas/JettonOperations'
             });
         },
 
         /**
-         * @description Get the transfer jetton history for account and jetton
+         * @description Please use `getJettonAccountHistoryByID`` instead
          *
          * @tags Accounts
          * @name GetAccountJettonHistoryById
          * @request GET:/v2/accounts/{account_id}/jettons/{jetton_id}/history
+         * @deprecated
          */
         getAccountJettonHistoryById: (
             accountId_Address: Address,
@@ -7263,6 +7875,59 @@ export class TonApiClient {
         },
 
         /**
+         * @description Get the transfer jetton history for account and jetton
+         *
+         * @tags Accounts
+         * @name GetJettonAccountHistoryById
+         * @request GET:/v2/jettons/{jetton_id}/accounts/{account_id}/history
+         */
+        getJettonAccountHistoryById: (
+            accountId_Address: Address,
+            jettonId_Address: Address,
+            query: {
+                /**
+                 * omit this parameter to get last events
+                 * @format bigint
+                 * @example 25758317000002
+                 */
+                before_lt?: bigint;
+                /**
+                 * @min 1
+                 * @max 1000
+                 * @example 100
+                 */
+                limit: number;
+                /**
+                 * @format int64
+                 * @max 2114380800
+                 * @example 1668436763
+                 */
+                start_date?: number;
+                /**
+                 * @format int64
+                 * @max 2114380800
+                 * @example 1668436763
+                 */
+                end_date?: number;
+            },
+            params: RequestParams = {}
+        ) => {
+            const accountId = accountId_Address.toRawString();
+            const jettonId = jettonId_Address.toRawString();
+            const req = this.http.request<GetJettonAccountHistoryByIdData, Error>({
+                path: `/v2/jettons/${jettonId}/accounts/${accountId}/history`,
+                method: 'GET',
+                query: query,
+                format: 'json',
+                ...params
+            });
+
+            return prepareResponse<GetJettonAccountHistoryByIdData>(req, {
+                $ref: '#/components/schemas/JettonOperations'
+            });
+        },
+
+        /**
          * @description parse address and display in all formats
          *
          * @tags Utilities
@@ -7323,18 +7988,6 @@ export class TonApiClient {
                  * @example 100
                  */
                 limit: number;
-                /**
-                 * @format int64
-                 * @max 2114380800
-                 * @example 1668436763
-                 */
-                start_date?: number;
-                /**
-                 * @format int64
-                 * @max 2114380800
-                 * @example 1668436763
-                 */
-                end_date?: number;
             },
             params: RequestParams = {}
         ) => {
@@ -7348,7 +8001,7 @@ export class TonApiClient {
             });
 
             return prepareResponse<GetAccountNftHistoryData>(req, {
-                $ref: '#/components/schemas/AccountEvents'
+                $ref: '#/components/schemas/NftOperations'
             });
         },
 
@@ -7537,11 +8190,12 @@ export class TonApiClient {
         },
 
         /**
-         * @description Get the transfer nfts history for account
+         * @description Please use `getAccountNftHistory`` instead
          *
          * @tags NFT
          * @name GetNftHistoryById
          * @request GET:/v2/nfts/{account_id}/history
+         * @deprecated
          */
         getNftHistoryById: (
             accountId_Address: Address,
@@ -7615,10 +8269,18 @@ export class TonApiClient {
          * @name DnsResolve
          * @request GET:/v2/dns/{domain_name}/resolve
          */
-        dnsResolve: (domainName: string, params: RequestParams = {}) => {
+        dnsResolve: (
+            domainName: string,
+            query?: {
+                /** @default false */
+                filter?: boolean;
+            },
+            params: RequestParams = {}
+        ) => {
             const req = this.http.request<DnsResolveData, Error>({
                 path: `/v2/dns/${domainName}/resolve`,
                 method: 'GET',
+                query: query,
                 format: 'json',
                 ...params
             });
@@ -7712,168 +8374,6 @@ export class TonApiClient {
             });
 
             return prepareResponse<GetEventData>(req, { $ref: '#/components/schemas/Event' });
-        }
-    };
-    inscriptions = {
-        /**
-         * @description Get all inscriptions by owner address. It's experimental API and can be dropped in the future.
-         *
-         * @tags Inscriptions
-         * @name GetAccountInscriptions
-         * @request GET:/v2/experimental/accounts/{account_id}/inscriptions
-         */
-        getAccountInscriptions: (
-            accountId_Address: Address,
-            query?: {
-                /**
-                 * @min 1
-                 * @max 1000
-                 * @default 1000
-                 */
-                limit?: number;
-                /**
-                 * @min 0
-                 * @default 0
-                 */
-                offset?: number;
-            },
-            params: RequestParams = {}
-        ) => {
-            const accountId = accountId_Address.toRawString();
-            const req = this.http.request<GetAccountInscriptionsData, Error>({
-                path: `/v2/experimental/accounts/${accountId}/inscriptions`,
-                method: 'GET',
-                query: query,
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetAccountInscriptionsData>(req, {
-                $ref: '#/components/schemas/InscriptionBalances'
-            });
-        },
-
-        /**
-         * @description Get the transfer inscriptions history for account. It's experimental API and can be dropped in the future.
-         *
-         * @tags Inscriptions
-         * @name GetAccountInscriptionsHistory
-         * @request GET:/v2/experimental/accounts/{account_id}/inscriptions/history
-         */
-        getAccountInscriptionsHistory: (
-            accountId_Address: Address,
-            query?: {
-                /**
-                 * omit this parameter to get last events
-                 * @format bigint
-                 * @example 25758317000002
-                 */
-                before_lt?: bigint;
-                /**
-                 * @min 1
-                 * @max 1000
-                 * @default 100
-                 * @example 100
-                 */
-                limit?: number;
-            },
-            params: RequestParams = {}
-        ) => {
-            const accountId = accountId_Address.toRawString();
-            const req = this.http.request<GetAccountInscriptionsHistoryData, Error>({
-                path: `/v2/experimental/accounts/${accountId}/inscriptions/history`,
-                method: 'GET',
-                query: query,
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetAccountInscriptionsHistoryData>(req, {
-                $ref: '#/components/schemas/AccountEvents'
-            });
-        },
-
-        /**
-         * @description Get the transfer inscriptions history for account. It's experimental API and can be dropped in the future.
-         *
-         * @tags Inscriptions
-         * @name GetAccountInscriptionsHistoryByTicker
-         * @request GET:/v2/experimental/accounts/{account_id}/inscriptions/{ticker}/history
-         */
-        getAccountInscriptionsHistoryByTicker: (
-            accountId_Address: Address,
-            ticker: string,
-            query?: {
-                /**
-                 * omit this parameter to get last events
-                 * @format bigint
-                 * @example 25758317000002
-                 */
-                before_lt?: bigint;
-                /**
-                 * @min 1
-                 * @max 1000
-                 * @default 100
-                 * @example 100
-                 */
-                limit?: number;
-            },
-            params: RequestParams = {}
-        ) => {
-            const accountId = accountId_Address.toRawString();
-            const req = this.http.request<GetAccountInscriptionsHistoryByTickerData, Error>({
-                path: `/v2/experimental/accounts/${accountId}/inscriptions/${ticker}/history`,
-                method: 'GET',
-                query: query,
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetAccountInscriptionsHistoryByTickerData>(req, {
-                $ref: '#/components/schemas/AccountEvents'
-            });
-        },
-
-        /**
-         * @description return comment for making operation with inscription. please don't use it if you don't know what you are doing
-         *
-         * @tags Inscriptions
-         * @name GetInscriptionOpTemplate
-         * @request GET:/v2/experimental/inscriptions/op-template
-         */
-        getInscriptionOpTemplate: (
-            query: {
-                /** @example "ton20" */
-                type: 'ton20' | 'gram20';
-                destination?: string;
-                comment?: string;
-                /** @example "transfer" */
-                operation: 'transfer';
-                /**
-                 * @format bigint
-                 * @example "1000000000"
-                 */
-                amount: bigint;
-                /** @example "nano" */
-                ticker: string;
-                /** @example "UQAs87W4yJHlF8mt29ocA4agnMrLsOP69jC1HPyBUjJay7Mg" */
-                who: string;
-            },
-            params: RequestParams = {}
-        ) => {
-            const req = this.http.request<GetInscriptionOpTemplateData, Error>({
-                path: `/v2/experimental/inscriptions/op-template`,
-                method: 'GET',
-                query: query,
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetInscriptionOpTemplateData>(req, {
-                type: 'object',
-                required: ['comment', 'destination'],
-                properties: { comment: { type: 'string' }, destination: { type: 'string' } }
-            });
         }
     };
     jettons = {
@@ -7986,6 +8486,7 @@ export class TonApiClient {
                 limit?: number;
                 /**
                  * @min 0
+                 * @max 9000
                  * @default 0
                  */
                 offset?: number;
@@ -8319,9 +8820,7 @@ export class TonApiClient {
             return prepareResponse<GetChartRatesData>(req, {
                 type: 'object',
                 required: ['points'],
-                properties: {
-                    points: { type: 'array', items: { $ref: '#/components/schemas/ChartPoints' } }
-                }
+                properties: { points: { $ref: '#/components/schemas/ChartPoints' } }
             });
         },
 
@@ -8502,6 +9001,25 @@ export class TonApiClient {
         },
 
         /**
+         * @description Get human-friendly information about a wallet without low-level details.
+         *
+         * @tags Wallet
+         * @name GetWalletInfo
+         * @request GET:/v2/wallet/{account_id}
+         */
+        getWalletInfo: (accountId_Address: Address, params: RequestParams = {}) => {
+            const accountId = accountId_Address.toRawString();
+            const req = this.http.request<GetWalletInfoData, Error>({
+                path: `/v2/wallet/${accountId}`,
+                method: 'GET',
+                format: 'json',
+                ...params
+            });
+
+            return prepareResponse<GetWalletInfoData>(req, { $ref: '#/components/schemas/Wallet' });
+        },
+
+        /**
          * @description Get wallets by public key
          *
          * @tags Wallet
@@ -8517,7 +9035,7 @@ export class TonApiClient {
             });
 
             return prepareResponse<GetWalletsByPublicKeyData>(req, {
-                $ref: '#/components/schemas/Accounts'
+                $ref: '#/components/schemas/Wallets'
             });
         }
     };
@@ -8552,6 +9070,13 @@ export class TonApiClient {
         gaslessEstimate: (
             masterId_Address: Address,
             data: {
+                /**
+                 * TONAPI verifies that the account has enough jettons to pay the commission and make a transfer.
+                 * @default false
+                 */
+                throwErrorIfNotEnoughJettons?: boolean;
+                /** @default false */
+                returnEmulation?: boolean;
                 /** @format address */
                 walletAddress: Address;
                 walletPublicKey: string;
@@ -8570,6 +9095,8 @@ export class TonApiClient {
                     type: 'object',
                     required: ['messages', 'walletAddress', 'walletPublicKey'],
                     properties: {
+                        throwErrorIfNotEnoughJettons: { type: 'boolean', default: false },
+                        returnEmulation: { type: 'boolean', default: false },
                         walletAddress: { type: 'string', format: 'address' },
                         walletPublicKey: { type: 'string' },
                         messages: {
@@ -8618,10 +9145,13 @@ export class TonApiClient {
                         boc: { type: 'string', format: 'cell' }
                     }
                 }),
+                format: 'json',
                 ...params
             });
 
-            return prepareResponse<GaslessSendData>(req);
+            return prepareResponse<GaslessSendData>(req, {
+                $ref: '#/components/schemas/GaslessTx'
+            });
         }
     };
     liteServer = {
@@ -9340,6 +9870,27 @@ export class TonApiClient {
             return prepareResponse<GetMultisigAccountData>(req, {
                 $ref: '#/components/schemas/Multisig'
             });
+        },
+
+        /**
+         * @description Get multisig order
+         *
+         * @tags Multisig
+         * @name GetMultisigOrder
+         * @request GET:/v2/multisig/order/{account_id}
+         */
+        getMultisigOrder: (accountId_Address: Address, params: RequestParams = {}) => {
+            const accountId = accountId_Address.toRawString();
+            const req = this.http.request<GetMultisigOrderData, Error>({
+                path: `/v2/multisig/order/${accountId}`,
+                method: 'GET',
+                format: 'json',
+                ...params
+            });
+
+            return prepareResponse<GetMultisigOrderData>(req, {
+                $ref: '#/components/schemas/MultisigOrder'
+            });
         }
     };
     emulation = {
@@ -9375,7 +9926,7 @@ export class TonApiClient {
         },
 
         /**
-         * @description Emulate sending message to blockchain
+         * @description Emulate sending message to retrieve general blockchain events
          *
          * @tags Emulation, Events
          * @name EmulateMessageToEvent
@@ -9410,7 +9961,7 @@ export class TonApiClient {
         },
 
         /**
-         * @description Emulate sending message to blockchain
+         * @description Emulate sending message to retrieve with a detailed execution trace
          *
          * @tags Emulation, Traces
          * @name EmulateMessageToTrace
@@ -9445,7 +9996,7 @@ export class TonApiClient {
         },
 
         /**
-         * @description Emulate sending message to blockchain
+         * @description Emulate sending message to retrieve the resulting wallet state
          *
          * @tags Emulation, Wallet
          * @name EmulateMessageToWallet
@@ -9469,11 +10020,16 @@ export class TonApiClient {
                     balance?: bigint;
                 }[];
             },
+            query?: {
+                /** @example "usd" */
+                currency?: string;
+            },
             params: RequestParams = {}
         ) => {
             const req = this.http.request<EmulateMessageToWalletData, Error>({
                 path: `/v2/wallet/emulate`,
                 method: 'POST',
+                query: query,
                 body: prepareRequestData(data, {
                     type: 'object',
                     required: ['boc'],
@@ -9506,7 +10062,7 @@ export class TonApiClient {
         },
 
         /**
-         * @description Emulate sending message to blockchain
+         * @description Emulate sending message to retrieve account-specific events
          *
          * @tags Emulation, Accounts
          * @name EmulateMessageToAccountEvent
@@ -9539,6 +10095,47 @@ export class TonApiClient {
 
             return prepareResponse<EmulateMessageToAccountEventData>(req, {
                 $ref: '#/components/schemas/AccountEvent'
+            });
+        }
+    };
+    purchases = {
+        /**
+         * @description Get history of purchases
+         *
+         * @tags Purchases
+         * @name GetPurchaseHistory
+         * @request GET:/v2/purchases/{account_id}/history
+         */
+        getPurchaseHistory: (
+            accountId_Address: Address,
+            query?: {
+                /**
+                 * omit this parameter to get last invoices
+                 * @format bigint
+                 * @example 25758317000002
+                 */
+                before_lt?: bigint;
+                /**
+                 * @min 1
+                 * @max 1000
+                 * @default 100
+                 * @example 100
+                 */
+                limit?: number;
+            },
+            params: RequestParams = {}
+        ) => {
+            const accountId = accountId_Address.toRawString();
+            const req = this.http.request<GetPurchaseHistoryData, Error>({
+                path: `/v2/purchases/${accountId}/history`,
+                method: 'GET',
+                query: query,
+                format: 'json',
+                ...params
+            });
+
+            return prepareResponse<GetPurchaseHistoryData>(req, {
+                $ref: '#/components/schemas/AccountPurchases'
             });
         }
     };
