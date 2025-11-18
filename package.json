@@ -1,18 +1,22 @@
 {
   "name": "ton-api",
   "private": true,
-  "version": "0.4.0",
+  "version": "0.5.0-alpha.6",
   "type": "module",
   "scripts": {
     "postinstall": "patch-package",
     "test": "vitest run tests/",
     "test:client": "vitest run tests/client",
     "test:adapters": "vitest run tests/adapters",
+    "test:integration": "INTEGRATION=true vitest run tests/client/integration.test.ts",
     "test:watch": "vitest",
     "build": "turbo run build",
     "build:client": "turbo run build --filter=@ton-api/client",
     "build:adapters": "turbo run build --filter=@ton-api/ton-adapter",
     "build:watch": "turbo run build:watch",
+    "typecheck": "npm run typecheck:tests && turbo run typecheck",
+    "typecheck:tests": "tsc --noEmit",
+    "typecheck:client": "turbo run typecheck --filter=@ton-api/client",
     "lint": "turbo run lint",
     "lint:fix": "turbo run lint:fix",
     "clean": "turbo run clean && rimraf node_modules"

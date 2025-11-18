@@ -1,6 +1,6 @@
 import { Address, Tuple, TupleItem } from '@ton/core';
-import { execGetMethodForBlockchainAccount } from './__mock__/tuple';
 import { ta } from './utils/client';
+import { execGetMethodForBlockchainAccount as execGetMethodForBlockchainAccountMock } from './__mock__/tuple';
 import { mockFetch } from './utils/mockFetch';
 import { test, expect, afterEach, vi } from 'vitest';
 
@@ -13,36 +13,49 @@ function guardTuple(item: TupleItem): item is Tuple {
 }
 
 test('Tuple test', async () => {
-    mockFetch(execGetMethodForBlockchainAccount);
+    mockFetch(execGetMethodForBlockchainAccountMock);
 
     const addressString = 'Ef_X4pRKtgXOXYMOXNgXNRdlhkNKJ9bTKMfqvj6HDIiQG98F';
     const addressObject = Address.parse(addressString);
-    const res = await ta.blockchain.execGetMethodForBlockchainAccount(
+    const data = await ta.execGetMethodForBlockchainAccount(
         addressObject,
         'list_nominators'
     );
-    const highLevelTuple = res.stack[0];
 
-    expect(res).toBeDefined();
-    expect(res.success).toBeDefined();
+    expect(data).toBeDefined();
+    expect(data?.success).toBeDefined();
+
+    const highLevelTuple = data?.stack[0];
     expect(highLevelTuple).toBeDefined();
-    expect(highLevelTuple.type).toBeDefined();
-    expect(highLevelTuple.type).toBe('tuple');
+    expect(highLevelTuple?.type).toBeDefined();
+    expect(highLevelTuple?.type).toBe('tuple');
 
-    if (guardTuple(highLevelTuple)) {
-        expect(highLevelTuple.items).toBeDefined();
-
-        const secondLevelTupleFirst = highLevelTuple.items[0];
-        expect(secondLevelTupleFirst).toBeDefined();
-        expect(secondLevelTupleFirst.type).toBeDefined();
-        expect(secondLevelTupleFirst.type).toBe('tuple');
-
-        if (guardTuple(secondLevelTupleFirst)) {
-            expect(secondLevelTupleFirst.items).toBeDefined();
-        } else {
-            throw new Error('Second Tuple guard failed');
-        }
-    } else {
-        throw new Error('First Tuple guard failed');
+    if (!highLevelTuple) {
+        expect.fail('Expected highLevelTuple to be defined');
+        return;
     }
+
+    if (!guardTuple(highLevelTuple)) {
+        expect.fail('Expected highLevelTuple to be a tuple type');
+        return;
+    }
+
+    expect(highLevelTuple.items).toBeDefined();
+
+    const secondLevelTupleFirst = highLevelTuple.items[0];
+    expect(secondLevelTupleFirst).toBeDefined();
+    expect(secondLevelTupleFirst?.type).toBeDefined();
+    expect(secondLevelTupleFirst?.type).toBe('tuple');
+
+    if (!secondLevelTupleFirst) {
+        expect.fail('Expected secondLevelTupleFirst to be defined');
+        return;
+    }
+
+    if (!guardTuple(secondLevelTupleFirst)) {
+        expect.fail('Expected secondLevelTupleFirst to be a tuple type');
+        return;
+    }
+
+    expect(secondLevelTupleFirst.items).toBeDefined();
 });

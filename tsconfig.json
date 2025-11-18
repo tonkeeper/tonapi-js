@@ -1,0 +1,25 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "baseUrl": ".",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "target": "ESNext",
+    "lib": ["ESNext", "dom"],
+    "paths": {
+      "@ton-api/client": ["./packages/client/src/client.ts"],
+      "@ton-api/ton-adapter": ["./packages/ton-adapter/src/index.ts"]
+    }
+  },
+  "include": [
+    "tests/**/*.ts",
+    "examples/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules/**",
+    "packages/**/dist/**",
+    "packages/**/node_modules/**",
+    "tests/client/__mock__/fetchMock.ts"
+  ]
+}

@@ -64,18 +64,8 @@ const schemasObject = _.keys(config.originalSchema.components.schemas).reduce((a
     return acc;
 }, {});
 
-// TODO: Maybe we will need this in the future
-// const requestBodiesObject = _.keys(config.originalSchema.components.requestBodies).reduce((acc, key) => {
-//     const fullKey = "#/components/requestBodies/" + key;
-//     const requestBodyContent = config.originalSchema.components.requestBodies[key].content['application/json'];
-//     // Skip requestBodies with content type other than application/json
-//     acc[fullKey] = requestBodyContent && clearSchemaReferenceInformation(requestBodyContent.schema);
-//     return acc;
-// }, {});
-
 const componentsJson = JSON.stringify({
   ...schemasObject,
-  // ...requestBodiesObject
 });
 
 utils.clearSchemaReferenceInformation = clearSchemaReferenceInformation;
@@ -96,34 +86,106 @@ const components =  <%~ componentsJson %>
 <% }) %>
 */
 <% } %>
+
+/**
+ * TonAPI Client - instance-based approach (recommended)
+ *
+ * @example
+ * ```typescript
+ * const client = new TonApiClient({
+ *   baseUrl: 'https://tonapi.io',
+ *   apiKey: process.env.TON_API_KEY
+ * });
+ *
+ * try {
+ *   const account = await client.getAccount(address);
+ *   console.log(account);
+ * } catch (error) {
+ *   console.error('Error:', error.message);
+ * }
+ * ```
+ */
 export class TonApiClient {
+  private http: HttpClient;
 
-<% if(config.singleHttpClient) { %>
-  http: HttpClient;
-
-  constructor (apiConfig: ApiConfig = {}) {
+  constructor(apiConfig: ApiConfig = {}) {
     this.http = new HttpClient(apiConfig);
   }
+
+<% if (routes.outOfModule) { %>
+  <% for (const route of routes.outOfModule) { %>
+<%~ includeFile('./procedure-call.ejs', { ...it, route, isFlat: false }) %>
+  <% } %>
 <% } %>
 
+<% if (routes.combined) { %>
+  <% for (const { routes: combinedRoutes = [], moduleName } of routes.combined) { %>
+    <% for (const route of combinedRoutes) { %>
+<%~ includeFile('./procedure-call.ejs', { ...it, route, isFlat: false }) %>
+    <% } %>
+  <% } %>
+<% } %>
+}
+
+// Default client instance for global methods
+let defaultClient: TonApiClient | null = null;
+
+/**
+ * Initialize the global API client with configuration.
+ * For advanced use cases with global methods.
+ *
+ * @param apiConfig - Configuration for the API client
+ * @param apiConfig.baseUrl - API base URL
+ * @param apiConfig.apiKey - API authentication key
+ * @param apiConfig.baseApiParams - Additional request parameters
+ *
+ * @example
+ * ```typescript
+ * initClient({
+ *   baseUrl: 'https://tonapi.io',
+ *   apiKey: process.env.TON_API_KEY
+ * });
+ *
+ * const { data, error } = await getAccount(address);
+ * if (error) {
+ *   console.error('Error:', error.message);
+ * } else {
+ *   console.log(data);
+ * }
+ * ```
+ */
+export function initClient(apiConfig: ApiConfig = {}): void {
+  defaultClient = new TonApiClient(apiConfig);
+}
+
+/**
+ * Get the current default client instance
+ * @internal
+ */
+function getDefaultClient(): TonApiClient {
+  if (!defaultClient) {
+    throw new Error(
+      'TonApiClient is not initialized. Call initClient() before using global methods, ' +
+      'or use new TonApiClient() for instance-based approach.'
+    );
+  }
+  return defaultClient;
+}
 
 <% if (routes.outOfModule) { %>
   <% for (const route of routes.outOfModule) { %>
 
-  <%~ includeFile('./procedure-call.ejs', { ...it, route }) %>
+<%~ includeFile('./procedure-call.ejs', { ...it, route, isFlat: true }) %>
 
   <% } %>
 <% } %>
 
 <% if (routes.combined) { %>
   <% for (const { routes: combinedRoutes = [], moduleName } of routes.combined) { %>
-  <%~ moduleName %> = {
-  <% for (const route of combinedRoutes) { %>
+    <% for (const route of combinedRoutes) { %>
 
-  <%~ includeFile('./procedure-call.ejs', { ...it, route }) %>
+<%~ includeFile('./procedure-call.ejs', { ...it, route, isFlat: true }) %>
 
-  <% } %>
-  }
+    <% } %>
   <% } %>
 <% } %>
-}

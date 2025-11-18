@@ -19,14 +19,19 @@ import {
 } from '@ton/core';
 import {
     AccountStatus as TonApiAccountStatus,
-    TonApiClient,
     BlockchainRawAccount,
-    AccountStatus
+    AccountStatus,
+    TonApiHttpError,
+    TonApiClient
 } from '@ton-api/client';
 import { Buffer } from 'buffer';
 
 export class ContractAdapter {
-    constructor(private readonly tonapi: TonApiClient) {}
+    private client: TonApiClient;
+
+    constructor(client: TonApiClient) {
+        this.client = client;
+    }
 
     /**
      * Open smart contract
@@ -34,9 +39,7 @@ export class ContractAdapter {
      * @returns opened contract
      */
     open<T extends Contract>(contract: T) {
-        return openContract<T>(contract, args =>
-            createProvider(this.tonapi, args.address, args.init)
-        );
+        return openContract<T>(contract, args => createProvider(this.client, args.address, args.init));
     }
 
     /**
@@ -46,28 +49,34 @@ export class ContractAdapter {
      * @returns provider
      */
     provider(address: Address, init?: { code?: Cell; data?: Cell } | null) {
-        return createProvider(this.tonapi, address, init ? init : null);
+        return createProvider(this.client, address, init ? init : null);
     }
 }
-type LoclaBlockchainRawAccount = Partial<Pick<BlockchainRawAccount, 'lastTransactionLt'>> &
+type LocalBlockchainRawAccount = Partial<Pick<BlockchainRawAccount, 'lastTransactionLt'>> &
     Omit<BlockchainRawAccount, 'lastTransactionLt'>;
 
 function createProvider(
-    tonapi: TonApiClient,
+    client: TonApiClient,
     address: Address,
     init: { code?: Cell | null; data?: Cell | null } | null
 ): ContractProvider {
     return {
         async getState(): Promise<ContractState> {
             // Load state
-            const account: LoclaBlockchainRawAccount = await tonapi.blockchain
+            const account: LocalBlockchainRawAccount = await client
                 .getBlockchainRawAccount(address)
-                .catch((error: Error) => {
-                    if (error.message !== 'entity not found') {
-                        throw new Error(`Account request failed: ${error.message}`, error);
+                .catch((accountError: unknown) => {
+                    // Check if it's a 404 error (account not found)
+                    const accountNotExists =
+                        accountError instanceof TonApiHttpError && accountError.status === 404;
+
+                    if (!accountNotExists) {
+                        throw new Error(`Account request failed`, {
+                            cause: accountError
+                        });
                     }
 
-                    const mockResult: LoclaBlockchainRawAccount = {
+                    return {
                         address: address,
                         balance: 0n,
                         lastTransactionLt: undefined,
@@ -79,9 +88,7 @@ function createProvider(
                             lastPaid: Math.floor(new Date().getTime() / 1000),
                             duePayment: 0n
                         }
-                    };
-
-                    return mockResult;
+                    } as LocalBlockchainRawAccount;
                 });
 
             // Convert state
@@ -95,7 +102,7 @@ function createProvider(
 
             const stateGetters: Record<
                 TonApiAccountStatus,
-                (account: LoclaBlockchainRawAccount) => ContractState['state']
+                (account: LocalBlockchainRawAccount) => ContractState['state']
             > = {
                 active: account => ({
                     type: 'active',
@@ -113,11 +120,14 @@ function createProvider(
                 }
             };
 
-            const extraCurrency: ExtraCurrency | null = account.extraBalance
-                ? Object.fromEntries(
-                      Object.entries(account.extraBalance).map(([k, v]) => [Number(k), BigInt(v)])
-                  )
-                : null;
+            let extraCurrency: ExtraCurrency | null = null;
+            if (account.extraBalance) {
+                const ec: Record<number, bigint> = {};
+                for (const [k, v] of Object.entries(account.extraBalance)) {
+                    ec[Number(k)] = BigInt(v as unknown as string | number | bigint);
+                }
+                extraCurrency = ec as unknown as ExtraCurrency;
+            }
 
             return {
                 balance: account.balance,
@@ -135,22 +145,31 @@ function createProvider(
                 throw new Error('Tuples as get parameters are not supported by tonapi');
             }
 
-            const result = await tonapi.blockchain.execGetMethodForBlockchainAccount(
-                address,
-                name,
-                { args: args.map(TupleItemToTonapiString) }
-            );
-
-            return {
-                stack: new TupleReader(result.stack)
-            };
+            return client
+                .execGetMethodForBlockchainAccount(address, name, {
+                    args: args.map(TupleItemToTonapiString)
+                })
+                .then((result) => ({
+                    stack: new TupleReader(result.stack)
+                }))
+                .catch((error: unknown) => {
+                    throw new Error(`Get method execution failed`, {
+                        cause: error
+                    });
+                });
         },
         async external(message) {
             // Resolve init
-            let neededInit: { code?: Cell | null; data?: Cell | null } | null = null;
-            if (init && (await tonapi.accounts.getAccount(address)).status !== 'active') {
-                neededInit = init;
-            }
+            const neededInit: { code?: Cell | null; data?: Cell | null } | null = init
+                ? await client
+                    .getAccount(address)
+                    .then((data) => (data.status !== 'active' ? init : null))
+                    .catch((error: unknown) => {
+                        throw new Error(`Failed to get account info`, {
+                            cause: error
+                        });
+                    })
+                : null;
 
             // Send with state init
             const ext = external({
@@ -160,14 +179,26 @@ function createProvider(
             });
             const boc = beginCell().store(storeMessage(ext)).endCell();
 
-            await tonapi.blockchain.sendBlockchainMessage({ boc });
+            return client
+                .sendBlockchainMessage({ boc })
+                .catch((error: unknown) => {
+                    throw new Error(`Failed to send blockchain message`, {
+                        cause: error
+                    });
+                });
         },
         async internal(via, message) {
             // Resolve init
-            let neededInit: { code?: Cell | null; data?: Cell | null } | null = null;
-            if (init && (await tonapi.accounts.getAccount(address)).status !== 'active') {
-                neededInit = init;
-            }
+            const neededInit: { code?: Cell | null; data?: Cell | null } | null = init
+                ? await client
+                    .getAccount(address)
+                    .then((data) => (data.status !== 'active' ? init : null))
+                    .catch((error: unknown) => {
+                        throw new Error(`Failed to get account info`, {
+                            cause: error
+                        });
+                    })
+                : null;
 
             // Resolve bounce
             let bounce = true;
@@ -202,28 +233,34 @@ function createProvider(
             });
         },
         open<T extends Contract>(contract: T): OpenedContract<T> {
-            return openContract(contract, params =>
-                createProvider(tonapi, params.address, params.init)
-            );
+            return openContract(contract, params => createProvider(client, params.address, params.init));
         },
-        getTransactions(
+        async getTransactions(
             address: Address,
             lt: bigint,
             hash: Buffer,
             limit?: number
         ): Promise<Transaction[]> {
             console.info(
-                'hash param in getTransactions action ignored, beacause not supported',
+                'hash param in getTransactions action ignored, because not supported',
                 hash.toString('hex')
             );
-            return tonapi.blockchain
+
+            return client
                 .getBlockchainAccountTransactions(address, {
                     before_lt: lt + 1n,
                     limit
                 })
-                .then(({ transactions }) =>
-                    transactions.map(transaction => loadTransaction(transaction.raw.asSlice()))
-                );
+                .then((result) =>
+                    result.transactions.map(transaction =>
+                        loadTransaction(transaction.raw.asSlice())
+                    )
+                )
+                .catch((error: unknown) => {
+                    throw new Error(`Failed to get account transactions`, {
+                        cause: error
+                    });
+                });
         }
     };
 }

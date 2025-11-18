@@ -1,4 +1,4 @@
-openapi: 3.1.0
+openapi: 3.0.0
 info:
   title: REST api to TON blockchain explorer
   version: 2.0.0
@@ -7,10 +7,9 @@ info:
     name: Support
     email: support@tonkeeper.com
 servers:
-  - url: "https://tonapi.io"
-  - url: "https://testnet.tonapi.io"
-  - url: "http://localhost:8081"
-
+  - url: https://tonapi.io
+  - url: https://testnet.tonapi.io
+  - url: http://localhost:8081
 tags:
   - name: Accounts
     externalDocs:
@@ -71,15 +70,11 @@ tags:
   - name: Lite Server
     externalDocs:
       description: Additional documentation
-      url: https://docs.tonconsole.com/tonapi/rest-api/liteserver
+      url: https://docs.tonconsole.com/tonapi/rest-api/lite-server
   - name: Emulation
     externalDocs:
       description: Additional documentation
       url: https://docs.tonconsole.com/tonapi/rest-api/emulation
-  - name: Inscriptions
-    externalDocs:
-      description: Additional documentation
-      url: https://docs.tonconsole.com/tonapi/rest-api/inscriptions
   - name: Utilities
     externalDocs:
       description: Additional documentation
@@ -88,7 +83,7 @@ tags:
     externalDocs:
       description: Additional documentation
       url: https://docs.tonconsole.com/tonapi/rest-api/extra-currency
-
+  - name: Purchases
 paths:
   /v2/openapi.json:
     get:
@@ -101,8 +96,8 @@ paths:
           description: openapi.json
           content:
             application/json:
-              schema: { } # Free-form JSON value
-        'default':
+              schema: {}
+        default:
           $ref: '#/components/responses/Error'
   /v2/openapi.yml:
     get:
@@ -118,7 +113,7 @@ paths:
               schema:
                 type: string
                 format: binary
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/status:
     get:
@@ -133,7 +128,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ServiceStatus'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/blockchain/reduced/blocks:
     get:
@@ -151,7 +146,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ReducedBlocks'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/blockchain/blocks/{block_id}:
     get:
@@ -168,7 +163,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BlockchainBlock'
-        'default':
+        default:
+          $ref: '#/components/responses/Error'
+  /v2/blockchain/blocks/{block_id}/boc:
+    get:
+      description: Download blockchain block BOC
+      operationId: downloadBlockchainBlockBoc
+      tags:
+        - Blockchain
+      parameters:
+        - $ref: '#/components/parameters/blockchainBlockIDParameter'
+      responses:
+        '200':
+          description: Block BOC file
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+                example: attachment; filename="block.boc"
+        default:
           $ref: '#/components/responses/Error'
   /v2/blockchain/masterchain/{masterchain_seqno}/shards:
     get:
@@ -185,7 +203,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BlockchainBlockShards'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/blockchain/masterchain/{masterchain_seqno}/blocks:
     get:
@@ -202,7 +220,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BlockchainBlocks'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/blockchain/masterchain/{masterchain_seqno}/transactions:
     get:
@@ -219,7 +237,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Transactions'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/blockchain/masterchain/{masterchain_seqno}/config:
     get:
@@ -236,7 +254,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BlockchainConfig'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/blockchain/masterchain/{masterchain_seqno}/config/raw:
     get:
@@ -253,7 +271,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RawBlockchainConfig'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/blockchain/blocks/{block_id}/transactions:
     get:
@@ -270,7 +288,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Transactions'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/blockchain/transactions/{transaction_id}:
     get:
@@ -287,7 +305,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Transaction'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/blockchain/messages/{msg_id}/transaction:
     get:
@@ -304,7 +322,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Transaction'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/blockchain/validators:
     get:
@@ -319,7 +337,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Validators'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/blockchain/masterchain-head:
     get:
@@ -334,7 +352,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BlockchainBlock'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/blockchain/accounts/{account_id}:
     get:
@@ -351,7 +369,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BlockchainRawAccount'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/blockchain/accounts/{account_id}/transactions:
     get:
@@ -363,7 +381,7 @@ paths:
         - $ref: '#/components/parameters/accountIDParameter'
         - name: after_lt
           in: query
-          description: "omit this parameter to get last transactions"
+          description: omit this parameter to get last transactions
           schema:
             type: integer
             format: int64
@@ -371,7 +389,7 @@ paths:
             x-js-format: bigint
         - name: before_lt
           in: query
-          description: "omit this parameter to get last transactions"
+          description: omit this parameter to get last transactions
           schema:
             type: integer
             format: int64
@@ -390,8 +408,8 @@ paths:
           in: query
           schema:
             type: string
-            description: "used to sort the result-set in ascending or descending order by lt."
-            default: "desc"
+            description: used to sort the result-set in ascending or descending order by lt.
+            default: desc
             enum:
               - desc
               - asc
@@ -402,7 +420,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Transactions'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/blockchain/accounts/{account_id}/methods/{method_name}:
     get:
@@ -419,28 +437,18 @@ paths:
           schema:
             type: array
             description: |-
-              Supported values:
-              "NaN" for NaN type, 
-              "Null" for Null type, 
-              10-base digits for tiny int type (Example: 100500), 
-              0x-prefixed hex digits for int257 (Example: 0xfa01d78381ae32), 
-              all forms of addresses for slice type (Example: 0:6e731f2e28b73539a7f85ac47ca104d5840b229351189977bb6151d36b5e3f5e), 
-              single-root base64-encoded BOC for cell (Example: "te6ccgEBAQEAAgAAAA=="),
-              single-root hex-encoded BOC for slice (Example: b5ee9c72010101010002000000)
+              Array of method arguments in string format. Supported value formats:
+              - "NaN" for Not-a-Number type
+              - "Null" for Null type
+              - Decimal integers for tinyint type (e.g., "100500")
+              - 0x-prefixed hex strings for int257 type (e.g., "0xfa01d78381ae32")
+              - TON blockchain addresses for slice type (e.g., "0:6e731f2e28b73539a7f85ac47ca104d5840b229351189977bb6151d36b5e3f5e")
+              - Base64-encoded BOC for cell type (e.g., "te6ccgEBAQEAAgAAAA==")
+              - Hex-encoded BOC for slice type (e.g., "b5ee9c72010101010002000000")
             items:
               type: string
-            example: [ "0:9a33970f617bcd71acf2cd28357c067aa31859c02820d8f01d74c88063a8f4d8" ]
-        - name: fix_order
-          in: query
-          required: false
-          schema:
-            type: boolean
-            description: |-
-              A temporary fix to switch to a scheme with direct ordering of arguments. 
-              If equal to false, then the method takes arguments in direct order,
-              e.g. for get_nft_content(int index, cell individual_content) we pass a list of arguments [index, individual_content].
-              If equal to true, then the method takes arguments in reverse order, e.g. [individual_content, index].
-            default: true
+            example:
+              - 0:9a33970f617bcd71acf2cd28357c067aa31859c02820d8f01d74c88063a8f4d8
       responses:
         '200':
           description: method execution result
@@ -448,7 +456,26 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MethodExecutionResult'
-        'default':
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      description: Execute get method for account
+      operationId: execGetMethodWithBodyForBlockchainAccount
+      tags:
+        - Blockchain
+      parameters:
+        - $ref: '#/components/parameters/accountIDParameter'
+        - $ref: '#/components/parameters/methodNameParameter'
+      requestBody:
+        $ref: '#/components/requestBodies/ExecGetMethodArgs'
+      responses:
+        '200':
+          description: method execution result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MethodExecutionResult'
+        default:
           $ref: '#/components/responses/Error'
   /v2/blockchain/message:
     post:
@@ -457,11 +484,11 @@ paths:
       tags:
         - Blockchain
       requestBody:
-        $ref: "#/components/requestBodies/BatchBoc"
+        $ref: '#/components/requestBodies/BatchBoc'
       responses:
         '200':
           description: the message has been sent
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/blockchain/config:
     get:
@@ -476,7 +503,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BlockchainConfig'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/blockchain/config/raw:
     get:
@@ -491,7 +518,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RawBlockchainConfig'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/blockchain/accounts/{account_id}/inspect:
     get:
@@ -508,7 +535,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BlockchainAccountInspect'
-        'default':
+        default:
+          $ref: '#/components/responses/Error'
+  /v2/blockchain/libraries/{hash}:
+    get:
+      description: Get library cell
+      operationId: getLibraryByHash
+      tags:
+        - Blockchain
+      parameters:
+        - $ref: '#/components/parameters/hashParameter'
+      responses:
+        '200':
+          description: library cell
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockchainLibrary'
+        default:
           $ref: '#/components/responses/Error'
   /v2/address/{account_id}/parse:
     get:
@@ -535,7 +579,7 @@ paths:
                   raw_form:
                     type: string
                     format: address
-                    example: "0:6e731f2e28b73539a7f85ac47ca104d5840b229351189977bb6151d36b5e3f5e"
+                    example: 0:6e731f2e28b73539a7f85ac47ca104d5840b229351189977bb6151d36b5e3f5e
                   bounceable:
                     required:
                       - b64
@@ -569,9 +613,9 @@ paths:
       tags:
         - Accounts
       parameters:
-        - $ref: "#/components/parameters/currencyQuery"
+        - $ref: '#/components/parameters/currencyQuery'
       requestBody:
-        $ref: "#/components/requestBodies/AccountIDs"
+        $ref: '#/components/requestBodies/AccountIDs'
       responses:
         '200':
           description: a list of accounts
@@ -579,7 +623,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Accounts'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/accounts/{account_id}:
     get:
@@ -596,7 +640,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Account'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/accounts/{account_id}/dns/backresolve:
     get:
@@ -613,7 +657,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DomainNames'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/accounts/{account_id}/jettons:
     get:
@@ -632,7 +676,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/JettonsBalances'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/accounts/{account_id}/jettons/{jetton_id}:
     get:
@@ -652,7 +696,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/JettonBalance'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/accounts/{account_id}/jettons/history:
     get:
@@ -662,10 +706,9 @@ paths:
         - Accounts
       parameters:
         - $ref: '#/components/parameters/accountIDParameter'
-        - $ref: '#/components/parameters/i18n'
         - name: before_lt
           in: query
-          description: "omit this parameter to get last events"
+          description: omit this parameter to get last events
           required: false
           schema:
             type: integer
@@ -680,34 +723,19 @@ paths:
             example: 100
             maximum: 1000
             minimum: 1
-        - name: start_date
-          in: query
-          required: false
-          schema:
-            type: integer
-            format: int64
-            maximum: 2114380800
-            example: 1668436763
-        - name: end_date
-          in: query
-          required: false
-          schema:
-            type: integer
-            format: int64
-            maximum: 2114380800
-            example: 1668436763
       responses:
         '200':
           description: account jettons history
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AccountEvents'
-        'default':
+                $ref: '#/components/schemas/JettonOperations'
+        default:
           $ref: '#/components/responses/Error'
   /v2/accounts/{account_id}/jettons/{jetton_id}/history:
     get:
-      description: Get the transfer jetton history for account and jetton
+      deprecated: true
+      description: Please use `getJettonAccountHistoryByID`` instead
       operationId: getAccountJettonHistoryByID
       tags:
         - Accounts
@@ -717,7 +745,7 @@ paths:
         - $ref: '#/components/parameters/i18n'
         - name: before_lt
           in: query
-          description: "omit this parameter to get last events"
+          description: omit this parameter to get last events
           required: false
           schema:
             type: integer
@@ -755,7 +783,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AccountEvents'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/accounts/{account_id}/nfts:
     get:
@@ -771,7 +799,7 @@ paths:
         - in: query
           name: indirect_ownership
           required: false
-          description: "Selling nft items in ton implemented usually via transfer items to special selling account. This option enables including items which owned not directly."
+          description: Selling nft items in ton implemented usually via transfer items to special selling account. This option enables including items which owned not directly.
           schema:
             type: boolean
             default: false
@@ -782,11 +810,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/NftItems'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/accounts/{account_id}/nfts/history:
     get:
-      x-question: duplicate of getNftHistoryByID ?
       description: Get the transfer nft history
       operationId: getAccountNftHistory
       tags:
@@ -796,7 +823,7 @@ paths:
         - $ref: '#/components/parameters/i18n'
         - name: before_lt
           in: query
-          description: "omit this parameter to get last events"
+          description: omit this parameter to get last events
           required: false
           schema:
             type: integer
@@ -811,30 +838,14 @@ paths:
             example: 100
             maximum: 1000
             minimum: 1
-        - name: start_date
-          in: query
-          required: false
-          schema:
-            type: integer
-            format: int64
-            maximum: 2114380800
-            example: 1668436763
-        - name: end_date
-          in: query
-          required: false
-          schema:
-            type: integer
-            format: int64
-            maximum: 2114380800
-            example: 1668436763
       responses:
         '200':
           description: nft history
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AccountEvents'
-        'default':
+                $ref: '#/components/schemas/NftOperations'
+        default:
           $ref: '#/components/responses/Error'
   /v2/accounts/{account_id}/events:
     get:
@@ -848,14 +859,14 @@ paths:
         - $ref: '#/components/parameters/initiatorQuery'
         - name: subject_only
           in: query
-          description: "filter actions where requested account is not real subject (for example sender or receiver jettons)"
+          description: filter actions where requested account is not real subject (for example sender or receiver jettons)
           schema:
             type: boolean
             default: false
           required: false
         - name: before_lt
           in: query
-          description: "omit this parameter to get last events"
+          description: omit this parameter to get last events
           required: false
           schema:
             type: integer
@@ -893,7 +904,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AccountEvents'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/accounts/{account_id}/events/{event_id}:
     get:
@@ -907,7 +918,7 @@ paths:
         - $ref: '#/components/parameters/i18n'
         - name: subject_only
           in: query
-          description: "filter actions where requested account is not real subject (for example sender or receiver jettons)"
+          description: filter actions where requested account is not real subject (for example sender or receiver jettons)
           schema:
             type: boolean
             default: false
@@ -919,7 +930,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AccountEvent'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/accounts/{account_id}/traces:
     get:
@@ -931,7 +942,7 @@ paths:
         - $ref: '#/components/parameters/accountIDParameter'
         - name: before_lt
           in: query
-          description: "omit this parameter to get last events"
+          description: omit this parameter to get last events
           required: false
           schema:
             type: integer
@@ -953,7 +964,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TraceIDs'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/accounts/{account_id}/subscriptions:
     get:
@@ -970,7 +981,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Subscriptions'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/accounts/{account_id}/reindex:
     post:
@@ -983,7 +994,7 @@ paths:
       responses:
         '200':
           description: success
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/accounts/search:
     get:
@@ -1006,7 +1017,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/FoundAccounts'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/accounts/{account_id}/dns/expiring:
     get:
@@ -1024,7 +1035,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DnsExpiring'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/accounts/{account_id}/publickey:
     get:
@@ -1046,8 +1057,8 @@ paths:
                 properties:
                   public_key:
                     type: string
-                    example: "NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODQ3..."
-        'default':
+                    example: NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODQ3...
+        default:
           $ref: '#/components/responses/Error'
   /v2/accounts/{account_id}/multisigs:
     get:
@@ -1064,9 +1075,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Multisigs'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
-  
   /v2/accounts/{account_id}/diff:
     get:
       description: Get account's balance change
@@ -1105,9 +1115,8 @@ paths:
                     type: integer
                     format: int64
                     example: 1000000000
-        'default':
+        default:
           $ref: '#/components/responses/Error'
-          
   /v2/accounts/{account_id}/extra-currency/{id}/history:
     get:
       description: Get the transfer history of extra currencies for an account.
@@ -1120,7 +1129,7 @@ paths:
         - $ref: '#/components/parameters/i18n'
         - name: before_lt
           in: query
-          description: "omit this parameter to get last events"
+          description: omit this parameter to get last events
           required: false
           schema:
             type: integer
@@ -1158,9 +1167,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AccountEvents'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
-  
   /v2/dns/{domain_name}:
     get:
       description: Get full information about domain name
@@ -1176,7 +1184,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DomainInfo'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/dns/{domain_name}/resolve:
     get:
@@ -1186,6 +1194,12 @@ paths:
         - DNS
       parameters:
         - $ref: '#/components/parameters/domainNameParameter'
+        - name: filter
+          in: query
+          schema:
+            type: boolean
+            default: false
+          required: false
       responses:
         '200':
           description: dns record
@@ -1193,7 +1207,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DnsRecord'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/dns/{domain_name}/bids:
     get:
@@ -1210,7 +1224,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DomainBids'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/dns/auctions:
     get:
@@ -1227,9 +1241,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Auctions'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
-
   /v2/nfts/collections:
     get:
       description: Get NFT collections
@@ -1261,7 +1274,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/NftCollections'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/nfts/collections/{account_id}:
     get:
@@ -1278,7 +1291,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/NftCollection'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/nfts/collections/_bulk:
     post:
@@ -1287,7 +1300,7 @@ paths:
       tags:
         - NFT
       requestBody:
-        $ref: "#/components/requestBodies/AccountIDs"
+        $ref: '#/components/requestBodies/AccountIDs'
       responses:
         '200':
           description: nft collections
@@ -1295,7 +1308,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/NftCollections'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/nfts/collections/{account_id}/items:
     get:
@@ -1314,7 +1327,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/NftItems'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/nfts/_bulk:
     post:
@@ -1323,7 +1336,7 @@ paths:
       tags:
         - NFT
       requestBody:
-        $ref: "#/components/requestBodies/AccountIDs"
+        $ref: '#/components/requestBodies/AccountIDs'
       responses:
         '200':
           description: nft items
@@ -1331,7 +1344,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/NftItems'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/nfts/{account_id}:
     get:
@@ -1348,11 +1361,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/NftItem'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/nfts/{account_id}/history:
     get:
-      description: Get the transfer nfts history for account
+      deprecated: true
+      description: Please use `getAccountNftHistory`` instead
       operationId: getNftHistoryByID
       tags:
         - NFT
@@ -1361,7 +1375,7 @@ paths:
         - $ref: '#/components/parameters/i18n'
         - name: before_lt
           in: query
-          description: "omit this parameter to get last events"
+          description: omit this parameter to get last events
           required: false
           schema:
             type: integer
@@ -1399,7 +1413,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AccountEvents'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/traces/{trace_id}:
     get:
@@ -1416,9 +1430,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Trace'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
-
   /v2/events/{event_id}:
     get:
       description: Get an event either by event ID or a hash of any transaction in a trace. An event is built on top of a trace which is a series of transactions caused by one inbound message. TonAPI looks for known patterns inside the trace and splits the trace into actions, where a single action represents a meaningful high-level operation like a Jetton Transfer or an NFT Purchase. Actions are expected to be shown to users. It is advised not to build any logic on top of actions because actions can be changed at any time.
@@ -1435,174 +1448,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Event'
-        'default':
-          $ref: '#/components/responses/Error'
-
-  /v2/experimental/accounts/{account_id}/inscriptions:
-    get:
-      description: Get all inscriptions by owner address. It's experimental API and can be dropped in the future.
-      operationId: getAccountInscriptions
-      tags:
-        - Inscriptions
-      parameters:
-        - $ref: '#/components/parameters/accountIDParameter'
-        - $ref: '#/components/parameters/limitQuery'
-        - $ref: '#/components/parameters/offsetQuery'
-      responses:
-        '200':
-          description: account inscriptions
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InscriptionBalances'
-        'default':
-          $ref: '#/components/responses/Error'
-  /v2/experimental/accounts/{account_id}/inscriptions/history:
-    get:
-      description: Get the transfer inscriptions history for account. It's experimental API and can be dropped in the future.
-      operationId: getAccountInscriptionsHistory
-      tags:
-        - Inscriptions
-      parameters:
-        - $ref: '#/components/parameters/accountIDParameter'
-        - $ref: '#/components/parameters/i18n'
-        - name: before_lt
-          in: query
-          description: "omit this parameter to get last events"
-          required: false
-          schema:
-            type: integer
-            format: int64
-            example: 25758317000002
-            x-js-format: bigint
-        - name: limit
-          in: query
-          required: false
-          schema:
-            type: integer
-            example: 100
-            default: 100
-            maximum: 1000
-            minimum: 1
-      responses:
-        '200':
-          description: account inscriptions history
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AccountEvents'
-        'default':
-          $ref: '#/components/responses/Error'
-  /v2/experimental/accounts/{account_id}/inscriptions/{ticker}/history:
-    get:
-      description: Get the transfer inscriptions history for account. It's experimental API and can be dropped in the future.
-      operationId: getAccountInscriptionsHistoryByTicker
-      tags:
-        - Inscriptions
-      parameters:
-        - $ref: '#/components/parameters/accountIDParameter'
-        - $ref: '#/components/parameters/i18n'
-        - name: ticker
-          in: path
-          required: true
-          schema:
-            type: string
-            example: "nano"
-        - name: before_lt
-          in: query
-          description: "omit this parameter to get last events"
-          required: false
-          schema:
-            type: integer
-            format: int64
-            example: 25758317000002
-            x-js-format: bigint
-        - name: limit
-          in: query
-          required: false
-          schema:
-            type: integer
-            example: 100
-            default: 100
-            maximum: 1000
-            minimum: 1
-      responses:
-        '200':
-          description: account inscriptions history
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AccountEvents'
-        'default':
-          $ref: '#/components/responses/Error'
-  /v2/experimental/inscriptions/op-template:
-    get:
-      description: return comment for making operation with inscription. please don't use it if you don't know what you are doing
-      operationId: getInscriptionOpTemplate
-      tags:
-        - Inscriptions
-      parameters:
-        - in: query
-          name: type
-          required: true
-          schema:
-            type: string
-            enum: [ "ton20", "gram20" ]
-            example: "ton20"
-        - in: query
-          name: destination
-          required: false
-          schema:
-            type: string
-        - in: query
-          name: comment
-          required: false
-          schema:
-            type: string
-        - in: query
-          name: operation
-          required: true
-          schema:
-            type: string
-            enum: [ "transfer" ]
-            example: "transfer"
-        - in: query
-          name: amount
-          required: true
-          schema:
-            type: string
-            x-js-format: bigint
-            example: "1000000000"
-        - in: query
-          name: ticker
-          required: true
-          schema:
-            type: string
-            example: "nano"
-        - in: query
-          name: who
-          required: true
-          schema:
-            type: string
-            example: UQAs87W4yJHlF8mt29ocA4agnMrLsOP69jC1HPyBUjJay7Mg
-      responses:
-        '200':
-          description: inscription op template
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - comment
-                  - destination
-                properties:
-                  comment:
-                    type: string
-                    example: "comment"
-                  destination:
-                    type: string
-                    example: "0:0000000000000"
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/jettons:
     get:
@@ -1635,7 +1481,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Jettons'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/jettons/{account_id}:
     get:
@@ -1652,7 +1498,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/JettonInfo'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/jettons/_bulk:
     post:
@@ -1661,7 +1507,7 @@ paths:
       tags:
         - Jettons
       requestBody:
-        $ref: "#/components/requestBodies/AccountIDs"
+        $ref: '#/components/requestBodies/AccountIDs'
       responses:
         '200':
           description: a list of jettons
@@ -1669,7 +1515,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Jettons'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/jettons/{account_id}/holders:
     get:
@@ -1680,7 +1526,14 @@ paths:
       parameters:
         - $ref: '#/components/parameters/accountIDParameter'
         - $ref: '#/components/parameters/limitQuery'
-        - $ref: '#/components/parameters/offsetQuery'
+        - in: query
+          name: offset
+          required: false
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+            maximum: 9000
       responses:
         '200':
           description: jetton's holders
@@ -1688,7 +1541,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/JettonHolders'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/jettons/{jetton_id}/transfer/{account_id}/payload:
     get:
@@ -1706,11 +1559,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/JettonTransferPayload'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/events/{event_id}/jettons:
     get:
-      description: "Get only jetton transfers in the event"
+      description: Get only jetton transfers in the event
       operationId: getJettonsEvents
       tags:
         - Jettons
@@ -1724,9 +1577,59 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Event'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
-   
+  /v2/jettons/{jetton_id}/accounts/{account_id}/history:
+    get:
+      description: Get the transfer jetton history for account and jetton
+      operationId: getJettonAccountHistoryByID
+      tags:
+        - Accounts
+      parameters:
+        - $ref: '#/components/parameters/accountIDParameter'
+        - $ref: '#/components/parameters/jettonIDParameter'
+        - name: before_lt
+          in: query
+          description: omit this parameter to get last events
+          required: false
+          schema:
+            type: integer
+            format: int64
+            example: 25758317000002
+            x-js-format: bigint
+        - name: limit
+          in: query
+          required: true
+          schema:
+            type: integer
+            example: 100
+            maximum: 1000
+            minimum: 1
+        - name: start_date
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+            maximum: 2114380800
+            example: 1668436763
+        - name: end_date
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+            maximum: 2114380800
+            example: 1668436763
+      responses:
+        '200':
+          description: account jetton history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JettonOperations'
+        default:
+          $ref: '#/components/responses/Error'
   /v2/extra-currency/{id}:
     get:
       description: Get extra currency info by id
@@ -1742,9 +1645,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EcPreview'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
-
   /v2/staking/nominator/{account_id}/pools:
     get:
       description: All pools where account participates
@@ -1760,7 +1662,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AccountStaking'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/staking/pool/{account_id}:
     get:
@@ -1786,7 +1688,7 @@ paths:
                     $ref: '#/components/schemas/PoolImplementation'
                   pool:
                     $ref: '#/components/schemas/PoolInfo'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/staking/pool/{account_id}/history:
     get:
@@ -1810,7 +1712,7 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/ApyHistory'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/staking/pools:
     get:
@@ -1830,7 +1732,7 @@ paths:
         - in: query
           name: include_unverified
           required: false
-          description: "return also pools not from white list - just compatible by interfaces (maybe dangerous!)"
+          description: return also pools not from white list - just compatible by interfaces (maybe dangerous!)
           schema:
             type: boolean
             example: false
@@ -1854,9 +1756,8 @@ paths:
                     type: object
                     additionalProperties:
                       $ref: '#/components/schemas/PoolImplementation'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
-
   /v2/storage/providers:
     get:
       description: Get TON storage providers deployed to the blockchain.
@@ -1877,9 +1778,8 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/StorageProvider'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
-  
   /v2/rates:
     get:
       description: Get the token price in the chosen currency for display only. Don’t use this for financial transactions.
@@ -1889,7 +1789,7 @@ paths:
       parameters:
         - in: query
           name: tokens
-          description: accept ton and jetton master addresses, separated by commas
+          description: accept cryptocurrencies and jetton master addresses, separated by commas
           required: true
           explode: false
           schema:
@@ -1897,10 +1797,14 @@ paths:
             maxItems: 100
             items:
               type: string
-            example: [ "ton" ]
+              x-js-format: token-or-address
+            example:
+              - ton
+              - btc
+              - EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs
         - in: query
           name: currencies
-          description: accept ton and all possible fiat currencies, separated by commas
+          description: accept cryptocurrencies and all possible fiat currencies
           required: true
           explode: false
           schema:
@@ -1908,7 +1812,11 @@ paths:
             maxItems: 50
             items:
               type: string
-            example: [ "ton","usd","rub" ]
+            example:
+              - ton
+              - btc
+              - usd
+              - rub
       responses:
         '200':
           description: tokens rates
@@ -1923,7 +1831,7 @@ paths:
                     type: object
                     additionalProperties:
                       $ref: '#/components/schemas/TokenRates'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/rates/chart:
     get:
@@ -1934,11 +1842,16 @@ paths:
       parameters:
         - in: query
           name: token
-          description: accept jetton master address
+          description: accept cryptocurrency or jetton master address
           required: true
           schema:
             type: string
-            format: address
+            x-js-format: token-or-address
+            example:
+              - value: ton
+                description: cryptocurrency code (ton, btc, etc.)
+              - value: EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs
+                description: jetton master address usdt for example
         - in: query
           name: currency
           required: false
@@ -1984,7 +1897,7 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/ChartPoints'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/rates/markets:
     get:
@@ -2006,9 +1919,8 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/MarketTonRates'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
-  
   /v2/tonconnect/payload:
     get:
       description: Get a payload for further token receipt
@@ -2027,8 +1939,8 @@ paths:
                 properties:
                   payload:
                     type: string
-                    example: "84jHVNLQmZsAAAAAZB0Zryi2wqVJI-KaKNXOvCijEi46YyYzkaSHyJrMPBMOkVZa"
-        'default':
+                    example: 84jHVNLQmZsAAAAAZB0Zryi2wqVJI-KaKNXOvCijEi46YyYzkaSHyJrMPBMOkVZa
+        default:
           $ref: '#/components/responses/Error'
   /v2/tonconnect/stateinit:
     post:
@@ -2037,7 +1949,7 @@ paths:
       tags:
         - Connect
       requestBody:
-        $ref: "#/components/requestBodies/TonConnectStateInit"
+        $ref: '#/components/requestBodies/TonConnectStateInit'
       responses:
         '200':
           description: account info
@@ -2045,7 +1957,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AccountInfoByStateInit'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/wallet/auth/proof:
     post:
@@ -2054,7 +1966,7 @@ paths:
       tags:
         - Wallet
       requestBody:
-        $ref: "#/components/requestBodies/TonConnectProof"
+        $ref: '#/components/requestBodies/TonConnectProof'
       responses:
         '200':
           description: auth token
@@ -2067,8 +1979,8 @@ paths:
                 properties:
                   token:
                     type: string
-                    example: "NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODQ3..."
-        'default':
+                    example: NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODQ3...
+        default:
           $ref: '#/components/responses/Error'
   /v2/wallet/{account_id}/seqno:
     get:
@@ -2085,7 +1997,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Seqno'
-        'default':
+        default:
+          $ref: '#/components/responses/Error'
+  /v2/wallet/{account_id}:
+    get:
+      description: Get human-friendly information about a wallet without low-level details.
+      operationId: getWalletInfo
+      tags:
+        - Wallet
+      parameters:
+        - $ref: '#/components/parameters/accountIDParameter'
+      responses:
+        '200':
+          description: wallet
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Wallet'
+        default:
           $ref: '#/components/responses/Error'
   /v2/gasless/config:
     get:
@@ -2095,18 +2024,19 @@ paths:
         - Gasless
       responses:
         '200':
-          description: "gasless config"
+          description: gasless config
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/GaslessConfig'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/gasless/estimate/{master_id}:
     post:
       description: Estimates the cost of the given messages and returns a payload to sign
       operationId: gaslessEstimate
       parameters:
+        - $ref: '#/components/parameters/i18n'
         - name: master_id
           in: path
           required: true
@@ -2118,15 +2048,15 @@ paths:
       tags:
         - Gasless
       requestBody:
-        $ref: "#/components/requestBodies/InternalMessages"
+        $ref: '#/components/requestBodies/InternalMessages'
       responses:
         '200':
-          description: "payload to sign"
+          description: payload to sign
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/SignRawParams'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/gasless/send:
     post:
@@ -2135,11 +2065,15 @@ paths:
       tags:
         - Gasless
       requestBody:
-        $ref: "#/components/requestBodies/GaslessSend"
+        $ref: '#/components/requestBodies/GaslessSend'
       responses:
         '200':
           description: the message has been sent
-        'default':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GaslessTx'
+        default:
           $ref: '#/components/responses/Error'
   /v2/pubkeys/{public_key}/wallets:
     get:
@@ -2155,10 +2089,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Accounts'
-        'default':
+                $ref: '#/components/schemas/Wallets'
+        default:
           $ref: '#/components/responses/Error'
-
   /v2/liteserver/get_masterchain_info:
     get:
       description: Get raw masterchain info
@@ -2184,7 +2117,7 @@ paths:
                     example: 131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85
                   init:
                     $ref: '#/components/schemas/InitStateRaw'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/liteserver/get_masterchain_info_ext:
     get:
@@ -2238,7 +2171,7 @@ paths:
                     example: 131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85
                   init:
                     $ref: '#/components/schemas/InitStateRaw'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/liteserver/get_time:
     get:
@@ -2260,7 +2193,7 @@ paths:
                     type: integer
                     format: int32
                     example: 1687146728
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/liteserver/get_block/{block_id}:
     get:
@@ -2286,7 +2219,7 @@ paths:
                   data:
                     type: string
                     example: 131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/liteserver/get_state/{block_id}:
     get:
@@ -2320,7 +2253,7 @@ paths:
                   data:
                     type: string
                     example: 131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/liteserver/get_block_header/{block_id}:
     get:
@@ -2352,7 +2285,7 @@ paths:
                   header_proof:
                     type: string
                     example: 131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/liteserver/send_message:
     post:
@@ -2361,7 +2294,7 @@ paths:
       tags:
         - Lite Server
       requestBody:
-        $ref: "#/components/requestBodies/LiteServerSendMessageRequest"
+        $ref: '#/components/requestBodies/LiteServerSendMessageRequest'
       responses:
         '200':
           description: code
@@ -2376,7 +2309,7 @@ paths:
                     type: integer
                     format: int32
                     example: 200
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/liteserver/get_account_state/{account_id}:
     get:
@@ -2414,7 +2347,7 @@ paths:
                   state:
                     type: string
                     example: 131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/liteserver/get_shard_info/{block_id}:
     get:
@@ -2450,7 +2383,7 @@ paths:
                   shard_descr:
                     type: string
                     example: 131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/liteserver/get_all_shards_info/{block_id}:
     get:
@@ -2480,7 +2413,7 @@ paths:
                   data:
                     type: string
                     example: 131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/liteserver/get_transactions/{account_id}:
     get:
@@ -2511,7 +2444,7 @@ paths:
                   transactions:
                     type: string
                     example: 131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/liteserver/list_block_transactions/{block_id}:
     get:
@@ -2572,7 +2505,7 @@ paths:
                   proof:
                     type: string
                     example: 131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/liteserver/get_block_proof:
     get:
@@ -2688,7 +2621,7 @@ paths:
                                       signature:
                                         type: string
                                         example: 131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/liteserver/get_config_all/{block_id}:
     get:
@@ -2724,7 +2657,7 @@ paths:
                   config_proof:
                     type: string
                     example: 131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/liteserver/get_shard_block_proof/{block_id}:
     get:
@@ -2760,7 +2693,7 @@ paths:
                         proof:
                           type: string
                           example: 131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/liteserver/get_out_msg_queue_sizes:
     get:
@@ -2795,9 +2728,8 @@ paths:
                         size:
                           type: integer
                           format: uint32
-        'default':
+        default:
           $ref: '#/components/responses/Error'
-  
   /v2/multisig/{account_id}:
     get:
       description: Get multisig account info
@@ -2813,7 +2745,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Multisig'
-        'default':
+        default:
+          $ref: '#/components/responses/Error'
+  /v2/multisig/order/{account_id}:
+    get:
+      description: Get multisig order
+      operationId: getMultisigOrder
+      tags:
+        - Multisig
+      parameters:
+        - $ref: '#/components/parameters/accountIDParameter'
+      responses:
+        '200':
+          description: multisig order
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MultisigOrder'
+        default:
           $ref: '#/components/responses/Error'
   /v2/message/decode:
     post:
@@ -2822,7 +2771,7 @@ paths:
       tags:
         - Emulation
       requestBody:
-        $ref: "#/components/requestBodies/Boc"
+        $ref: '#/components/requestBodies/Boc'
       responses:
         '200':
           description: decoded message
@@ -2830,11 +2779,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DecodedMessage'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/events/emulate:
     post:
-      description: Emulate sending message to blockchain
+      description: Emulate sending message to retrieve general blockchain events
       operationId: emulateMessageToEvent
       tags:
         - Emulation
@@ -2847,7 +2796,7 @@ paths:
           schema:
             type: boolean
       requestBody:
-        $ref: "#/components/requestBodies/Boc"
+        $ref: '#/components/requestBodies/Boc'
       responses:
         '200':
           description: emulated event
@@ -2855,11 +2804,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Event'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/traces/emulate:
     post:
-      description: Emulate sending message to blockchain
+      description: Emulate sending message to retrieve with a detailed execution trace
       operationId: emulateMessageToTrace
       tags:
         - Emulation
@@ -2871,7 +2820,7 @@ paths:
           schema:
             type: boolean
       requestBody:
-        $ref: "#/components/requestBodies/Boc"
+        $ref: '#/components/requestBodies/Boc'
       responses:
         '200':
           description: emulated trace
@@ -2879,19 +2828,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Trace'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/wallet/emulate:
     post:
-      description: Emulate sending message to blockchain
+      description: Emulate sending message to retrieve the resulting wallet state
       operationId: emulateMessageToWallet
       tags:
         - Emulation
         - Wallet
       parameters:
         - $ref: '#/components/parameters/i18n'
+        - $ref: '#/components/parameters/currencyQuery'
       requestBody:
-        $ref: "#/components/requestBodies/EmulationBoc"
+        $ref: '#/components/requestBodies/EmulationBoc'
       responses:
         '200':
           description: emulated message
@@ -2899,11 +2849,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MessageConsequences'
-        'default':
+        default:
           $ref: '#/components/responses/Error'
   /v2/accounts/{account_id}/events/emulate:
     post:
-      description: Emulate sending message to blockchain
+      description: Emulate sending message to retrieve account-specific events
       operationId: emulateMessageToAccountEvent
       tags:
         - Emulation
@@ -2917,7 +2867,7 @@ paths:
           schema:
             type: boolean
       requestBody:
-        $ref: "#/components/requestBodies/Boc"
+        $ref: '#/components/requestBodies/Boc'
       responses:
         '200':
           description: emulated message to account
@@ -2925,7 +2875,42 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AccountEvent'
-        'default':
+        default:
+          $ref: '#/components/responses/Error'
+  /v2/purchases/{account_id}/history:
+    get:
+      description: Get history of purchases
+      operationId: getPurchaseHistory
+      tags:
+        - Purchases
+      parameters:
+        - $ref: '#/components/parameters/accountIDParameter'
+        - name: before_lt
+          in: query
+          description: omit this parameter to get last invoices
+          required: false
+          schema:
+            type: integer
+            format: int64
+            example: 25758317000002
+            x-js-format: bigint
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 100
+            example: 100
+            maximum: 1000
+            minimum: 1
+      responses:
+        '200':
+          description: account purchase history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountPurchases'
+        default:
           $ref: '#/components/responses/Error'
 components:
   parameters:
@@ -2933,7 +2918,7 @@ components:
       in: path
       name: masterchain_seqno
       required: true
-      description: "masterchain block seqno"
+      description: masterchain block seqno
       schema:
         type: integer
         format: int32
@@ -2950,7 +2935,7 @@ components:
       in: path
       name: block_id
       required: true
-      description: "block ID: (workchain,shard,seqno,root_hash,file_hash)"
+      description: 'block ID: (workchain,shard,seqno,root_hash,file_hash)'
       schema:
         type: string
         example: (-1,8000000000000000,4234234,3E575DAB1D25...90D8,47192E5C46C...BB29)
@@ -3020,7 +3005,7 @@ components:
       in: path
       name: trace_id
       required: true
-      description: "trace ID or transaction hash in hex (without 0x) or base64url format"
+      description: trace ID or transaction hash in hex (without 0x) or base64url format
       schema:
         type: string
         example: 97264395BD65A255A429B11326C84128B7D70FFED7949ABAE3036D506BA38621
@@ -3028,7 +3013,7 @@ components:
       in: path
       name: event_id
       required: true
-      description: "event ID or transaction hash in hex (without 0x) or base64url format"
+      description: event ID or transaction hash in hex (without 0x) or base64url format
       schema:
         type: string
         example: 97264395BD65A255A429B11326C84128B7D70FFED7949ABAE3036D506BA38621
@@ -3036,7 +3021,7 @@ components:
       in: path
       name: id
       required: true
-      description: "extra currency id"
+      description: extra currency id
       schema:
         type: integer
         example: 239
@@ -3048,14 +3033,22 @@ components:
       schema:
         type: string
         example: NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODQ3...
+    hashParameter:
+      in: path
+      name: hash
+      required: true
+      description: hash in hex (without 0x) format
+      schema:
+        type: string
+        example: 131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85
     i18n:
       in: header
       name: Accept-Language
       required: false
       schema:
         type: string
-        example: "ru-RU,ru;q=0.5"
-        default: "en"
+        example: ru-RU,ru;q=0.5
+        default: en
     limitQuery:
       in: query
       name: limit
@@ -3085,7 +3078,7 @@ components:
       in: query
       name: period
       required: false
-      description: "number of days before expiration"
+      description: number of days before expiration
       schema:
         type: integer
         minimum: 1
@@ -3094,16 +3087,16 @@ components:
       in: query
       name: collection
       required: false
-      description: "nft collection"
+      description: nft collection
       schema:
         type: string
         format: address
-        example: "0:06d811f426598591b32b2c49f29f66c821368e4acb1de16762b04e0174532465"
+        example: 0:06d811f426598591b32b2c49f29f66c821368e4acb1de16762b04e0174532465
     modeQuery:
       in: query
       name: mode
       required: true
-      description: "mode"
+      description: mode
       schema:
         type: integer
         format: int32
@@ -3112,7 +3105,7 @@ components:
       in: query
       name: count
       required: true
-      description: "count"
+      description: count
       schema:
         type: integer
         format: int32
@@ -3121,7 +3114,7 @@ components:
       in: query
       name: known_block
       required: true
-      description: "known block: (workchain,shard,seqno,root_hash,file_hash)"
+      description: 'known block: (workchain,shard,seqno,root_hash,file_hash)'
       schema:
         type: string
         example: (-1,8000000000000000,4234234,3E575DAB1D25...90D8,47192E5C46C...BB29)
@@ -3129,7 +3122,7 @@ components:
       in: query
       name: target_block
       required: false
-      description: "target block: (workchain,shard,seqno,root_hash,file_hash)"
+      description: 'target block: (workchain,shard,seqno,root_hash,file_hash)'
       schema:
         type: string
         example: (-1,8000000000000000,4234234,3E575DAB1D25...90D8,47192E5C46C...BB29)
@@ -3137,7 +3130,7 @@ components:
       in: query
       name: lt
       required: true
-      description: "lt"
+      description: lt
       schema:
         type: integer
         format: int64
@@ -3145,7 +3138,7 @@ components:
     ltQuery:
       in: query
       name: lt
-      description: "lt"
+      description: lt
       schema:
         type: integer
         format: int64
@@ -3154,15 +3147,15 @@ components:
       in: query
       name: hash
       required: true
-      description: "hash"
+      description: hash
       schema:
         type: string
-        example: "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85"
+        example: 131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85
     workchainQuery:
       in: query
       name: workchain
       required: true
-      description: "workchain"
+      description: workchain
       schema:
         type: integer
         format: int32
@@ -3171,7 +3164,7 @@ components:
       in: query
       name: shard
       required: true
-      description: "shard"
+      description: shard
       schema:
         type: integer
         format: int64
@@ -3180,7 +3173,7 @@ components:
       in: query
       name: exact
       required: true
-      description: "exact"
+      description: exact
       schema:
         type: boolean
         example: false
@@ -3212,25 +3205,29 @@ components:
         type: array
         items:
           type: string
-        example: [ "ton", "usd", "rub" ]
+        example:
+          - ton
+          - usd
+          - rub
     supportedExtensions:
       in: query
       name: supported_extensions
-      description: "comma separated list supported extensions"
+      description: comma separated list supported extensions
       explode: false
       required: false
       schema:
         type: array
         items:
           type: string
-        example: [ "custom_payload" ]
+        example:
+          - custom_payload
     currencyQuery:
       in: query
       name: currency
       required: false
       schema:
         type: string
-        example: "usd"
+        example: usd
     fromQuery:
       in: query
       name: from
@@ -3245,7 +3242,6 @@ components:
       schema:
         type: integer
         format: int64
-
   requestBodies:
     MethodParameters:
       description: input parameters for contract get method
@@ -3298,7 +3294,7 @@ components:
                     address:
                       type: string
                       format: address
-                      example: "0:97146a46acc2654y27947f14c4a4b14273e954f78bc017790b41208b0043200b"
+                      example: 0:97146a46acc2654y27947f14c4a4b14273e954f78bc017790b41208b0043200b
                     balance:
                       type: integer
                       format: int64
@@ -3316,6 +3312,13 @@ components:
               - wallet_address
               - wallet_public_key
             properties:
+              throw_error_if_not_enough_jettons:
+                type: boolean
+                default: false
+                description: TONAPI verifies that the account has enough jettons to pay the commission and make a transfer.
+              return_emulation:
+                type: boolean
+                default: false
               wallet_address:
                 type: string
                 format: address
@@ -3377,7 +3380,7 @@ components:
                   format: address
                   example: 0:97264395BD65A255A429B11326C84128B7D70FFED7949ABAE3036D506BA38621
     TonConnectProof:
-      description: "Data that is expected from TON Connect"
+      description: Data that is expected from TON Connect
       required: true
       content:
         application/json:
@@ -3390,7 +3393,7 @@ components:
               address:
                 type: string
                 format: address
-                example: "0:97146a46acc2654y27947f14c4a4b14273e954f78bc017790b41208b0043200b"
+                example: 0:97146a46acc2654y27947f14c4a4b14273e954f78bc017790b41208b0043200b
               proof:
                 type: object
                 required:
@@ -3402,7 +3405,7 @@ components:
                   timestamp:
                     type: integer
                     format: int64
-                    example: "1678275313"
+                    example: '1678275313'
                   domain:
                     type: object
                     required:
@@ -3417,12 +3420,12 @@ components:
                     type: string
                   payload:
                     type: string
-                    example: "84jHVNLQmZsAAAAAZB0Zryi2wqVJI-KaKNXOvCijEi46YyYzkaSHyJrMPBMOkVZa"
+                    example: 84jHVNLQmZsAAAAAZB0Zryi2wqVJI-KaKNXOvCijEi46YyYzkaSHyJrMPBMOkVZa
                   state_init:
                     type: string
                     format: cell-base64
     TonConnectStateInit:
-      description: "Data that is expected"
+      description: Data that is expected
       required: true
       content:
         application/json:
@@ -3435,7 +3438,7 @@ components:
                 type: string
                 format: cell-base64
     LiteServerSendMessageRequest:
-      description: "Data that is expected"
+      description: Data that is expected
       required: true
       content:
         application/json:
@@ -3447,7 +3450,20 @@ components:
               body:
                 type: string
                 format: cell-base64
-
+    ExecGetMethodArgs:
+      description: |
+        Request body for executing a GET method on a blockchain account via POST. This format allows passing arguments in the request body instead of query parameters, which is especially useful for large or complex input data.
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - args
+            properties:
+              args:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ExecGetMethodArg'
   schemas:
     Error:
       type: object
@@ -3466,7 +3482,7 @@ components:
       properties:
         address:
           type: string
-          format: address
+          format: maybe-address
           example: 0:10C1073837B93FDAAD594284CE8B8EFF7B9CF25427440EB2FC682762E1471365
         name:
           type: string
@@ -3508,7 +3524,7 @@ components:
               value:
                 type: string
                 x-js-format: bigint
-                example: "10000000000"
+                example: '10000000000'
     BlockValueFlow:
       type: object
       required:
@@ -3576,8 +3592,7 @@ components:
           format: int32
         shard:
           type: string
-          # x-js-format: bigint ???
-          example: "8000000000000000"
+          example: '8000000000000000'
         seqno:
           type: integer
           example: 21734019
@@ -3596,12 +3611,12 @@ components:
           type: array
           items:
             type: string
-            example: "[ (0,4234235,8000000000000000) ]"
+            example: '[ (0,4234235,8000000000000000) ]'
         parent:
           type: array
           items:
             type: string
-            example: "[ (0,21734018,8000000000000000) ]"
+            example: '[ (0,21734018,8000000000000000) ]'
     BlockchainBlock:
       type: object
       required:
@@ -3644,8 +3659,7 @@ components:
           format: int32
         shard:
           type: string
-          # x-js-format: bigint ???
-          example: "8000000000000000"
+          example: '8000000000000000'
         seqno:
           type: integer
           example: 21734019
@@ -3727,7 +3741,10 @@ components:
           type: array
           items:
             type: string
-            example: [ (-1,4234235,8000000000000000) ]
+            example:
+              - (-1
+              - 4234235
+              - 8000000000000000)
         in_msg_descr_length:
           type: integer
           format: int64
@@ -3871,21 +3888,21 @@ components:
         op_code:
           type: string
           x-js-format: bigint
-          example: "0xdeadbeaf"
+          example: '0xdeadbeaf'
         init:
           $ref: '#/components/schemas/StateInit'
         hash:
           type: string
-          example: "1219de582369ac80ee1afe12147930f458a54ff1eea612611a8bc6bd31581a6c"
+          example: 1219de582369ac80ee1afe12147930f458a54ff1eea612611a8bc6bd31581a6c
         raw_body:
           type: string
           format: cell
           description: hex-encoded BoC with raw message body
-          example: "B5EE9C7201010101001100001D00048656C6C6F2C20776F726C64218"
+          example: B5EE9C7201010101001100001D00048656C6C6F2C20776F726C64218
         decoded_op_name:
           type: string
-          example: "nft_transfer"
-        decoded_body: { } # Free-form JSON value
+          example: nft_transfer
+        decoded_body: {}
     TransactionType:
       type: string
       example: TransOrd
@@ -3911,6 +3928,7 @@ components:
         - cskip_no_state
         - cskip_bad_state
         - cskip_no_gas
+        - cskip_suspended
     BouncePhaseType:
       type: string
       example: cskip_no_state
@@ -4118,8 +4136,8 @@ components:
         raw:
           type: string
           format: cell
-          description: "hex encoded boc with raw transaction"
-          example: "b5ee9c72410206010001380003b372cf3b5b8c891e517c9addbda1c0386a09ccacbb0e3faf630b51cfc8152325acb00002ac5795c0e41fdf79135cb7da03cc623b165d614b562a51eeccd8a5e097f405abf6b37f4e73000002ac5629732c1666887ed000144030480102030101a004008272abc8f2971aa4404ac6da1597720f348b2e1247b1ad9f55cbd3b6812f0a5f08b269bb65039fb1f6074d00f794e857f6dfd01131d299df456af10a8a4943d4d165000d0c80608840492001ab48015581f575c3b8c6ab3d6"
+          description: hex encoded boc with raw transaction
+          example: b5ee9c72410206010001380003b372cf3b5b8c891e517c9addbda1c0386a09ccacbb0e3faf630b51cfc8152325acb00002ac5795c0e41fdf79135cb7da03cc623b165d614b562a51eeccd8a5e097f405abf6b37f4e73000002ac5629732c1666887ed000144030480102030101a004008272abc8f2971aa4404ac6da1597720f348b2e1247b1ad9f55cbd3b6812f0a5f08b269bb65039fb1f6074d00f794e857f6dfd01131d299df456af10a8a4943d4d165000d0c80608840492001ab48015581f575c3b8c6ab3d6
     Transactions:
       type: object
       required:
@@ -4329,10 +4347,10 @@ components:
           example: 1000000
         zerostate_root_hash:
           type: string
-          example: "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85"
+          example: 131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85
         zerostate_file_hash:
           type: string
-          example: "A6A0BD6608672B11B79538A50B2204E748305C12AA0DED9C16CF0006CE3AF8DB"
+          example: A6A0BD6608672B11B79538A50B2204E748305C12AA0DED9C16CF0006CE3AF8DB
         version:
           type: integer
           format: int64
@@ -4387,7 +4405,6 @@ components:
         medium_proportional_mult:
           type: integer
           example: 1000000
-
     SizeLimitsConfig:
       type: object
       required:
@@ -4450,7 +4467,7 @@ components:
         total_weight:
           type: string
           x-js-format: bigint
-          example: "1152921504606846800"
+          example: '1152921504606846800'
         list:
           type: array
           items:
@@ -4467,7 +4484,7 @@ components:
                 x-js-format: bigint
               adnl_addr:
                 type: string
-                example: "45061C1D4EC44A937D0318589E13C73D151D1CEF5D3C0E53AFBCF56A6C2FE2BD"
+                example: 45061C1D4EC44A937D0318589E13C73D151D1CEF5D3C0E53AFBCF56A6C2FE2BD
     Oracle:
       type: object
       required:
@@ -4661,11 +4678,9 @@ components:
           x-js-format: bigint
           example: 123456789
         extra_balance:
-          type: object
-          additionalProperties:
-            type: string
-            # x-js-format: bigint ???
-            # example ???
+          type: array
+          items:
+            $ref: '#/components/schemas/ExtraCurrency'
         code:
           type: string
           format: cell
@@ -4686,7 +4701,7 @@ components:
           type: string
           example: 088b436a846d92281734236967970612f87fbd64a2cd3573107948379e8e4161
         status:
-          '$ref': '#/components/schemas/AccountStatus'
+          $ref: '#/components/schemas/AccountStatus'
         storage:
           $ref: '#/components/schemas/AccountStorageInfo'
         libraries:
@@ -4703,6 +4718,127 @@ components:
               root:
                 type: string
                 format: cell
+    BlockchainLibrary:
+      type: object
+      required:
+        - boc
+      properties:
+        boc:
+          type: string
+          format: cell
+          example: b5ee9c7201010101005f0000baff0020dd2082014c97ba218201339cbab19c71b0ed44d0d31fd70bffe304e0a4f260810200d71820d70b1fed44d0d31fd3ffd15112baf2a122f901541044f910f2a2f80001d31f3120d74a96d307d402fb00ded1a4c8cb1fcbffc9ed54
+    WalletStats:
+      type: object
+      required:
+        - nfts_count
+        - jettons_count
+        - multisig_count
+        - staking_count
+      properties:
+        nfts_count:
+          type: integer
+          format: int32
+          example: 123456789
+        jettons_count:
+          type: integer
+          format: int32
+          example: 123456789
+        multisig_count:
+          type: integer
+          format: int32
+          example: 123456789
+        staking_count:
+          type: integer
+          format: int32
+          example: 123456789
+    WalletPlugin:
+      type: object
+      required:
+        - address
+        - type
+        - status
+      properties:
+        address:
+          type: string
+          format: address
+          example: 0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf
+        type:
+          type: string
+          example: subscription_v1
+        status:
+          $ref: '#/components/schemas/AccountStatus'
+    Wallets:
+      type: object
+      required:
+        - accounts
+      properties:
+        accounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Wallet'
+    Wallet:
+      type: object
+      required:
+        - address
+        - balance
+        - stats
+        - plugins
+        - status
+        - last_activity
+        - get_methods
+        - is_wallet
+        - last_lt
+      properties:
+        address:
+          type: string
+          format: address
+          example: 0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf
+        is_wallet:
+          type: boolean
+        balance:
+          type: integer
+          format: int64
+          example: 123456789
+          x-js-format: bigint
+        stats:
+          $ref: '#/components/schemas/WalletStats'
+        plugins:
+          type: array
+          items:
+            $ref: '#/components/schemas/WalletPlugin'
+        status:
+          $ref: '#/components/schemas/AccountStatus'
+        last_activity:
+          type: integer
+          description: unix timestamp
+          format: int64
+          example: 1720860269
+        name:
+          type: string
+          example: Ton foundation
+        icon:
+          type: string
+          example: https://ton.org/logo.png
+        get_methods:
+          type: array
+          deprecated: true
+          items:
+            type: string
+          example:
+            - get_item_data
+        is_suspended:
+          type: boolean
+        signature_disabled:
+          type: boolean
+        interfaces:
+          type: array
+          items:
+            type: string
+        last_lt:
+          type: integer
+          format: int64
+          example: 25713146000001
+          x-js-format: bigint
     Account:
       type: object
       required:
@@ -4727,17 +4863,17 @@ components:
           items:
             $ref: '#/components/schemas/ExtraCurrency'
         currencies_balance:
-          description: "{'USD': 1, 'IDR': 1000}"
+          description: '{''USD'': 1, ''IDR'': 1000}'
           type: object
           additionalProperties: true
-          example: { }
+          example: {}
         last_activity:
           type: integer
           description: unix timestamp
           format: int64
           example: 1720860269
         status:
-          '$ref': '#/components/schemas/AccountStatus'
+          $ref: '#/components/schemas/AccountStatus'
         interfaces:
           type: array
           items:
@@ -4745,13 +4881,13 @@ components:
             example: nft_sale
         name:
           type: string
-          example: "Ton foundation"
+          example: Ton foundation
         is_scam:
           type: boolean
           example: true
         icon:
           type: string
-          example: "https://ton.org/logo.png"
+          example: https://ton.org/logo.png
         memo_required:
           type: boolean
           example: true
@@ -4759,7 +4895,8 @@ components:
           type: array
           items:
             type: string
-          example: [ 'get_item_data' ]
+          example:
+            - get_item_data
         is_suspended:
           type: boolean
         is_wallet:
@@ -4782,11 +4919,11 @@ components:
         relay_address:
           type: string
           format: address
-          description: "sending excess to this address decreases the commission of a gasless transfer"
+          description: sending excess to this address decreases the commission of a gasless transfer
           example: 0:dfbd5be8497fdc0c9fcbdfc676864840ddf8ad6423d6d5657d9b0e8270d6c8ac
         gas_jettons:
           type: array
-          description: "list of jettons, any of them can be used to pay for gas"
+          description: list of jettons, any of them can be used to pay for gas
           items:
             type: object
             required:
@@ -4807,17 +4944,22 @@ components:
           example: 0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf
         amount:
           type: string
-          # x-js-format: bigint
-          # example: "1000000" nanocoins or decimal ?
-          description: "Number of nanocoins to send. Decimal string."
+          description: Number of nanocoins to send. Decimal string.
         payload:
           type: string
           format: cell
-          description: "Raw one-cell BoC encoded in hex."
+          description: Raw one-cell BoC encoded in hex.
         stateInit:
           type: string
           format: cell
-          description: "Raw once-cell BoC encoded in hex."
+          description: Raw once-cell BoC encoded in hex.
+    GaslessTx:
+      type: object
+      required:
+        - protocol_name
+      properties:
+        protocol_name:
+          type: string
     SignRawParams:
       type: object
       required:
@@ -4826,7 +4968,10 @@ components:
         - commission
         - from
         - valid_until
+        - protocol_name
       properties:
+        protocol_name:
+          type: string
         relay_address:
           type: string
           format: address
@@ -4834,8 +4979,8 @@ components:
         commission:
           type: string
           x-js-format: bigint
-          example: "1000000"
-          description: "Commission for the transaction. In nanocoins."
+          example: '1000000'
+          description: Commission for the transaction. In nanocoins.
         from:
           type: string
           format: address
@@ -4848,6 +4993,8 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SignRawMessage'
+        emulation:
+          $ref: '#/components/schemas/MessageConsequences'
     MethodExecutionResult:
       type: object
       required:
@@ -4865,8 +5012,8 @@ components:
         stack:
           type: array
           items:
-            $ref: "#/components/schemas/TvmStackRecord"
-        decoded: { } # Free-form JSON value
+            $ref: '#/components/schemas/TvmStackRecord'
+        decoded: {}
     TvmStackRecord:
       type: object
       format: tuple-item
@@ -4875,12 +5022,12 @@ components:
       properties:
         type:
           type: string
-          example: "cell"
+          example: cell
           enum:
             - cell
             - num
             - nan
-            - "null"
+            - 'null'
             - tuple
         cell:
           type: string
@@ -4890,10 +5037,10 @@ components:
           format: cell
         num:
           type: string
-          example: ""
+          example: ''
         tuple:
           type: array
-          example: [ ]
+          example: []
           items:
             $ref: '#/components/schemas/TvmStackRecord'
     RawBlockchainConfig:
@@ -4904,43 +5051,38 @@ components:
         config:
           type: object
           additionalProperties: true
-          example: { }
-
+          example: {}
     BlockchainConfig:
       type: object
       required:
         - raw
-        - "0"
-        - "1"
-        - "2"
-        - "4"
-        - "44"
+        - '0'
+        - '1'
+        - '2'
+        - '4'
+        - '44'
       properties:
-        raw:
-          type: string
-          format: cell
-          description: config boc in hex format
-        "0":
+        '0':
           type: string
           format: address
-          description: "config address"
-        "1":
+          description: config address
+        '1':
           type: string
           format: address
-          description: "elector address"
-        "2":
+          description: elector address
+        '2':
           type: string
           format: address
-          description: "minter address"
-        "3":
+          description: minter address
+        '3':
           type: string
           format: address
-          description: "The address of the transaction fee collector."
-        "4":
+          description: The address of the transaction fee collector.
+        '4':
           type: string
           format: address
-          description: "dns root address"
-        "5":
+          description: dns root address
+        '5':
           type: object
           required:
             - fee_burn_nom
@@ -4955,7 +5097,7 @@ components:
             fee_burn_denom:
               type: integer
               format: int64
-        "6":
+        '6':
           type: object
           description: Minting fees of new currencies.
           required:
@@ -4968,7 +5110,7 @@ components:
             mint_add_price:
               type: integer
               format: int64
-        "7":
+        '7':
           type: object
           description: The volume of each of the additional currencies in circulation.
           required:
@@ -4987,9 +5129,7 @@ components:
                     format: int64
                   amount:
                     type: string
-                    # x-js-format: bigint
-                    # example: "1000000"
-        "8":
+        '8':
           type: object
           description: The network version and additional capabilities supported by the validators.
           required:
@@ -5002,7 +5142,7 @@ components:
             capabilities:
               type: integer
               format: int64
-        "9":
+        '9':
           type: object
           description: List of mandatory parameters of the blockchain config.
           required:
@@ -5013,7 +5153,7 @@ components:
               items:
                 type: integer
                 format: int32
-        "10":
+        '10':
           type: object
           description: List of critical TON parameters, the change of which significantly affects the network, so more voting rounds are held.
           required:
@@ -5024,7 +5164,7 @@ components:
               items:
                 type: integer
                 format: int32
-        "11":
+        '11':
           type: object
           description: This parameter indicates under what conditions proposals to change the TON configuration are accepted.
           required:
@@ -5035,7 +5175,7 @@ components:
               $ref: '#/components/schemas/ConfigProposalSetup'
             critical_params:
               $ref: '#/components/schemas/ConfigProposalSetup'
-        "12":
+        '12':
           type: object
           description: Workchains in the TON Blockchain
           required:
@@ -5045,7 +5185,7 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/WorkchainDescr'
-        "13":
+        '13':
           type: object
           description: The cost of filing complaints about incorrect operation of validators.
           required:
@@ -5062,7 +5202,7 @@ components:
             cell_price:
               type: integer
               format: int64
-        "14":
+        '14':
           type: object
           description: The reward in nanoTons for block creation in the TON blockchain.
           required:
@@ -5075,7 +5215,7 @@ components:
             basechain_block_fee:
               type: integer
               format: int64
-        "15":
+        '15':
           type: object
           description: The reward in nanoTons for block creation in the TON blockchain.
           required:
@@ -5100,7 +5240,7 @@ components:
               type: integer
               format: int64
               example: 32768
-        "16":
+        '16':
           type: object
           description: The limits on the number of validators in the TON blockchain.
           required:
@@ -5117,7 +5257,7 @@ components:
             min_validators:
               type: integer
               example: 75
-        "17":
+        '17':
           type: object
           description: The stake parameters configuration in the TON blockchain.
           required:
@@ -5128,20 +5268,14 @@ components:
           properties:
             min_stake:
               type: string
-              # x-js-format: bigint
-              # example: "1000000"
             max_stake:
               type: string
-              # x-js-format: bigint
-              # example: "1000000"
             min_total_stake:
               type: string
-              # x-js-format: bigint
-              # example: "1000000"
             max_stake_factor:
               type: integer
               format: int64
-        "18":
+        '18':
           type: object
           description: The prices for data storage.
           required:
@@ -5178,7 +5312,7 @@ components:
                     type: integer
                     format: int64
                     example: 500000
-        "20":
+        '20':
           type: object
           description: The cost of computations in the masterchain. The complexity of any computation is estimated in gas units.
           required:
@@ -5186,7 +5320,7 @@ components:
           properties:
             gas_limits_prices:
               $ref: '#/components/schemas/GasLimitPrices'
-        "21":
+        '21':
           type: object
           description: The cost of computations in the basechains. The complexity of any computation is estimated in gas units.
           required:
@@ -5194,7 +5328,7 @@ components:
           properties:
             gas_limits_prices:
               $ref: '#/components/schemas/GasLimitPrices'
-        "22":
+        '22':
           type: object
           description: The limits on the block in the masterchain, upon reaching which the block is finalized and the callback of the remaining messages (if any) is carried over to the next block.
           required:
@@ -5202,7 +5336,7 @@ components:
           properties:
             block_limits:
               $ref: '#/components/schemas/BlockLimits'
-        "23":
+        '23':
           type: object
           description: The limits on the block in the basechains, upon reaching which the block is finalized and the callback of the remaining messages (if any) is carried over to the next block.
           required:
@@ -5210,7 +5344,7 @@ components:
           properties:
             block_limits:
               $ref: '#/components/schemas/BlockLimits'
-        "24":
+        '24':
           type: object
           description: The cost of sending messages in the masterchain of the TON blockchain.
           required:
@@ -5218,7 +5352,7 @@ components:
           properties:
             msg_forward_prices:
               $ref: '#/components/schemas/MsgForwardPrices'
-        "25":
+        '25':
           type: object
           description: The cost of sending messages in the basechains of the TON blockchain.
           required:
@@ -5226,7 +5360,7 @@ components:
           properties:
             msg_forward_prices:
               $ref: '#/components/schemas/MsgForwardPrices'
-        "28":
+        '28':
           type: object
           description: The configuration for the Catchain protocol.
           required:
@@ -5257,7 +5391,7 @@ components:
               example: 1000000
             shuffle_mc_validators:
               type: boolean
-        "29":
+        '29':
           type: object
           description: The configuration for the consensus protocol above catchain.
           required:
@@ -5317,7 +5451,7 @@ components:
               type: integer
               format: int64
               example: 10000
-        "31":
+        '31':
           type: object
           description: The configuration for the consensus protocol above catchain.
           required:
@@ -5328,20 +5462,20 @@ components:
               items:
                 type: string
                 format: address
-                example: -1:dd24c4a1f2b88f8b7053513b5cc6c5a31bc44b2a72dcb4d8c0338af0f0d37ec5
-        "32":
+                example: '-1:dd24c4a1f2b88f8b7053513b5cc6c5a31bc44b2a72dcb4d8c0338af0f0d37ec5'
+        '32':
           $ref: '#/components/schemas/ValidatorsSet'
-        "33":
+        '33':
           $ref: '#/components/schemas/ValidatorsSet'
-        "34":
+        '34':
           $ref: '#/components/schemas/ValidatorsSet'
-        "35":
+        '35':
           $ref: '#/components/schemas/ValidatorsSet'
-        "36":
+        '36':
           $ref: '#/components/schemas/ValidatorsSet'
-        "37":
+        '37':
           $ref: '#/components/schemas/ValidatorsSet'
-        "40":
+        '40':
           type: object
           description: The configuration for punishment for improper behavior (non-validation). In the absence of the parameter, the default fine size is 101 TON
           required:
@@ -5349,7 +5483,7 @@ components:
           properties:
             misbehaviour_punishment_config:
               $ref: '#/components/schemas/MisbehaviourPunishmentConfig'
-        "43":
+        '43':
           type: object
           description: The size limits and some other characteristics of accounts and messages.
           required:
@@ -5357,7 +5491,7 @@ components:
           properties:
             size_limits_config:
               $ref: '#/components/schemas/SizeLimitsConfig'
-        "44":
+        '44':
           type: object
           description: suspended accounts
           required:
@@ -5369,11 +5503,10 @@ components:
               items:
                 type: string
                 format: address
-                example: 0:0000000000000000000000000000000000000000000000000000000000000000
+                example: '0:0000000000000000000000000000000000000000000000000000000000000000'
             suspended_until:
               type: integer
-
-        "45":
+        '45':
           type: object
           description: precompiled contracts
           required:
@@ -5393,7 +5526,7 @@ components:
                   gas_usage:
                     type: integer
                     format: int64
-        "71":
+        '71':
           type: object
           description: Bridge parameters for wrapping TON in other networks.
           required:
@@ -5401,7 +5534,7 @@ components:
           properties:
             oracle_bridge_params:
               $ref: '#/components/schemas/OracleBridgeParams'
-        "72":
+        '72':
           type: object
           description: Bridge parameters for wrapping TON in other networks.
           required:
@@ -5409,7 +5542,7 @@ components:
           properties:
             oracle_bridge_params:
               $ref: '#/components/schemas/OracleBridgeParams'
-        "73":
+        '73':
           type: object
           description: Bridge parameters for wrapping TON in other networks.
           required:
@@ -5417,7 +5550,7 @@ components:
           properties:
             oracle_bridge_params:
               $ref: '#/components/schemas/OracleBridgeParams'
-        "79":
+        '79':
           type: object
           description: Bridge parameters for wrapping tokens from other networks into tokens on the TON network.
           required:
@@ -5425,7 +5558,7 @@ components:
           properties:
             jetton_bridge_params:
               $ref: '#/components/schemas/JettonBridgeParams'
-        "81":
+        '81':
           type: object
           description: Bridge parameters for wrapping tokens from other networks into tokens on the TON network.
           required:
@@ -5433,7 +5566,7 @@ components:
           properties:
             jetton_bridge_params:
               $ref: '#/components/schemas/JettonBridgeParams'
-        "82":
+        '82':
           type: object
           description: Bridge parameters for wrapping tokens from other networks into tokens on the TON network.
           required:
@@ -5441,6 +5574,10 @@ components:
           properties:
             jetton_bridge_params:
               $ref: '#/components/schemas/JettonBridgeParams'
+        raw:
+          type: string
+          format: cell
+          description: config boc in hex format
     DomainNames:
       type: object
       required:
@@ -5490,6 +5627,7 @@ components:
       type: string
       enum:
         - whitelist
+        - graylist
         - blacklist
         - none
     JettonPreview:
@@ -5521,11 +5659,27 @@ components:
           example: https://cache.tonapi.io/images/jetton.jpg
         verification:
           $ref: '#/components/schemas/JettonVerificationType'
-        custom_payload_api_uri: # todo: maybe remove
+        custom_payload_api_uri:
           type: string
         score:
           type: integer
           format: int32
+        scaled_ui:
+          $ref: '#/components/schemas/ScaledUI'
+    ScaledUI:
+      type: object
+      required:
+        - numerator
+        - denominator
+      properties:
+        numerator:
+          type: string
+          x-js-format: bigint
+          example: '597968399'
+        denominator:
+          type: string
+          x-js-format: bigint
+          example: '597968399'
     JettonBalance:
       type: object
       required:
@@ -5536,7 +5690,7 @@ components:
         balance:
           type: string
           x-js-format: bigint
-          example: "597968399"
+          example: '597968399'
         price:
           $ref: '#/components/schemas/TokenRates'
         wallet_address:
@@ -5559,7 +5713,7 @@ components:
             amount:
               type: string
               x-js-format: bigint
-              example: "597968399"
+              example: '597968399'
             till:
               type: integer
               format: int64
@@ -5573,19 +5727,57 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/JettonBalance'
+    CurrencyType:
+      type: string
+      example: jetton
+      enum:
+        - native
+        - extra_currency
+        - jetton
+        - fiat
+    VaultDepositInfo:
+      type: object
+      required:
+        - price
+        - vault
+      properties:
+        price:
+          $ref: '#/components/schemas/Price'
+        vault:
+          type: string
+          format: address
+          example: 0:0BB5A9F69043EEBDDA5AD2E946EB953242BD8F603FE795D90698CEEC6BFC60A0
     Price:
       type: object
       required:
+        - currency_type
         - value
+        - decimals
         - token_name
+        - verification
+        - image
       properties:
+        currency_type:
+          $ref: '#/components/schemas/CurrencyType'
         value:
           type: string
           x-js-format: bigint
-          example: "123000000000"
+          example: '123000000000'
+        decimals:
+          type: integer
+          example: 9
         token_name:
           type: string
           example: TON
+        verification:
+          $ref: '#/components/schemas/TrustType'
+        image:
+          type: string
+          example: https://cache.tonapi.io/images/jetton.jpg
+        jetton:
+          type: string
+          format: address
+          example: 0:0BB5A9F69043EEBDDA5AD2E946EB953242BD8F603FE795D90698CEEC6BFC60A0
     ImagePreview:
       type: object
       required:
@@ -5594,10 +5786,10 @@ components:
       properties:
         resolution:
           type: string
-          example: "100x100"
+          example: 100x100
         url:
           type: string
-          example: "https://site.com/pic1.jpg"
+          example: https://site.com/pic1.jpg
     NftApprovedBy:
       type: array
       items:
@@ -5667,15 +5859,15 @@ components:
               example: TON Diamonds
             description:
               type: string
-              example: "Best collection in TON network"
+              example: Best collection in TON network
         verified:
           type: boolean
-          description: "Collection master contract confirmed that this item is part of collection"
+          description: Collection master contract confirmed that this item is part of collection
           example: true
         metadata:
           type: object
           additionalProperties: true
-          example: { }
+          example: {}
         sale:
           $ref: '#/components/schemas/Sale'
         previews:
@@ -5686,9 +5878,10 @@ components:
           type: string
           example: crypto.ton
         approved_by:
+          allOf:
+            - $ref: '#/components/schemas/NftApprovedBy'
           deprecated: true
-          description: "please use trust field"
-          $ref: '#/components/schemas/NftApprovedBy'
+          description: Please use trust field
         include_cnft:
           type: boolean
           example: false
@@ -5725,11 +5918,9 @@ components:
         address:
           type: string
           format: address
-          example: "0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf"
+          example: 0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf
         seqno:
-          type: integer
-          format: int64
-          example: 1
+          type: string
         threshold:
           type: integer
           format: int32
@@ -5738,13 +5929,13 @@ components:
           items:
             type: string
             format: address
-            example: "0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf"
+            example: 0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf
         proposers:
           type: array
           items:
             type: string
             format: address
-            example: "0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf"
+            example: 0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf
         orders:
           type: array
           items:
@@ -5762,15 +5953,14 @@ components:
         - risk
         - creation_date
         - signed_by
+        - multisig_address
       properties:
         address:
           type: string
           format: address
-          example: "0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf"
+          example: 0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf
         order_seqno:
-          type: integer
-          format: int64
-          example: 1
+          type: string
         threshold:
           type: integer
           format: int32
@@ -5782,7 +5972,7 @@ components:
           items:
             type: string
             format: address
-            example: "0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf"
+            example: 0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf
         approvals_num:
           type: integer
           format: int32
@@ -5799,7 +5989,32 @@ components:
           items:
             type: string
             format: address
-            example: "0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf"
+            example: 0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf
+        multisig_address:
+          type: string
+          format: address
+          example: 0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf
+        changing_parameters:
+          type: object
+          required:
+            - threshold
+            - signers
+            - proposers
+          properties:
+            threshold:
+              type: integer
+              format: int32
+            signers:
+              type: array
+              items:
+                type: string
+                format: address
+                example: 0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf
+            proposers:
+              type: array
+              items:
+                type: string
+                format: address
     Refund:
       type: object
       required:
@@ -5815,7 +6030,7 @@ components:
             - GetGems
         origin:
           type: string
-          example: "0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf"
+          example: 0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf
     ValueFlow:
       type: object
       required:
@@ -5852,7 +6067,7 @@ components:
               qty:
                 type: string
                 x-js-format: bigint
-                example: "200"
+                example: '200'
               quantity:
                 type: integer
                 deprecated: true
@@ -5869,15 +6084,15 @@ components:
       properties:
         type:
           type: string
-          example: "TonTransfer"
+          example: TonTransfer
           enum:
             - TonTransfer
             - ExtraCurrencyTransfer
+            - ContractDeploy
             - JettonTransfer
             - JettonBurn
             - JettonMint
             - NftItemTransfer
-            - ContractDeploy
             - Subscribe
             - UnSubscribe
             - AuctionBid
@@ -5885,17 +6100,23 @@ components:
             - DepositStake
             - WithdrawStake
             - WithdrawStakeRequest
+            - ElectionsDepositStake
+            - ElectionsRecoverStake
             - JettonSwap
             - SmartContractExec
-            - ElectionsRecoverStake
-            - ElectionsDepositStake
             - DomainRenew
-            - InscriptionTransfer
-            - InscriptionMint
+            - Purchase
+            - AddExtension
+            - RemoveExtension
+            - SetSignatureAllowedAction
+            - GasRelay
+            - DepositTokenStake
+            - WithdrawTokenStakeRequest
+            - LiquidityDeposit
             - Unknown
         status:
           type: string
-          example: "ok"
+          example: ok
           enum:
             - ok
             - failed
@@ -5937,17 +6158,29 @@ components:
           $ref: '#/components/schemas/SmartContractAction'
         DomainRenew:
           $ref: '#/components/schemas/DomainRenewAction'
-        InscriptionTransfer:
-          $ref: '#/components/schemas/InscriptionTransferAction'
-        InscriptionMint:
-          $ref: '#/components/schemas/InscriptionMintAction'
+        Purchase:
+          $ref: '#/components/schemas/PurchaseAction'
+        AddExtension:
+          $ref: '#/components/schemas/AddExtensionAction'
+        RemoveExtension:
+          $ref: '#/components/schemas/RemoveExtensionAction'
+        SetSignatureAllowedAction:
+          $ref: '#/components/schemas/SetSignatureAllowedAction'
+        GasRelay:
+          $ref: '#/components/schemas/GasRelayAction'
+        DepositTokenStake:
+          $ref: '#/components/schemas/DepositTokenStakeAction'
+        WithdrawTokenStakeRequest:
+          $ref: '#/components/schemas/WithdrawTokenStakeRequestAction'
+        LiquidityDeposit:
+          $ref: '#/components/schemas/LiquidityDepositAction'
         simple_preview:
           $ref: '#/components/schemas/ActionSimplePreview'
         base_transactions:
           type: array
           items:
             type: string
-            description: "transaction hash"
+            description: transaction hash
             example: e8b0e3fee4a26bd2317ac1f9952fcdc87dc08fdb617656b5202416323337372e
     TonTransferAction:
       type: object
@@ -5968,7 +6201,9 @@ components:
           x-js-format: bigint
         comment:
           type: string
-          example: "Hi! This is your salary. \nFrom accounting with love."
+          example: |-
+            Hi! This is your salary. 
+            From accounting with love.
         encrypted_comment:
           $ref: '#/components/schemas/EncryptedComment'
         refund:
@@ -6018,11 +6253,13 @@ components:
         amount:
           type: string
           x-js-format: bigint
-          example: "1000000000"
+          example: '1000000000'
           description: amount in quanta of tokens
         comment:
           type: string
-          example: "Hi! This is your salary. \nFrom accounting with love."
+          example: |-
+            Hi! This is your salary. 
+            From accounting with love.
         encrypted_comment:
           $ref: '#/components/schemas/EncryptedComment'
         currency:
@@ -6047,10 +6284,9 @@ components:
           x-js-format: bigint
         operation:
           type: string
-          example: "NftTransfer or 0x35d95a12"
+          example: NftTransfer or 0x35d95a12
         payload:
           type: string
-          # example ??, maybe cell?
         refund:
           $ref: '#/components/schemas/Refund'
     DomainRenewAction:
@@ -6062,75 +6298,83 @@ components:
       properties:
         domain:
           type: string
-          example: "vasya.ton"
+          example: vasya.ton
         contract_address:
           type: string
           format: address
-          example: "0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf"
+          example: 0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf
         renewer:
           $ref: '#/components/schemas/AccountAddress'
-    InscriptionMintAction:
+    GasRelayAction:
       type: object
       required:
-        - type
-        - ticker
-        - recipient
         - amount
-        - decimals
+        - relayer
+        - target
       properties:
-        recipient:
-          $ref: '#/components/schemas/AccountAddress'
         amount:
-          type: string
-          x-js-format: bigint
-          description: amount in minimal particles
-          example: "123456789"
-        type:
-          type: string
-          enum:
-            - ton20
-            - gram20
-          example: "ton20"
-        ticker:
-          type: string
-          example: "nano"
-        decimals:
           type: integer
-          example: 9
-    InscriptionTransferAction:
+          format: int64
+          x-js-format: bigint
+          example: 1000000000
+        relayer:
+          $ref: '#/components/schemas/AccountAddress'
+        target:
+          $ref: '#/components/schemas/AccountAddress'
+    PurchaseAction:
       type: object
       required:
-        - sender
-        - recipient
+        - source
+        - destination
+        - invoice_id
         - amount
-        - type
-        - ticker
-        - decimals
+        - metadata
       properties:
-        sender:
+        source:
           $ref: '#/components/schemas/AccountAddress'
-        recipient:
+        destination:
           $ref: '#/components/schemas/AccountAddress'
+        invoice_id:
+          type: string
+          example: 03cfc582-b1c3-410a-a9a7-1f3afe326b3b
         amount:
+          $ref: '#/components/schemas/Price'
+        metadata:
+          $ref: '#/components/schemas/Metadata'
+    AddExtensionAction:
+      type: object
+      required:
+        - wallet
+        - extension
+      properties:
+        wallet:
+          $ref: '#/components/schemas/AccountAddress'
+        extension:
           type: string
-          x-js-format: bigint
-          description: amount in minimal particles
-          example: "123456789"
-        comment:
+          format: address
+          example: 0:10C1073837B93FDAAD594284CE8B8EFF7B9CF25427440EB2FC682762E1471365
+    RemoveExtensionAction:
+      type: object
+      required:
+        - wallet
+        - extension
+      properties:
+        wallet:
+          $ref: '#/components/schemas/AccountAddress'
+        extension:
           type: string
-          example: "Hi! This is your salary. \nFrom accounting with love."
-        type:
-          type: string
-          enum:
-            - ton20
-            - gram20
-          example: "ton20"
-        ticker:
-          type: string
-          example: "nano"
-        decimals:
-          type: integer
-          example: 9
+          format: address
+          example: 0:10C1073837B93FDAAD594284CE8B8EFF7B9CF25427440EB2FC682762E1471365
+    SetSignatureAllowedAction:
+      type: object
+      required:
+        - wallet
+        - allowed
+      properties:
+        wallet:
+          $ref: '#/components/schemas/AccountAddress'
+        allowed:
+          type: boolean
     NftItemTransferAction:
       type: object
       required:
@@ -6142,16 +6386,19 @@ components:
           $ref: '#/components/schemas/AccountAddress'
         nft:
           type: string
-          example: ""
+          format: maybe-address
+          example: ''
         comment:
           type: string
-          example: "Hi! This is your salary. \nFrom accounting with love."
+          example: |-
+            Hi! This is your salary. 
+            From accounting with love.
         encrypted_comment:
           $ref: '#/components/schemas/EncryptedComment'
         payload:
           type: string
           description: raw hex encoded payload
-          example: '0234de3e21d21b3ee21f3'
+          example: 0234de3e21d21b3ee21f3
         refund:
           $ref: '#/components/schemas/Refund'
     JettonTransferAction:
@@ -6177,11 +6424,13 @@ components:
         amount:
           type: string
           x-js-format: bigint
-          example: "1000000000"
+          example: '1000000000'
           description: amount in quanta of tokens
         comment:
           type: string
-          example: "Hi! This is your salary. \nFrom accounting with love."
+          example: |-
+            Hi! This is your salary. 
+            From accounting with love.
         encrypted_comment:
           $ref: '#/components/schemas/EncryptedComment'
         refund:
@@ -6205,7 +6454,7 @@ components:
         amount:
           type: string
           x-js-format: bigint
-          example: "1000000000"
+          example: '1000000000'
           description: amount in quanta of tokens
         jetton:
           $ref: '#/components/schemas/JettonPreview'
@@ -6226,7 +6475,7 @@ components:
         amount:
           type: string
           x-js-format: bigint
-          example: "1000000000"
+          example: '1000000000'
           description: amount in quanta of tokens
         jetton:
           $ref: '#/components/schemas/JettonPreview'
@@ -6239,19 +6488,22 @@ components:
         address:
           type: string
           format: address
-          example: "0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf"
+          example: 0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf
         interfaces:
           type: array
           items:
             type: string
-          example: [ "nft_item", "nft_royalty" ]
+          example:
+            - nft_item
+            - nft_royalty
     SubscriptionAction:
       type: object
       required:
         - subscriber
         - subscription
         - beneficiary
-        - amount
+        - admin
+        - price
         - initial
       properties:
         subscriber:
@@ -6259,14 +6511,19 @@ components:
         subscription:
           type: string
           format: address
-          example: "0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf"
+          example: 0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf
         beneficiary:
           $ref: '#/components/schemas/AccountAddress'
+        admin:
+          $ref: '#/components/schemas/AccountAddress'
         amount:
+          deprecated: true
           type: integer
           format: int64
           example: 1000000000
           x-js-format: bigint
+        price:
+          $ref: '#/components/schemas/Price'
         initial:
           type: boolean
           example: false
@@ -6276,14 +6533,17 @@ components:
         - subscriber
         - subscription
         - beneficiary
+        - admin
       properties:
         subscriber:
           $ref: '#/components/schemas/AccountAddress'
         subscription:
           type: string
           format: address
-          example: "0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf"
+          example: 0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf
         beneficiary:
+          $ref: '#/components/schemas/AccountAddress'
+        admin:
           $ref: '#/components/schemas/AccountAddress'
     AuctionBidAction:
       type: object
@@ -6309,7 +6569,7 @@ components:
         auction:
           $ref: '#/components/schemas/AccountAddress'
     DepositStakeAction:
-      description: "validator's participation in elections"
+      description: validator's participation in elections
       type: object
       required:
         - amount
@@ -6329,7 +6589,7 @@ components:
         implementation:
           $ref: '#/components/schemas/PoolImplementationType'
     WithdrawStakeAction:
-      description: "validator's participation in elections"
+      description: validator's participation in elections
       type: object
       required:
         - amount
@@ -6349,7 +6609,7 @@ components:
         implementation:
           $ref: '#/components/schemas/PoolImplementationType'
     WithdrawStakeRequestAction:
-      description: "validator's participation in elections"
+      description: validator's participation in elections
       type: object
       required:
         - staker
@@ -6404,18 +6664,15 @@ components:
       properties:
         dex:
           type: string
-          enum:
-            - stonfi
-            - dedust
-            - megatonfi
+          example: stonfi
         amount_in:
           type: string
           x-js-format: bigint
-          example: "1660050553"
+          example: '1660050553'
         amount_out:
           type: string
           x-js-format: bigint
-          example: "1660050553"
+          example: '1660050553'
         ton_in:
           type: integer
           example: 1000000000
@@ -6458,6 +6715,45 @@ components:
           $ref: '#/components/schemas/AccountAddress'
         buyer:
           $ref: '#/components/schemas/AccountAddress'
+    DepositTokenStakeAction:
+      type: object
+      required:
+        - staker
+        - protocol
+      properties:
+        staker:
+          $ref: '#/components/schemas/AccountAddress'
+        protocol:
+          $ref: '#/components/schemas/Protocol'
+        stake_meta:
+          $ref: '#/components/schemas/Price'
+    WithdrawTokenStakeRequestAction:
+      type: object
+      required:
+        - staker
+        - protocol
+      properties:
+        staker:
+          $ref: '#/components/schemas/AccountAddress'
+        protocol:
+          $ref: '#/components/schemas/Protocol'
+        stake_meta:
+          $ref: '#/components/schemas/Price'
+    LiquidityDepositAction:
+      type: object
+      required:
+        - protocol
+        - from
+        - tokens
+      properties:
+        protocol:
+          $ref: '#/components/schemas/Protocol'
+        from:
+          $ref: '#/components/schemas/AccountAddress'
+        tokens:
+          type: array
+          items:
+            $ref: '#/components/schemas/VaultDepositInfo'
     ActionSimplePreview:
       type: object
       description: shortly describes what this action is about.
@@ -6468,16 +6764,16 @@ components:
       properties:
         name:
           type: string
-          example: "Ton Transfer"
+          example: Ton Transfer
         description:
           type: string
-          example: "Transferring 5 Ton"
+          example: Transferring 5 Ton
         action_image:
           type: string
           description: a link to an image for this particular action.
         value:
           type: string
-          example: "5 Ton"
+          example: 5 Ton
         value_image:
           type: string
           description: a link to an image that depicts this action's asset.
@@ -6497,6 +6793,7 @@ components:
         - lt
         - in_progress
         - extra
+        - progress
       properties:
         event_id:
           type: string
@@ -6529,6 +6826,12 @@ components:
           type: integer
           format: int64
           example: 3
+        progress:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          example: 0.5
     AccountEvents:
       type: object
       required:
@@ -6543,6 +6846,67 @@ components:
           type: integer
           format: int64
           example: 25713146000001
+    Purchase:
+      type: object
+      required:
+        - event_id
+        - invoice_id
+        - source
+        - destination
+        - lt
+        - utime
+        - amount
+        - metadata
+      properties:
+        event_id:
+          type: string
+          example: e8b0e3fee4a26bd2317ac1f9952fcdc87dc08fdb617656b5202416323337372e
+        invoice_id:
+          type: string
+          example: 03cfc582-b1c3-410a-a9a7-1f3afe326b3b
+        source:
+          $ref: '#/components/schemas/AccountAddress'
+        destination:
+          $ref: '#/components/schemas/AccountAddress'
+        lt:
+          type: integer
+          format: int64
+          example: 25713146000001
+          x-js-format: bigint
+        utime:
+          type: integer
+          format: int64
+          example: 1645544908
+        amount:
+          $ref: '#/components/schemas/Price'
+        metadata:
+          $ref: '#/components/schemas/Metadata'
+    AccountPurchases:
+      type: object
+      required:
+        - purchases
+        - next_from
+      properties:
+        purchases:
+          type: array
+          items:
+            $ref: '#/components/schemas/Purchase'
+        next_from:
+          type: integer
+          format: int64
+          example: 25713146000001
+    Metadata:
+      type: object
+      required:
+        - encrypted_binary
+      properties:
+        encrypted_binary:
+          type: string
+          description: hex encoded bytes
+        decryption_key:
+          type: string
+          description: hex encoded bytes
+          example: dead.....beef
     TraceID:
       type: object
       required:
@@ -6578,62 +6942,52 @@ components:
     Subscription:
       type: object
       required:
-        - address
-        - wallet_address
-        - beneficiary_address
-        - amount
+        - type
+        - status
         - period
-        - start_time
-        - timeout
-        - last_payment_time
-        - last_request_time
         - subscription_id
-        - failed_attempts
+        - payment_per_period
+        - wallet
+        - next_charge_at
+        - metadata
       properties:
-        address:
+        type:
           type: string
-          format: address
-          example: 0:dea8f638b789172ce36d10a20318125e52c649aa84893cd77858224fe2b9b0ee
-        wallet_address:
+          description: type of subscription
+          example: v2
+        status:
           type: string
-          format: address
-          example: 0:567DE86AF2B6A557D7085807CF7C26338124987A5179344F0D0FA2657EB710F1
-        beneficiary_address:
-          type: string
-          format: address
-          example: 0:c704dadfabac88eab58e340de03080df81ff76636431f48624ad6e26fb2da0a4
-        amount:
-          type: integer
-          format: int64
-          example: 1000000000
+          enum:
+            - not_ready
+            - active
+            - suspended
+            - cancelled
         period:
           type: integer
+          description: payment period in seconds
           format: int64
           example: 2592000
-        start_time:
-          type: integer
-          format: int64
-          example: 1653996832
-        timeout:
-          type: integer
-          format: int64
-          example: 10800
-        last_payment_time:
+        subscription_id:
+          type: string
+          description: common identifier
+        payment_per_period:
+          $ref: '#/components/schemas/Price'
+        wallet:
+          $ref: '#/components/schemas/AccountAddress'
+        next_charge_at:
           type: integer
           format: int64
           example: 1653996834
-        last_request_time:
-          type: integer
-          format: int64
-          example: 0
-        subscription_id:
-          type: integer
-          format: int64
-          example: 217477
-        failed_attempts:
-          type: integer
-          format: int32
-          example: 0
+        metadata:
+          $ref: '#/components/schemas/Metadata'
+        address:
+          type: string
+          format: maybe-address
+          example: 0:dea8f638b789172ce36d10a20318125e52c649aa84893cd77858224fe2b9b0ee
+        beneficiary:
+          $ref: '#/components/schemas/AccountAddress'
+        admin:
+          $ref: '#/components/schemas/AccountAddress'
     Subscriptions:
       type: object
       required:
@@ -6700,7 +7054,7 @@ components:
         address:
           type: string
           format: address
-          example: "0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf"
+          example: 0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf
         account:
           $ref: '#/components/schemas/AccountAddress'
         is_wallet:
@@ -6716,7 +7070,7 @@ components:
           type: array
           items:
             type: string
-            example: "name"
+            example: name
     DomainInfo:
       type: object
       required:
@@ -6739,17 +7093,17 @@ components:
           $ref: '#/components/schemas/WalletDNS'
         next_resolver:
           type: string
-          format: address
-          example: "0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf"
+          format: maybe-address
+          example: 0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf
         sites:
           type: array
           items:
             type: string
-            example: "http://12234.ton"
+            example: http://12234.ton
         storage:
           type: string
-          description: "tonstorage bag id"
-          example: "da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf"
+          description: tonstorage bag id
+          example: da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf
     NftCollection:
       type: object
       required:
@@ -6774,7 +7128,7 @@ components:
         metadata:
           type: object
           additionalProperties: true
-          example: { }
+          example: {}
         previews:
           type: array
           items:
@@ -6802,7 +7156,9 @@ components:
           type: array
           items:
             type: string
-          example: [ "wallet", "tep62_item" ]
+          example:
+            - wallet
+            - tep62_item
         children:
           type: array
           items:
@@ -6849,6 +7205,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/NftItem'
+        total_equivalent:
+          type: number
+          format: float
+          description: Estimated equivalent value of all assets at risk in selected currency (for example USD)
     JettonQuantity:
       type: object
       required:
@@ -6859,7 +7219,7 @@ components:
         quantity:
           type: string
           x-js-format: bigint
-          example: "597968399"
+          example: '597968399'
         wallet_address:
           $ref: '#/components/schemas/AccountAddress'
         jetton:
@@ -6874,7 +7234,7 @@ components:
           $ref: '#/components/schemas/AccountAddress'
         destination_wallet_version:
           type: string
-          example: "v3R2"
+          example: v3R2
         ext_in_msg_decoded:
           type: object
           properties:
@@ -6959,7 +7319,7 @@ components:
                   example: 1
                 bounded_query_id:
                   type: string
-                  example: "34254528475294857"
+                  example: '34254528475294857'
                 raw_messages:
                   type: array
                   items:
@@ -6980,12 +7340,12 @@ components:
               format: cell
             decoded_op_name:
               type: string
-              example: "nft_transfer"
+              example: nft_transfer
             op_code:
               type: string
               x-js-format: bigint
-              example: "0xdeadbeaf"
-            decoded_body: { } # Free-form JSON value
+              example: '0xdeadbeaf'
+            decoded_body: {}
         mode:
           type: integer
           example: 2
@@ -6999,6 +7359,7 @@ components:
         - is_scam
         - lt
         - in_progress
+        - progress
       properties:
         event_id:
           type: string
@@ -7028,6 +7389,12 @@ components:
           type: boolean
           example: false
           description: Event is not finished yet. Transactions still happening
+        progress:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          example: 0.5
     JettonMetadata:
       type: object
       required:
@@ -7048,10 +7415,10 @@ components:
           example: WTON
         decimals:
           type: string
-          example: "9"
+          example: '9'
         image:
           type: string
-          example: "https://bitcoincash-example.github.io/website/logo.png"
+          example: https://bitcoincash-example.github.io/website/logo.png
           description: this field currently returns a cached image URL (e.g., "https://cache.tonapi.io/images/jetton.jpg"). In the future, this will be replaced with the original URL from the metadata. The cached image is already available in the `preview` field of `JettonInfo` and will remain there.
         description:
           type: string
@@ -7060,53 +7427,26 @@ components:
           type: array
           items:
             type: string
-            example: [ "https://t.me/durov_coin", "https://twitter.com/durov_coin" ]
+            example:
+              - https://t.me/durov_coin
+              - https://twitter.com/durov_coin
         websites:
           type: array
           items:
             type: string
-            example: [ "https://durov.coin", "ton://durov-coin.ton" ]
+            example:
+              - https://durov.coin
+              - ton://durov-coin.ton
         catalogs:
           type: array
           items:
             type: string
-            example: [ "https://coinmarketcap.com/currencies/drv/", "https://www.coingecko.com/en/coins/durov" ]
+            example:
+              - https://coinmarketcap.com/currencies/drv/
+              - https://www.coingecko.com/en/coins/durov
         custom_payload_api_uri:
           type: string
-          example: "https://claim-api.tonapi.io/jettons/TESTMINT"
-    InscriptionBalances:
-      type: object
-      required:
-        - inscriptions
-      properties:
-        inscriptions:
-          type: array
-          items:
-            $ref: '#/components/schemas/InscriptionBalance'
-    InscriptionBalance:
-      type: object
-      required:
-        - type
-        - ticker
-        - balance
-        - decimals
-      properties:
-        type:
-          type: string
-          enum:
-            - ton20
-            - gram20
-          example: "ton20"
-        ticker:
-          type: string
-          example: "nano"
-        balance:
-          type: string
-          x-js-format: bigint
-          example: "1000000000"
-        decimals:
-          type: integer
-          example: 9
+          example: https://claim-api.tonapi.io/jettons/TESTMINT
     Jettons:
       type: object
       required:
@@ -7132,20 +7472,22 @@ components:
         total_supply:
           type: string
           x-js-format: bigint
-          example: "5887105890579978"
+          example: '5887105890579978'
         admin:
           $ref: '#/components/schemas/AccountAddress'
         metadata:
           $ref: '#/components/schemas/JettonMetadata'
         preview:
           type: string
-          example: "https://cache.tonapi.io/images/jetton.jpg"
+          example: https://cache.tonapi.io/images/jetton.jpg
         verification:
           $ref: '#/components/schemas/JettonVerificationType'
         holders_count:
           type: integer
           format: int32
           example: 2000
+        scaled_ui:
+          $ref: '#/components/schemas/ScaledUI'
     JettonHolders:
       type: object
       required:
@@ -7170,7 +7512,7 @@ components:
               balance:
                 type: string
                 x-js-format: bigint
-                example: "168856200518084"
+                example: '168856200518084'
                 description: balance in the smallest jetton's units
         total:
           type: integer
@@ -7184,14 +7526,12 @@ components:
       properties:
         custom_payload:
           type: string
-          # format: ???
-          example: "b5ee9c72410212010001b40009460395b521c9251151ae7987e03c544bd275d6cd42c2d157f840beb14d5454b96718000d012205817002020328480101fd7f6a648d4f771d7f0abc1707e4e806b19de1801f65eb8c133a4cfb0c33d847000b22012004052848010147da975b922d89192f4c9b68a640daa6764ec398c93cec025e17f0c1852a711a0009220120061122012007082848010170d9fb0423cbef6c2cf1f3811a2f640daf8c9a326b6f8816c1b993e90d88e2100006220120090a28480101f6df1d75f6b9e45f224b2cb4fc2286d927d47b468b6dbf1fedc4316290ec2ae900042201200b102201200c0f2201200d"
-          description: "hex-encoded BoC"
+          format: cell
+          description: hex-encoded BoC
         state_init:
           type: string
-          # format: ???
-          example: "b5ee9c72410212010001b40009460395b521c9251151ae7987e03c544bd275d6cd42c2d157f840beb14d5454b96718000d012205817002020328480101fd7f6a648d4f771d7f0abc1707e4e806b19de1801f65eb8c133a4cfb0c33d847000b22012004052848010147da975b922d89192f4c9b68a640daa6764ec398c93cec025e17f0c1852a711a0009220120061122012007082848010170d9fb0423cbef6c2cf1f3811a2f640daf8c9a326b6f8816c1b993e90d88e2100006220120090a28480101f6df1d75f6b9e45f224b2cb4fc2286d927d47b468b6dbf1fedc4316290ec2ae900042201200b102201200c0f2201200d"
-          description: "hex-encoded BoC"
+          format: cell
+          description: hex-encoded BoC
     AccountStaking:
       type: object
       required:
@@ -7212,7 +7552,7 @@ components:
       properties:
         pool:
           type: string
-          example: "EQBI-wGVp_x0VFEjd7m9cEUD3tJ_bnxMSp0Tb9qz757ATEAM"
+          example: EQBI-wGVp_x0VFEjd7m9cEUD3tJ_bnxMSp0Tb9qz757ATEAM
         amount:
           type: integer
           format: int64
@@ -7253,10 +7593,10 @@ components:
         address:
           type: string
           format: address
-          example: "0:48fb0195a7fc7454512377b9bd704503ded27f6e7c4c4a9d136fdab3ef9ec04c"
+          example: 0:48fb0195a7fc7454512377b9bd704503ded27f6e7c4c4a9d136fdab3ef9ec04c
         name:
           type: string
-          example: "Tonkeeper pool"
+          example: Tonkeeper pool
         total_amount:
           type: integer
           format: int64
@@ -7297,20 +7637,20 @@ components:
         liquid_jetton_master:
           type: string
           format: address
-          example: "0:4a91d32d0289bda9813ae00ff7640e6c38fdce76e4583dd6afc463b70c7d767c"
-          description: "for liquid staking master account of jetton"
+          example: 0:4a91d32d0289bda9813ae00ff7640e6c38fdce76e4583dd6afc463b70c7d767c
+          description: for liquid staking master account of jetton
         nominators_stake:
           type: integer
           format: int64
           x-js-format: bigint
           example: 5000000000
-          description: "total stake of all nominators"
+          description: total stake of all nominators
         validator_stake:
           type: integer
           format: int64
           x-js-format: bigint
           example: 5000000000
-          description: "stake of validator"
+          description: stake of validator
         cycle_length:
           type: integer
           format: int64
@@ -7327,15 +7667,15 @@ components:
           example: TON Whales
         description:
           type: string
-          example: "Oldest pool with minimal staking amount 50 TON"
+          example: Oldest pool with minimal staking amount 50 TON
         url:
           type: string
-          example: "https://tonvalidators.org/"
+          example: https://tonvalidators.org/
         socials:
           type: array
           items:
             type: string
-            example: "https://t.me/tonwhales"
+            example: https://t.me/tonwhales
     StorageProvider:
       type: object
       required:
@@ -7390,10 +7730,10 @@ components:
                 format: address
               name:
                 type: string
-                example: "blah_blah.ton"
+                example: blah_blah.ton
               preview:
                 type: string
-                example: "https://cache.tonapi.io/images/media.jpg"
+                example: https://cache.tonapi.io/images/media.jpg
               trust:
                 $ref: '#/components/schemas/TrustType'
     DnsExpiring:
@@ -7415,20 +7755,26 @@ components:
                 example: 1678275313
               name:
                 type: string
-                example: "blah_blah.ton"
+                example: blah_blah.ton
               dns_item:
                 $ref: '#/components/schemas/NftItem'
     ChartPoints:
       type: array
+      items: false
+      description: |
+        Each inner array is a pair [timestamp, price]:
+          • index 0 — Unix timestamp (int64)  
+          • index 1 — token price (decimal) in the requested currency.
+      example:
+        - 1668436763
+        - 97.21323234
       prefixItems:
         - type: integer
           format: int64
           description: Unix timestamp of the data point
         - type: number
           description: Decimal price of the token in the requested currency
-      items: false
       additionalItems: false
-      example: [[ 1668436763, 97.21323234 ]]
     AccountInfoByStateInit:
       type: object
       required:
@@ -7437,11 +7783,11 @@ components:
       properties:
         public_key:
           type: string
-          example: "NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODQ3..."
+          example: NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODQ3...
         address:
           type: string
           format: address
-          example: "0:97146a46acc2654y27947f14c4a4b14273e954f78bc017790b41208b0043200b"
+          example: 0:97146a46acc2654y27947f14c4a4b14273e954f78bc017790b41208b0043200b
     Seqno:
       type: object
       required:
@@ -7465,8 +7811,7 @@ components:
           format: int32
         shard:
           type: string
-          # x-js-format: bigint ??
-          example: "800000000000000"
+          example: '800000000000000'
         seqno:
           type: integer
           example: 30699640
@@ -7502,10 +7847,10 @@ components:
       properties:
         encryption_type:
           type: string
-          example: "simple"
+          example: simple
         cipher_text:
           type: string
-          example: "A6A0BD6608672B...CE3AF8DB"
+          example: A6A0BD6608672B...CE3AF8DB
     BlockchainAccountInspect:
       type: object
       required:
@@ -7517,6 +7862,8 @@ components:
         code:
           type: string
           format: cell
+        disassembled_code:
+          type: string
         code_hash:
           type: string
         methods:
@@ -7551,19 +7898,19 @@ components:
           additionalProperties:
             type: string
           example:
-            TON: "-1.28%"
+            TON: '-1.28%'
         diff_7d:
           type: object
           additionalProperties:
             type: string
           example:
-            TON: "-2.74%"
+            TON: '-2.74%'
         diff_30d:
           type: object
           additionalProperties:
             type: string
           example:
-            TON: "-0.56%"
+            TON: '-0.56%'
     MarketTonRates:
       type: object
       required:
@@ -7573,10 +7920,10 @@ components:
       properties:
         market:
           type: string
-          example: "OKX"
+          example: OKX
         usd_price:
           type: number
-          example: 5.20
+          example: 5.2
         last_date_update:
           type: integer
           format: int64
@@ -7590,7 +7937,7 @@ components:
         amount:
           type: string
           x-js-format: bigint
-          example: "1000000000"
+          example: '1000000000'
         preview:
           $ref: '#/components/schemas/EcPreview'
     SourceFile:
@@ -7635,8 +7982,157 @@ components:
           format: int64
         method:
           type: string
-          example: "get_something"
-  
+          example: get_something
+    NftOperations:
+      type: object
+      required:
+        - operations
+      properties:
+        operations:
+          type: array
+          items:
+            $ref: '#/components/schemas/NftOperation'
+        next_from:
+          type: integer
+          format: int64
+          example: 25713146000001
+          x-js-format: bigint
+    NftOperation:
+      type: object
+      required:
+        - operation
+        - utime
+        - lt
+        - transaction_hash
+        - item
+      properties:
+        operation:
+          type: string
+          example: transfer
+        utime:
+          type: integer
+          format: int64
+          example: 1234567890
+        lt:
+          type: integer
+          format: int64
+          example: 25713146000001
+          x-js-format: bigint
+        transaction_hash:
+          type: string
+          example: '0xdeadbeaf'
+        source:
+          $ref: '#/components/schemas/AccountAddress'
+        destination:
+          $ref: '#/components/schemas/AccountAddress'
+        item:
+          $ref: '#/components/schemas/NftItem'
+    JettonOperations:
+      type: object
+      required:
+        - operations
+      properties:
+        operations:
+          type: array
+          items:
+            $ref: '#/components/schemas/JettonOperation'
+        next_from:
+          type: integer
+          format: int64
+          example: 25713146000001
+          x-js-format: bigint
+    JettonOperation:
+      type: object
+      required:
+        - operation
+        - utime
+        - lt
+        - jetton
+        - transaction_hash
+        - amount
+        - trace_id
+        - query_id
+      properties:
+        operation:
+          type: string
+          example: transfer
+          enum:
+            - transfer
+            - mint
+            - burn
+        utime:
+          type: integer
+          format: int64
+          example: 1234567890
+        lt:
+          type: integer
+          format: int64
+          example: 25713146000001
+          x-js-format: bigint
+        transaction_hash:
+          type: string
+          example: cbf3e3d70ecf6f69643dd430761cd6004de2cacbdbc3029b0abd30ca3cc1c67e
+        source:
+          $ref: '#/components/schemas/AccountAddress'
+        destination:
+          $ref: '#/components/schemas/AccountAddress'
+        amount:
+          type: string
+          x-js-format: bigint
+          example: '1000000000'
+        jetton:
+          $ref: '#/components/schemas/JettonPreview'
+        trace_id:
+          type: string
+          example: 8fa19eec7bd6d00d0d76048cebe31e34082a859410c9fcf7d55ef4ff8f7fcb47
+        query_id:
+          type: string
+          example: '17286061481122318000'
+          x-js-format: bigint
+        payload: {}
+    ExecGetMethodArgType:
+      type: string
+      description: |
+        Data type of the argument value:
+        - `nan`: Not-a-Number value
+        - `null`: Null value
+        - `tinyint`: Decimal integer (e.g., `100500`)
+        - `int257`: 257-bit integer in hex format with 0x prefix (e.g., `0xfa01d78381ae32`)
+        - `slice`: TON blockchain address (e.g., `0:6e731f2e...`)
+        - `cell_boc_base64`: Base64-encoded cell BOC (Binary Object Code) (e.g., `te6ccgEBAQEAAgAAAA==`)
+        - `slice_boc_hex`: Hex-encoded slice BOC (e.g., `b5ee9c72...`)
+      enum:
+        - nan
+        - 'null'
+        - tinyint
+        - int257
+        - slice
+        - cell_boc_base64
+        - slice_boc_hex
+      example: int257
+    ExecGetMethodArg:
+      type: object
+      required:
+        - type
+        - value
+      properties:
+        type:
+          $ref: '#/components/schemas/ExecGetMethodArgType'
+        value:
+          type: string
+          description: String representation of the value according to the specified type
+          example: '0xfa01d78381ae32'
+    Protocol:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          example: Ethena
+        image:
+          type: string
+          example: https://cache.tonapi.io/images/jetton.jpg
   responses:
     Error:
       description: Some error during request processing

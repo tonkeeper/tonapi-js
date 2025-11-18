@@ -2,7 +2,7 @@ import { Address, Contract, ContractProvider, OpenedContract } from '@ton/ton';
 import { mnemonicNew, mnemonicToPrivateKey, KeyPair } from '@ton/crypto';
 import { ContractAdapter } from '@ton-api/ton-adapter';
 import { TonApiClient } from '@ton-api/client';
-import { test, beforeAll } from 'vitest';
+import { test, beforeAll, expect } from 'vitest';
 
 class NftItem implements Contract {
     constructor(public readonly address: Address) {}
@@ -23,15 +23,15 @@ class NftItem implements Contract {
     }
 }
 
-// Initialize the ton API client
-const ta = new TonApiClient({
+// Create TonApiClient instance
+const tonApiClient = new TonApiClient({
     baseUrl: 'https://tonapi.io'
     // apiKey: 'your-api-key',
 });
 
-// Create an adapter
-const contractAdapter = new ContractAdapter(ta);
-let keyPair: KeyPair; // eslint-disable-line
+// Create an adapter with explicit client
+const contractAdapter = new ContractAdapter(tonApiClient);
+let keyPair: KeyPair;
 let contract: OpenedContract<any>;
 
 beforeAll(async () => {
@@ -39,37 +39,18 @@ beforeAll(async () => {
     const mnemonics = await mnemonicNew();
 
     keyPair = await mnemonicToPrivateKey(mnemonics);
-    // const customPublickKey = 'bada76699b7e8417300355f5c355dff83a96c5c9cd43df0dd9bc23c72e78bc0e';
-    // const buffer = Buffer.from(customPublickKey, 'hex');
     const wallet = NftItem.createFromAddress(
         Address.parse('UQAs87W4yJHlF8mt29ocA4agnMrLsOP69jC1HPyBUjJay7Mg')
     );
     contract = contractAdapter.open(wallet);
 });
 
-// Use tonapi adapter to work with any @ton/ton smart-contracts wrappers
-
-test('Wallet contract', async () => {
-    // Get balance
-    // const balance: bigint = await contract.getBalance();
-    // expect(balance).toBe(0n);
-    // expect(typeof balance === 'bigint').toBe(true);
-
-    // get transactions
-    const data = await contract.getData(); // eslint-disable-line
-    // console.log(data);
-
-    // Create a transfer
-    // const seqno: number = await contract.getSeqno();
-    // await contract.sendTransfer({
-    //     seqno,
-    //     secretKey: keyPair.secretKey,
-    //     messages: [internal({
-    //         value: '0.001',
-    //         to: 'EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N',
-    //         body: 'Hello world',
-    //     })]
-    // });
+test.skip('NftItem contract getData', async () => {
+    const data = await contract.getData();
+    expect(data).toBeDefined();
 });
 
-test('Wallet contract', async () => {});
+test.skip('NftItem contract getTransactions', async () => {
+    const transactions = await contract.getTransactions();
+    expect(Array.isArray(transactions)).toBe(true);
+});

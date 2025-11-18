@@ -15,7 +15,7 @@ test('Client status test', async () => {
         indexing_latency: 8
     });
 
-    const res = await ta.utilities.status();
+    const res = await ta.status();
     expect(res).toBeDefined();
 });
 
@@ -25,7 +25,7 @@ test('Client apiKey test', async () => {
         indexing_latency: 8
     });
 
-    const res = await taWithApiKey.utilities.status();
+    const res = await taWithApiKey.status();
     expect(res).toBeDefined();
 
     expect(fetchSpy).toHaveBeenCalledWith(
@@ -44,12 +44,7 @@ test('Client apiKey missing test', async () => {
         indexing_latency: 8
     });
 
-    const config: ApiConfig = {
-        baseUrl: 'https://tonapi.io'
-    };
-
-    const localTa = new TonApiClient(config);
-    const res = await localTa.utilities.status();
+    const res = await ta.status();
     expect(res).toBeDefined();
 
     expect(fetchSpy).toHaveBeenCalledWith(
@@ -68,12 +63,7 @@ test('Client fallback test', async () => {
         indexing_latency: 8
     });
 
-    const config: ApiConfig = {
-        baseUrl: 'https://tonapi.io'
-    };
-
-    const localTa = new TonApiClient(config);
-    const res = await localTa.blockchain.status();
+    const res = await ta.status();
     expect(res).toBeDefined();
 
     expect(fetchSpy).toHaveBeenCalledWith(
@@ -92,7 +82,7 @@ test('Client x-tonapi-client header test', async () => {
         indexing_latency: 8
     });
 
-    const res = await ta.utilities.status();
+    const res = await ta.status();
     expect(res).toBeDefined();
 
     expect(fetchSpy).toHaveBeenCalledWith(
@@ -125,7 +115,7 @@ test('Client custom fetch is called', async () => {
 
     const ta = new TonApiClient(config);
 
-    await ta.utilities.status();
+    await ta.status();
 
     expect(customFetch).toHaveBeenCalled();
 });
@@ -138,7 +128,7 @@ test('Client post method in fetch', async () => {
         'UQAW2nxA69WYdMr90utDmpeZFwvG4XYcc9iibAP5sZnlojRO'
     ];
 
-    const res = await ta.accounts.getAccounts({
+    const res = await ta.getAccounts({
         accountIds: accountIds.map(id => Address.parse(id))
     });
 
@@ -158,7 +148,7 @@ test('Client response type for schema outside component (with snake_case)', asyn
     });
 
     const senderAddress = Address.parse('UQAQxxpzxmEVU0Lu8U0zNTxBzXIWPvo263TIN1OQM9YvxsnV');
-    const res = await ta.accounts.getAccountPublicKey(senderAddress);
+    const res = await ta.getAccountPublicKey(senderAddress);
 
     expect(res).toBeDefined();
     expect(res.publicKey).toBe('9544d2cccdd17e06e27f14fd531f803378d27f64710fd6aadc418c53d0660ec6');

@@ -16,10 +16,10 @@ export interface Error {
 
 export interface AccountAddress {
     /**
-     * @format address
+     * @format maybe-address
      * @example "0:10C1073837B93FDAAD594284CE8B8EFF7B9CF25427440EB2FC682762E1471365"
      */
-    address: Address;
+    address: Address | null;
     /**
      * Display name. Data collected from different sources like moderation lists, dns, collections names and over.
      * @example "Ton foundation"
@@ -329,7 +329,8 @@ export enum AccStatusChange {
 export enum ComputeSkipReason {
     CskipNoState = 'cskip_no_state',
     CskipBadState = 'cskip_bad_state',
-    CskipNoGas = 'cskip_no_gas'
+    CskipNoGas = 'cskip_no_gas',
+    CskipSuspended = 'cskip_suspended'
 }
 
 /** @example "cskip_no_state" */
@@ -890,7 +891,7 @@ export interface BlockchainRawAccount {
      * @example 123456789
      */
     balance: bigint;
-    extraBalance?: Record<string, string>;
+    extraBalance?: ExtraCurrency[];
     /**
      * @format cell
      * @example "b5ee9c72410104010087000114ff00f4a413f4a0f2c80b0102012002030002d200dfa5ffff76a268698fe9ffe8e42c5267858f90e785ffe4f6aa6467c444ffb365ffc10802faf0807d014035e7a064b87d804077e7857fc10803dfd2407d014035e7a064b86467cd8903a32b9ba4410803ade68afd014035e7a045ea432b6363796103bb7b9363210c678b64b87d807d8040c249b3e4"
@@ -918,6 +919,92 @@ export interface BlockchainRawAccount {
         /** @format cell */
         root: Cell;
     }[];
+}
+
+export interface BlockchainLibrary {
+    /**
+     * @format cell
+     * @example "b5ee9c7201010101005f0000baff0020dd2082014c97ba218201339cbab19c71b0ed44d0d31fd70bffe304e0a4f260810200d71820d70b1fed44d0d31fd3ffd15112baf2a122f901541044f910f2a2f80001d31f3120d74a96d307d402fb00ded1a4c8cb1fcbffc9ed54"
+     */
+    boc: Cell;
+}
+
+export interface WalletStats {
+    /**
+     * @format int32
+     * @example 123456789
+     */
+    nftsCount: number;
+    /**
+     * @format int32
+     * @example 123456789
+     */
+    jettonsCount: number;
+    /**
+     * @format int32
+     * @example 123456789
+     */
+    multisigCount: number;
+    /**
+     * @format int32
+     * @example 123456789
+     */
+    stakingCount: number;
+}
+
+export interface WalletPlugin {
+    /**
+     * @format address
+     * @example "0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf"
+     */
+    address: Address;
+    /** @example "subscription_v1" */
+    type: string;
+    status: AccountStatus;
+}
+
+export interface Wallets {
+    accounts: Wallet[];
+}
+
+export interface Wallet {
+    /**
+     * @format address
+     * @example "0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf"
+     */
+    address: Address;
+    isWallet: boolean;
+    /**
+     * @format bigint
+     * @example 123456789
+     */
+    balance: bigint;
+    stats: WalletStats;
+    plugins: WalletPlugin[];
+    status: AccountStatus;
+    /**
+     * unix timestamp
+     * @format int64
+     * @example 1720860269
+     */
+    lastActivity: number;
+    /** @example "Ton foundation" */
+    name?: string;
+    /** @example "https://ton.org/logo.png" */
+    icon?: string;
+    /**
+     * @deprecated
+     * @example ["get_item_data"]
+     */
+    getMethods: string[];
+    isSuspended?: boolean;
+    signatureDisabled?: boolean;
+    interfaces?: string[];
+    /**
+     * @format bigint
+     * @example 25713146000001
+     */
+    lastLt: bigint;
 }
 
 export interface Account {
@@ -997,7 +1084,12 @@ export interface SignRawMessage {
     stateInit?: Cell;
 }
 
+export interface GaslessTx {
+    protocolName: string;
+}
+
 export interface SignRawParams {
+    protocolName: string;
     /**
      * @format address
      * @example "0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf"
@@ -1020,6 +1112,7 @@ export interface SignRawParams {
      */
     validUntil: number;
     messages: SignRawMessage[];
+    emulation?: MessageConsequences;
 }
 
 export interface MethodExecutionResult {
@@ -1405,6 +1498,7 @@ export interface DomainBids {
 
 export enum JettonVerificationType {
     Whitelist = 'whitelist',
+    Graylist = 'graylist',
     Blacklist = 'blacklist',
     None = 'none'
 }
@@ -1427,6 +1521,20 @@ export interface JettonPreview {
     customPayloadApiUri?: string;
     /** @format int32 */
     score: number;
+    scaledUi?: ScaledUI;
+}
+
+export interface ScaledUI {
+    /**
+     * @format bigint
+     * @example "597968399"
+     */
+    numerator: bigint;
+    /**
+     * @format bigint
+     * @example "597968399"
+     */
+    denominator: bigint;
 }
 
 export interface JettonBalance {
@@ -1458,14 +1566,42 @@ export interface JettonsBalances {
     balances: JettonBalance[];
 }
 
+/** @example "jetton" */
+export enum CurrencyType {
+    Native = 'native',
+    ExtraCurrency = 'extra_currency',
+    Jetton = 'jetton',
+    Fiat = 'fiat'
+}
+
+export interface VaultDepositInfo {
+    price: Price;
+    /**
+     * @format address
+     * @example "0:0BB5A9F69043EEBDDA5AD2E946EB953242BD8F603FE795D90698CEEC6BFC60A0"
+     */
+    vault: Address;
+}
+
 export interface Price {
+    currencyType: CurrencyType;
     /**
      * @format bigint
      * @example "123000000000"
      */
     value: bigint;
+    /** @example 9 */
+    decimals: number;
     /** @example "TON" */
     tokenName: string;
+    verification: TrustType;
+    /** @example "https://cache.tonapi.io/images/jetton.jpg" */
+    image: string;
+    /**
+     * @format address
+     * @example "0:0BB5A9F69043EEBDDA5AD2E946EB953242BD8F603FE795D90698CEEC6BFC60A0"
+     */
+    jetton?: Address;
 }
 
 export interface ImagePreview {
@@ -1531,7 +1667,7 @@ export interface NftItem {
     /** @example "crypto.ton" */
     dns?: string;
     /**
-     * please use trust field
+     * Please use trust field
      * @deprecated
      */
     approvedBy: NftApprovedBy;
@@ -1554,11 +1690,7 @@ export interface Multisig {
      * @example "0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf"
      */
     address: Address;
-    /**
-     * @format int64
-     * @example 1
-     */
-    seqno: number;
+    seqno: string;
     /** @format int32 */
     threshold: number;
     signers: Address[];
@@ -1572,11 +1704,7 @@ export interface MultisigOrder {
      * @example "0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf"
      */
     address: Address;
-    /**
-     * @format int64
-     * @example 1
-     */
-    orderSeqno: number;
+    orderSeqno: string;
     /** @format int32 */
     threshold: number;
     /** @example false */
@@ -1591,6 +1719,17 @@ export interface MultisigOrder {
     /** @format int64 */
     creationDate: number;
     signedBy: Address[];
+    /**
+     * @format address
+     * @example "0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf"
+     */
+    multisigAddress: Address;
+    changingParameters?: {
+        /** @format int32 */
+        threshold: number;
+        signers: Address[];
+        proposers: Address[];
+    };
 }
 
 export interface Refund {
@@ -1634,11 +1773,11 @@ export interface Action {
     type:
         | 'TonTransfer'
         | 'ExtraCurrencyTransfer'
+        | 'ContractDeploy'
         | 'JettonTransfer'
         | 'JettonBurn'
         | 'JettonMint'
         | 'NftItemTransfer'
-        | 'ContractDeploy'
         | 'Subscribe'
         | 'UnSubscribe'
         | 'AuctionBid'
@@ -1646,13 +1785,19 @@ export interface Action {
         | 'DepositStake'
         | 'WithdrawStake'
         | 'WithdrawStakeRequest'
+        | 'ElectionsDepositStake'
+        | 'ElectionsRecoverStake'
         | 'JettonSwap'
         | 'SmartContractExec'
-        | 'ElectionsRecoverStake'
-        | 'ElectionsDepositStake'
         | 'DomainRenew'
-        | 'InscriptionTransfer'
-        | 'InscriptionMint'
+        | 'Purchase'
+        | 'AddExtension'
+        | 'RemoveExtension'
+        | 'SetSignatureAllowedAction'
+        | 'GasRelay'
+        | 'DepositTokenStake'
+        | 'WithdrawTokenStakeRequest'
+        | 'LiquidityDeposit'
         | 'Unknown';
     /** @example "ok" */
     status: 'ok' | 'failed';
@@ -1678,8 +1823,14 @@ export interface Action {
     JettonSwap?: JettonSwapAction;
     SmartContractExec?: SmartContractAction;
     DomainRenew?: DomainRenewAction;
-    InscriptionTransfer?: InscriptionTransferAction;
-    InscriptionMint?: InscriptionMintAction;
+    Purchase?: PurchaseAction;
+    AddExtension?: AddExtensionAction;
+    RemoveExtension?: RemoveExtensionAction;
+    SetSignatureAllowedAction?: SetSignatureAllowedAction;
+    GasRelay?: GasRelayAction;
+    DepositTokenStake?: DepositTokenStakeAction;
+    WithdrawTokenStakeRequest?: WithdrawTokenStakeRequestAction;
+    LiquidityDeposit?: LiquidityDepositAction;
     /** shortly describes what this action is about. */
     simplePreview: ActionSimplePreview;
     baseTransactions: string[];
@@ -1765,49 +1916,56 @@ export interface DomainRenewAction {
     renewer: AccountAddress;
 }
 
-export interface InscriptionMintAction {
-    recipient: AccountAddress;
+export interface GasRelayAction {
     /**
-     * amount in minimal particles
      * @format bigint
-     * @example "123456789"
+     * @example 1000000000
      */
     amount: bigint;
-    /** @example "ton20" */
-    type: 'ton20' | 'gram20';
-    /** @example "nano" */
-    ticker: string;
-    /** @example 9 */
-    decimals: number;
+    relayer: AccountAddress;
+    target: AccountAddress;
 }
 
-export interface InscriptionTransferAction {
-    sender: AccountAddress;
-    recipient: AccountAddress;
+export interface PurchaseAction {
+    source: AccountAddress;
+    destination: AccountAddress;
+    /** @example "03cfc582-b1c3-410a-a9a7-1f3afe326b3b" */
+    invoiceId: string;
+    amount: Price;
+    metadata: Metadata;
+}
+
+export interface AddExtensionAction {
+    wallet: AccountAddress;
     /**
-     * amount in minimal particles
-     * @format bigint
-     * @example "123456789"
+     * @format address
+     * @example "0:10C1073837B93FDAAD594284CE8B8EFF7B9CF25427440EB2FC682762E1471365"
      */
-    amount: bigint;
+    extension: Address;
+}
+
+export interface RemoveExtensionAction {
+    wallet: AccountAddress;
     /**
-     * @example "Hi! This is your salary.
-     * From accounting with love."
+     * @format address
+     * @example "0:10C1073837B93FDAAD594284CE8B8EFF7B9CF25427440EB2FC682762E1471365"
      */
-    comment?: string;
-    /** @example "ton20" */
-    type: 'ton20' | 'gram20';
-    /** @example "nano" */
-    ticker: string;
-    /** @example 9 */
-    decimals: number;
+    extension: Address;
+}
+
+export interface SetSignatureAllowedAction {
+    wallet: AccountAddress;
+    allowed: boolean;
 }
 
 export interface NftItemTransferAction {
     sender?: AccountAddress;
     recipient?: AccountAddress;
-    /** @example "" */
-    nft: string;
+    /**
+     * @format maybe-address
+     * @example ""
+     */
+    nft: Address | null;
     /**
      * @example "Hi! This is your salary.
      * From accounting with love."
@@ -1901,11 +2059,14 @@ export interface SubscriptionAction {
      */
     subscription: Address;
     beneficiary: AccountAddress;
+    admin: AccountAddress;
     /**
+     * @deprecated
      * @format bigint
      * @example 1000000000
      */
-    amount: bigint;
+    amount?: bigint;
+    price: Price;
     /** @example false */
     initial: boolean;
 }
@@ -1918,6 +2079,7 @@ export interface UnSubscriptionAction {
      */
     subscription: Address;
     beneficiary: AccountAddress;
+    admin: AccountAddress;
 }
 
 export interface AuctionBidAction {
@@ -1983,7 +2145,8 @@ export interface ElectionsDepositStakeAction {
 }
 
 export interface JettonSwapAction {
-    dex: 'stonfi' | 'dedust' | 'megatonfi';
+    /** @example "stonfi" */
+    dex: string;
     /**
      * @format bigint
      * @example "1660050553"
@@ -2016,6 +2179,24 @@ export interface NftPurchaseAction {
     nft: NftItem;
     seller: AccountAddress;
     buyer: AccountAddress;
+}
+
+export interface DepositTokenStakeAction {
+    staker: AccountAddress;
+    protocol: Protocol;
+    stakeMeta?: Price;
+}
+
+export interface WithdrawTokenStakeRequestAction {
+    staker: AccountAddress;
+    protocol: Protocol;
+    stakeMeta?: Price;
+}
+
+export interface LiquidityDepositAction {
+    protocol: Protocol;
+    from: AccountAddress;
+    tokens: VaultDepositInfo[];
 }
 
 /** shortly describes what this action is about. */
@@ -2065,6 +2246,13 @@ export interface AccountEvent {
      * @example 3
      */
     extra: number;
+    /**
+     * @format float
+     * @min 0
+     * @max 1
+     * @example 0.5
+     */
+    progress: number;
 }
 
 export interface AccountEvents {
@@ -2074,6 +2262,46 @@ export interface AccountEvents {
      * @example 25713146000001
      */
     nextFrom: number;
+}
+
+export interface Purchase {
+    /** @example "e8b0e3fee4a26bd2317ac1f9952fcdc87dc08fdb617656b5202416323337372e" */
+    eventId: string;
+    /** @example "03cfc582-b1c3-410a-a9a7-1f3afe326b3b" */
+    invoiceId: string;
+    source: AccountAddress;
+    destination: AccountAddress;
+    /**
+     * @format bigint
+     * @example 25713146000001
+     */
+    lt: bigint;
+    /**
+     * @format int64
+     * @example 1645544908
+     */
+    utime: number;
+    amount: Price;
+    metadata: Metadata;
+}
+
+export interface AccountPurchases {
+    purchases: Purchase[];
+    /**
+     * @format int64
+     * @example 25713146000001
+     */
+    nextFrom: number;
+}
+
+export interface Metadata {
+    /** hex encoded bytes */
+    encryptedBinary: string;
+    /**
+     * hex encoded bytes
+     * @example "dead.....beef"
+     */
+    decryptionKey?: string;
 }
 
 export interface TraceID {
@@ -2097,60 +2325,34 @@ export interface ApyHistory {
 
 export interface Subscription {
     /**
-     * @format address
-     * @example "0:dea8f638b789172ce36d10a20318125e52c649aa84893cd77858224fe2b9b0ee"
+     * type of subscription
+     * @example "v2"
      */
-    address: Address;
+    type: string;
+    status: 'not_ready' | 'active' | 'suspended' | 'cancelled';
     /**
-     * @format address
-     * @example "0:567DE86AF2B6A557D7085807CF7C26338124987A5179344F0D0FA2657EB710F1"
-     */
-    walletAddress: Address;
-    /**
-     * @format address
-     * @example "0:c704dadfabac88eab58e340de03080df81ff76636431f48624ad6e26fb2da0a4"
-     */
-    beneficiaryAddress: Address;
-    /**
-     * @format int64
-     * @example 1000000000
-     */
-    amount: number;
-    /**
+     * payment period in seconds
      * @format int64
      * @example 2592000
      */
     period: number;
-    /**
-     * @format int64
-     * @example 1653996832
-     */
-    startTime: number;
-    /**
-     * @format int64
-     * @example 10800
-     */
-    timeout: number;
+    /** common identifier */
+    subscriptionId: string;
+    paymentPerPeriod: Price;
+    wallet: AccountAddress;
     /**
      * @format int64
      * @example 1653996834
      */
-    lastPaymentTime: number;
+    nextChargeAt: number;
+    metadata: Metadata;
     /**
-     * @format int64
-     * @example 0
+     * @format maybe-address
+     * @example "0:dea8f638b789172ce36d10a20318125e52c649aa84893cd77858224fe2b9b0ee"
      */
-    lastRequestTime: number;
-    /**
-     * @format int64
-     * @example 217477
-     */
-    subscriptionId: number;
-    /**
-     * @format int32
-     * @example 0
-     */
-    failedAttempts: number;
+    address?: Address | null;
+    beneficiary?: AccountAddress;
+    admin?: AccountAddress;
 }
 
 export interface Subscriptions {
@@ -2220,10 +2422,10 @@ export interface DomainInfo {
 export interface DnsRecord {
     wallet?: WalletDNS;
     /**
-     * @format address
+     * @format maybe-address
      * @example "0:da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf"
      */
-    nextResolver?: Address;
+    nextResolver?: Address | null;
     sites: string[];
     /**
      * tonstorage bag id
@@ -2287,6 +2489,11 @@ export interface Risk {
     ton: bigint;
     jettons: JettonQuantity[];
     nfts: NftItem[];
+    /**
+     * Estimated equivalent value of all assets at risk in selected currency (for example USD)
+     * @format float
+     */
+    totalEquivalent?: number;
 }
 
 export interface JettonQuantity {
@@ -2408,6 +2615,13 @@ export interface Event {
      * @example false
      */
     inProgress: boolean;
+    /**
+     * @format float
+     * @min 0
+     * @max 1
+     * @example 0.5
+     */
+    progress: number;
 }
 
 export interface JettonMetadata {
@@ -2436,24 +2650,6 @@ export interface JettonMetadata {
     customPayloadApiUri?: string;
 }
 
-export interface InscriptionBalances {
-    inscriptions: InscriptionBalance[];
-}
-
-export interface InscriptionBalance {
-    /** @example "ton20" */
-    type: 'ton20' | 'gram20';
-    /** @example "nano" */
-    ticker: string;
-    /**
-     * @format bigint
-     * @example "1000000000"
-     */
-    balance: bigint;
-    /** @example 9 */
-    decimals: number;
-}
-
 export interface Jettons {
     jettons: JettonInfo[];
 }
@@ -2476,6 +2672,7 @@ export interface JettonInfo {
      * @example 2000
      */
     holdersCount: number;
+    scaledUi?: ScaledUI;
 }
 
 export interface JettonHolders {
@@ -2504,14 +2701,14 @@ export interface JettonHolders {
 export interface JettonTransferPayload {
     /**
      * hex-encoded BoC
-     * @example "b5ee9c72410212010001b40009460395b521c9251151ae7987e03c544bd275d6cd42c2d157f840beb14d5454b96718000d012205817002020328480101fd7f6a648d4f771d7f0abc1707e4e806b19de1801f65eb8c133a4cfb0c33d847000b22012004052848010147da975b922d89192f4c9b68a640daa6764ec398c93cec025e17f0c1852a711a0009220120061122012007082848010170d9fb0423cbef6c2cf1f3811a2f640daf8c9a326b6f8816c1b993e90d88e2100006220120090a28480101f6df1d75f6b9e45f224b2cb4fc2286d927d47b468b6dbf1fedc4316290ec2ae900042201200b102201200c0f2201200d"
+     * @format cell
      */
-    customPayload?: string;
+    customPayload?: Cell;
     /**
      * hex-encoded BoC
-     * @example "b5ee9c72410212010001b40009460395b521c9251151ae7987e03c544bd275d6cd42c2d157f840beb14d5454b96718000d012205817002020328480101fd7f6a648d4f771d7f0abc1707e4e806b19de1801f65eb8c133a4cfb0c33d847000b22012004052848010147da975b922d89192f4c9b68a640daa6764ec398c93cec025e17f0c1852a711a0009220120061122012007082848010170d9fb0423cbef6c2cf1f3811a2f640daf8c9a326b6f8816c1b993e90d88e2100006220120090a28480101f6df1d75f6b9e45f224b2cb4fc2286d927d47b468b6dbf1fedc4316290ec2ae900042201200b102201200c0f2201200d"
+     * @format cell
      */
-    stateInit?: string;
+    stateInit?: Cell;
 }
 
 export interface AccountStaking {
@@ -2678,7 +2875,12 @@ export interface DnsExpiring {
     }[];
 }
 
-/** @example [[1668436763,97.21323234]] */
+/**
+ * Each inner array is a pair [timestamp, price]:
+ *   • index 0 — Unix timestamp (int64)
+ *   • index 1 — token price (decimal) in the requested currency.
+ * @example [1668436763,97.21323234]
+ */
 export type ChartPoints = [number, number];
 
 export interface AccountInfoByStateInit {
@@ -2737,6 +2939,7 @@ export interface EncryptedComment {
 export interface BlockchainAccountInspect {
     /** @format cell */
     code: Cell;
+    disassembledCode?: string;
     codeHash: string;
     methods: Method[];
     compiler: 'func' | 'fift' | 'tact';
@@ -2803,6 +3006,124 @@ export interface Method {
     method: string;
 }
 
+export interface NftOperations {
+    operations: NftOperation[];
+    /**
+     * @format bigint
+     * @example 25713146000001
+     */
+    nextFrom?: bigint;
+}
+
+export interface NftOperation {
+    /** @example "transfer" */
+    operation: string;
+    /**
+     * @format int64
+     * @example 1234567890
+     */
+    utime: number;
+    /**
+     * @format bigint
+     * @example 25713146000001
+     */
+    lt: bigint;
+    /** @example "0xdeadbeaf" */
+    transactionHash: string;
+    source?: AccountAddress;
+    destination?: AccountAddress;
+    item: NftItem;
+}
+
+export interface JettonOperations {
+    operations: JettonOperation[];
+    /**
+     * @format bigint
+     * @example 25713146000001
+     */
+    nextFrom?: bigint;
+}
+
+export interface JettonOperation {
+    /** @example "transfer" */
+    operation: 'transfer' | 'mint' | 'burn';
+    /**
+     * @format int64
+     * @example 1234567890
+     */
+    utime: number;
+    /**
+     * @format bigint
+     * @example 25713146000001
+     */
+    lt: bigint;
+    /** @example "cbf3e3d70ecf6f69643dd430761cd6004de2cacbdbc3029b0abd30ca3cc1c67e" */
+    transactionHash: string;
+    source?: AccountAddress;
+    destination?: AccountAddress;
+    /**
+     * @format bigint
+     * @example "1000000000"
+     */
+    amount: bigint;
+    jetton: JettonPreview;
+    /** @example "8fa19eec7bd6d00d0d76048cebe31e34082a859410c9fcf7d55ef4ff8f7fcb47" */
+    traceId: string;
+    /**
+     * @format bigint
+     * @example "17286061481122318000"
+     */
+    queryId: bigint;
+    payload?: any;
+}
+
+/**
+ * Data type of the argument value:
+ * - `nan`: Not-a-Number value
+ * - `null`: Null value
+ * - `tinyint`: Decimal integer (e.g., `100500`)
+ * - `int257`: 257-bit integer in hex format with 0x prefix (e.g., `0xfa01d78381ae32`)
+ * - `slice`: TON blockchain address (e.g., `0:6e731f2e...`)
+ * - `cell_boc_base64`: Base64-encoded cell BOC (Binary Object Code) (e.g., `te6ccgEBAQEAAgAAAA==`)
+ * - `slice_boc_hex`: Hex-encoded slice BOC (e.g., `b5ee9c72...`)
+ * @example "int257"
+ */
+export enum ExecGetMethodArgType {
+    Nan = 'nan',
+    Null = 'null',
+    Tinyint = 'tinyint',
+    Int257 = 'int257',
+    Slice = 'slice',
+    CellBocBase64 = 'cell_boc_base64',
+    SliceBocHex = 'slice_boc_hex'
+}
+
+export interface ExecGetMethodArg {
+    /**
+     * Data type of the argument value:
+     * - `nan`: Not-a-Number value
+     * - `null`: Null value
+     * - `tinyint`: Decimal integer (e.g., `100500`)
+     * - `int257`: 257-bit integer in hex format with 0x prefix (e.g., `0xfa01d78381ae32`)
+     * - `slice`: TON blockchain address (e.g., `0:6e731f2e...`)
+     * - `cell_boc_base64`: Base64-encoded cell BOC (Binary Object Code) (e.g., `te6ccgEBAQEAAgAAAA==`)
+     * - `slice_boc_hex`: Hex-encoded slice BOC (e.g., `b5ee9c72...`)
+     */
+    type: ExecGetMethodArgType;
+    /**
+     * String representation of the value according to the specified type
+     * @example "0xfa01d78381ae32"
+     */
+    value: string;
+}
+
+export interface Protocol {
+    /** @example "Ethena" */
+    name: string;
+    /** @example "https://cache.tonapi.io/images/jetton.jpg" */
+    image?: string;
+}
+
 export type GetOpenapiJsonData = any;
 
 /** @format binary */
@@ -2813,6 +3134,9 @@ export type StatusData = ServiceStatus;
 export type GetReducedBlockchainBlocksData = ReducedBlocks;
 
 export type GetBlockchainBlockData = BlockchainBlock;
+
+/** @format binary */
+export type DownloadBlockchainBlockBocData = File;
 
 export type GetBlockchainMasterchainShardsData = BlockchainBlockShards;
 
@@ -2840,6 +3164,8 @@ export type GetBlockchainAccountTransactionsData = Transactions;
 
 export type ExecGetMethodForBlockchainAccountData = MethodExecutionResult;
 
+export type ExecGetMethodWithBodyForBlockchainAccountData = MethodExecutionResult;
+
 export type SendBlockchainMessageData = any;
 
 export type GetBlockchainConfigData = BlockchainConfig;
@@ -2847,6 +3173,8 @@ export type GetBlockchainConfigData = BlockchainConfig;
 export type GetRawBlockchainConfigData = RawBlockchainConfig;
 
 export type BlockchainAccountInspectData = BlockchainAccountInspect;
+
+export type GetLibraryByHashData = BlockchainLibrary;
 
 export interface AddressParseData {
     /**
@@ -2876,13 +3204,13 @@ export type GetAccountJettonsBalancesData = JettonsBalances;
 
 export type GetAccountJettonBalanceData = JettonBalance;
 
-export type GetAccountJettonsHistoryData = AccountEvents;
+export type GetAccountJettonsHistoryData = JettonOperations;
 
 export type GetAccountJettonHistoryByIdData = AccountEvents;
 
 export type GetAccountNftItemsData = NftItems;
 
-export type GetAccountNftHistoryData = AccountEvents;
+export type GetAccountNftHistoryData = NftOperations;
 
 export type GetAccountEventsData = AccountEvents;
 
@@ -2941,19 +3269,6 @@ export type GetTraceData = Trace;
 
 export type GetEventData = Event;
 
-export type GetAccountInscriptionsData = InscriptionBalances;
-
-export type GetAccountInscriptionsHistoryData = AccountEvents;
-
-export type GetAccountInscriptionsHistoryByTickerData = AccountEvents;
-
-export interface GetInscriptionOpTemplateData {
-    /** @example "comment" */
-    comment: string;
-    /** @example "0:0000000000000" */
-    destination: string;
-}
-
 export type GetJettonsData = Jettons;
 
 export type GetJettonInfoData = JettonInfo;
@@ -2965,6 +3280,8 @@ export type GetJettonHoldersData = JettonHolders;
 export type GetJettonTransferPayloadData = JettonTransferPayload;
 
 export type GetJettonsEventsData = Event;
+
+export type GetJettonAccountHistoryByIdData = JettonOperations;
 
 export type GetExtraCurrencyInfoData = EcPreview;
 
@@ -3014,13 +3331,15 @@ export interface TonConnectProofData {
 
 export type GetAccountSeqnoData = Seqno;
 
+export type GetWalletInfoData = Wallet;
+
 export type GaslessConfigData = GaslessConfig;
 
 export type GaslessEstimateData = SignRawParams;
 
-export type GaslessSendData = any;
+export type GaslessSendData = GaslessTx;
 
-export type GetWalletsByPublicKeyData = Accounts;
+export type GetWalletsByPublicKeyData = Wallets;
 
 export interface GetRawMasterchainInfoData {
     last: BlockRaw;
@@ -3241,6 +3560,8 @@ export interface GetOutMsgQueueSizesData {
 
 export type GetMultisigAccountData = Multisig;
 
+export type GetMultisigOrderData = MultisigOrder;
+
 export type DecodeMessageData = DecodedMessage;
 
 export type EmulateMessageToEventData = Event;
@@ -3250,6 +3571,8 @@ export type EmulateMessageToTraceData = Trace;
 export type EmulateMessageToWalletData = MessageConsequences;
 
 export type EmulateMessageToAccountEventData = AccountEvent;
+
+export type GetPurchaseHistoryData = AccountPurchases;
 
 export type QueryParamsType = Record<string | number, any>;
 export type ResponseFormat = keyof Omit<Body, 'body' | 'bodyUsed'>;
@@ -3363,7 +3686,7 @@ class HttpClient {
         const headers = {
             ...(baseApiParams.headers ?? {}),
             ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
-            'x-tonapi-client': `tonapi-js@0.4.0`
+            'x-tonapi-client': `tonapi-js@0.5.0-alpha.6`
         };
 
         const preparedApiConfig = {
@@ -3392,7 +3715,8 @@ class HttpClient {
             .map((val: any) => encodeURIComponent(typeof val === 'number' ? val : `${val}`))
             .join(',');
 
-        return this.encodeQueryParam(key, value);
+        // Don't double-encode: value is already encoded, only encode the key
+        return `${encodeURIComponent(key)}=${value}`;
     }
 
     protected addArrayQueryParam(query: QueryParamsType, key: string, implodeParams?: string[]) {
@@ -3539,6 +3863,8 @@ class HttpClient {
                 this.abortControllers.delete(cancelToken);
             }
 
+            // Return result object instead of throwing
+            // prepareResponse will handle error conversion
             if (!response.ok) throw result;
             return result.data;
         });
@@ -3555,7 +3881,7 @@ const components = {
         type: 'object',
         required: ['address', 'is_scam', 'is_wallet'],
         properties: {
-            address: { type: 'string', format: 'address' },
+            address: { type: 'string', format: 'maybe-address' },
             name: { type: 'string' },
             is_scam: { type: 'boolean' },
             icon: { type: 'string' },
@@ -3799,7 +4125,7 @@ const components = {
     },
     '#/components/schemas/ComputeSkipReason': {
         type: 'string',
-        enum: ['cskip_no_state', 'cskip_bad_state', 'cskip_no_gas']
+        enum: ['cskip_no_state', 'cskip_bad_state', 'cskip_no_gas', 'cskip_suspended']
     },
     '#/components/schemas/BouncePhaseType': {
         type: 'string',
@@ -4186,7 +4512,7 @@ const components = {
         properties: {
             address: { type: 'string', format: 'address' },
             balance: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            extra_balance: { type: 'object', additionalProperties: { type: 'string' } },
+            extra_balance: { type: 'array', items: { $ref: '#/components/schemas/ExtraCurrency' } },
             code: { type: 'string', format: 'cell' },
             data: { type: 'string', format: 'cell' },
             last_transaction_lt: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
@@ -4205,6 +4531,65 @@ const components = {
                     }
                 }
             }
+        }
+    },
+    '#/components/schemas/BlockchainLibrary': {
+        type: 'object',
+        required: ['boc'],
+        properties: { boc: { type: 'string', format: 'cell' } }
+    },
+    '#/components/schemas/WalletStats': {
+        type: 'object',
+        required: ['nfts_count', 'jettons_count', 'multisig_count', 'staking_count'],
+        properties: {
+            nfts_count: { type: 'integer', format: 'int32' },
+            jettons_count: { type: 'integer', format: 'int32' },
+            multisig_count: { type: 'integer', format: 'int32' },
+            staking_count: { type: 'integer', format: 'int32' }
+        }
+    },
+    '#/components/schemas/WalletPlugin': {
+        type: 'object',
+        required: ['address', 'type', 'status'],
+        properties: {
+            address: { type: 'string', format: 'address' },
+            type: { type: 'string' },
+            status: { $ref: '#/components/schemas/AccountStatus' }
+        }
+    },
+    '#/components/schemas/Wallets': {
+        type: 'object',
+        required: ['accounts'],
+        properties: { accounts: { type: 'array', items: { $ref: '#/components/schemas/Wallet' } } }
+    },
+    '#/components/schemas/Wallet': {
+        type: 'object',
+        required: [
+            'address',
+            'balance',
+            'stats',
+            'plugins',
+            'status',
+            'last_activity',
+            'get_methods',
+            'is_wallet',
+            'last_lt'
+        ],
+        properties: {
+            address: { type: 'string', format: 'address' },
+            is_wallet: { type: 'boolean' },
+            balance: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            stats: { $ref: '#/components/schemas/WalletStats' },
+            plugins: { type: 'array', items: { $ref: '#/components/schemas/WalletPlugin' } },
+            status: { $ref: '#/components/schemas/AccountStatus' },
+            last_activity: { type: 'integer', format: 'int64' },
+            name: { type: 'string' },
+            icon: { type: 'string' },
+            get_methods: { type: 'array', deprecated: true, items: { type: 'string' } },
+            is_suspended: { type: 'boolean' },
+            signature_disabled: { type: 'boolean' },
+            interfaces: { type: 'array', items: { type: 'string' } },
+            last_lt: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' }
         }
     },
     '#/components/schemas/Account': {
@@ -4257,15 +4642,29 @@ const components = {
             stateInit: { type: 'string', format: 'cell' }
         }
     },
+    '#/components/schemas/GaslessTx': {
+        type: 'object',
+        required: ['protocol_name'],
+        properties: { protocol_name: { type: 'string' } }
+    },
     '#/components/schemas/SignRawParams': {
         type: 'object',
-        required: ['messages', 'relay_address', 'commission', 'from', 'valid_until'],
+        required: [
+            'messages',
+            'relay_address',
+            'commission',
+            'from',
+            'valid_until',
+            'protocol_name'
+        ],
         properties: {
+            protocol_name: { type: 'string' },
             relay_address: { type: 'string', format: 'address' },
             commission: { type: 'string', 'x-js-format': 'bigint' },
             from: { type: 'string', format: 'address' },
             valid_until: { type: 'integer', format: 'int64' },
-            messages: { type: 'array', items: { $ref: '#/components/schemas/SignRawMessage' } }
+            messages: { type: 'array', items: { $ref: '#/components/schemas/SignRawMessage' } },
+            emulation: { $ref: '#/components/schemas/MessageConsequences' }
         }
     },
     '#/components/schemas/MethodExecutionResult': {
@@ -4658,7 +5057,7 @@ const components = {
     },
     '#/components/schemas/JettonVerificationType': {
         type: 'string',
-        enum: ['whitelist', 'blacklist', 'none']
+        enum: ['whitelist', 'graylist', 'blacklist', 'none']
     },
     '#/components/schemas/JettonPreview': {
         type: 'object',
@@ -4671,7 +5070,16 @@ const components = {
             image: { type: 'string' },
             verification: { $ref: '#/components/schemas/JettonVerificationType' },
             custom_payload_api_uri: { type: 'string' },
-            score: { type: 'integer', format: 'int32' }
+            score: { type: 'integer', format: 'int32' },
+            scaled_ui: { $ref: '#/components/schemas/ScaledUI' }
+        }
+    },
+    '#/components/schemas/ScaledUI': {
+        type: 'object',
+        required: ['numerator', 'denominator'],
+        properties: {
+            numerator: { type: 'string', 'x-js-format': 'bigint' },
+            denominator: { type: 'string', 'x-js-format': 'bigint' }
         }
     },
     '#/components/schemas/JettonBalance': {
@@ -4700,12 +5108,29 @@ const components = {
             balances: { type: 'array', items: { $ref: '#/components/schemas/JettonBalance' } }
         }
     },
+    '#/components/schemas/CurrencyType': {
+        type: 'string',
+        enum: ['native', 'extra_currency', 'jetton', 'fiat']
+    },
+    '#/components/schemas/VaultDepositInfo': {
+        type: 'object',
+        required: ['price', 'vault'],
+        properties: {
+            price: { $ref: '#/components/schemas/Price' },
+            vault: { type: 'string', format: 'address' }
+        }
+    },
     '#/components/schemas/Price': {
         type: 'object',
-        required: ['value', 'token_name'],
+        required: ['currency_type', 'value', 'decimals', 'token_name', 'verification', 'image'],
         properties: {
+            currency_type: { $ref: '#/components/schemas/CurrencyType' },
             value: { type: 'string', 'x-js-format': 'bigint' },
-            token_name: { type: 'string' }
+            decimals: { type: 'integer' },
+            token_name: { type: 'string' },
+            verification: { $ref: '#/components/schemas/TrustType' },
+            image: { type: 'string' },
+            jetton: { type: 'string', format: 'address' }
         }
     },
     '#/components/schemas/ImagePreview': {
@@ -4753,9 +5178,9 @@ const components = {
             previews: { type: 'array', items: { $ref: '#/components/schemas/ImagePreview' } },
             dns: { type: 'string' },
             approved_by: {
+                allOf: { '0': { $ref: '#/components/schemas/NftApprovedBy' } },
                 deprecated: true,
-                description: 'please use trust field',
-                $ref: '#/components/schemas/NftApprovedBy'
+                description: 'Please use trust field'
             },
             include_cnft: { type: 'boolean' },
             trust: { $ref: '#/components/schemas/TrustType' }
@@ -4780,7 +5205,7 @@ const components = {
         required: ['address', 'seqno', 'threshold', 'signers', 'proposers', 'orders'],
         properties: {
             address: { type: 'string', format: 'address' },
-            seqno: { type: 'integer', format: 'int64' },
+            seqno: { type: 'string' },
             threshold: { type: 'integer', format: 'int32' },
             signers: { type: 'array', items: { type: 'string', format: 'address' } },
             proposers: { type: 'array', items: { type: 'string', format: 'address' } },
@@ -4799,11 +5224,12 @@ const components = {
             'expiration_date',
             'risk',
             'creation_date',
-            'signed_by'
+            'signed_by',
+            'multisig_address'
         ],
         properties: {
             address: { type: 'string', format: 'address' },
-            order_seqno: { type: 'integer', format: 'int64' },
+            order_seqno: { type: 'string' },
             threshold: { type: 'integer', format: 'int32' },
             sent_for_execution: { type: 'boolean' },
             signers: { type: 'array', items: { type: 'string', format: 'address' } },
@@ -4811,7 +5237,17 @@ const components = {
             expiration_date: { type: 'integer', format: 'int64' },
             risk: { $ref: '#/components/schemas/Risk' },
             creation_date: { type: 'integer', format: 'int64' },
-            signed_by: { type: 'array', items: { type: 'string', format: 'address' } }
+            signed_by: { type: 'array', items: { type: 'string', format: 'address' } },
+            multisig_address: { type: 'string', format: 'address' },
+            changing_parameters: {
+                type: 'object',
+                required: ['threshold', 'signers', 'proposers'],
+                properties: {
+                    threshold: { type: 'integer', format: 'int32' },
+                    signers: { type: 'array', items: { type: 'string', format: 'address' } },
+                    proposers: { type: 'array', items: { type: 'string', format: 'address' } }
+                }
+            }
         }
     },
     '#/components/schemas/Refund': {
@@ -4858,11 +5294,11 @@ const components = {
                 enum: [
                     'TonTransfer',
                     'ExtraCurrencyTransfer',
+                    'ContractDeploy',
                     'JettonTransfer',
                     'JettonBurn',
                     'JettonMint',
                     'NftItemTransfer',
-                    'ContractDeploy',
                     'Subscribe',
                     'UnSubscribe',
                     'AuctionBid',
@@ -4870,13 +5306,19 @@ const components = {
                     'DepositStake',
                     'WithdrawStake',
                     'WithdrawStakeRequest',
+                    'ElectionsDepositStake',
+                    'ElectionsRecoverStake',
                     'JettonSwap',
                     'SmartContractExec',
-                    'ElectionsRecoverStake',
-                    'ElectionsDepositStake',
                     'DomainRenew',
-                    'InscriptionTransfer',
-                    'InscriptionMint',
+                    'Purchase',
+                    'AddExtension',
+                    'RemoveExtension',
+                    'SetSignatureAllowedAction',
+                    'GasRelay',
+                    'DepositTokenStake',
+                    'WithdrawTokenStakeRequest',
+                    'LiquidityDeposit',
                     'Unknown'
                 ]
             },
@@ -4900,8 +5342,16 @@ const components = {
             JettonSwap: { $ref: '#/components/schemas/JettonSwapAction' },
             SmartContractExec: { $ref: '#/components/schemas/SmartContractAction' },
             DomainRenew: { $ref: '#/components/schemas/DomainRenewAction' },
-            InscriptionTransfer: { $ref: '#/components/schemas/InscriptionTransferAction' },
-            InscriptionMint: { $ref: '#/components/schemas/InscriptionMintAction' },
+            Purchase: { $ref: '#/components/schemas/PurchaseAction' },
+            AddExtension: { $ref: '#/components/schemas/AddExtensionAction' },
+            RemoveExtension: { $ref: '#/components/schemas/RemoveExtensionAction' },
+            SetSignatureAllowedAction: { $ref: '#/components/schemas/SetSignatureAllowedAction' },
+            GasRelay: { $ref: '#/components/schemas/GasRelayAction' },
+            DepositTokenStake: { $ref: '#/components/schemas/DepositTokenStakeAction' },
+            WithdrawTokenStakeRequest: {
+                $ref: '#/components/schemas/WithdrawTokenStakeRequestAction'
+            },
+            LiquidityDeposit: { $ref: '#/components/schemas/LiquidityDepositAction' },
             simple_preview: { $ref: '#/components/schemas/ActionSimplePreview' },
             base_transactions: { type: 'array', items: { type: 'string' } }
         }
@@ -4968,28 +5418,48 @@ const components = {
             renewer: { $ref: '#/components/schemas/AccountAddress' }
         }
     },
-    '#/components/schemas/InscriptionMintAction': {
+    '#/components/schemas/GasRelayAction': {
         type: 'object',
-        required: ['type', 'ticker', 'recipient', 'amount', 'decimals'],
+        required: ['amount', 'relayer', 'target'],
         properties: {
-            recipient: { $ref: '#/components/schemas/AccountAddress' },
-            amount: { type: 'string', 'x-js-format': 'bigint' },
-            type: { type: 'string', enum: ['ton20', 'gram20'] },
-            ticker: { type: 'string' },
-            decimals: { type: 'integer' }
+            amount: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            relayer: { $ref: '#/components/schemas/AccountAddress' },
+            target: { $ref: '#/components/schemas/AccountAddress' }
         }
     },
-    '#/components/schemas/InscriptionTransferAction': {
+    '#/components/schemas/PurchaseAction': {
         type: 'object',
-        required: ['sender', 'recipient', 'amount', 'type', 'ticker', 'decimals'],
+        required: ['source', 'destination', 'invoice_id', 'amount', 'metadata'],
         properties: {
-            sender: { $ref: '#/components/schemas/AccountAddress' },
-            recipient: { $ref: '#/components/schemas/AccountAddress' },
-            amount: { type: 'string', 'x-js-format': 'bigint' },
-            comment: { type: 'string' },
-            type: { type: 'string', enum: ['ton20', 'gram20'] },
-            ticker: { type: 'string' },
-            decimals: { type: 'integer' }
+            source: { $ref: '#/components/schemas/AccountAddress' },
+            destination: { $ref: '#/components/schemas/AccountAddress' },
+            invoice_id: { type: 'string' },
+            amount: { $ref: '#/components/schemas/Price' },
+            metadata: { $ref: '#/components/schemas/Metadata' }
+        }
+    },
+    '#/components/schemas/AddExtensionAction': {
+        type: 'object',
+        required: ['wallet', 'extension'],
+        properties: {
+            wallet: { $ref: '#/components/schemas/AccountAddress' },
+            extension: { type: 'string', format: 'address' }
+        }
+    },
+    '#/components/schemas/RemoveExtensionAction': {
+        type: 'object',
+        required: ['wallet', 'extension'],
+        properties: {
+            wallet: { $ref: '#/components/schemas/AccountAddress' },
+            extension: { type: 'string', format: 'address' }
+        }
+    },
+    '#/components/schemas/SetSignatureAllowedAction': {
+        type: 'object',
+        required: ['wallet', 'allowed'],
+        properties: {
+            wallet: { $ref: '#/components/schemas/AccountAddress' },
+            allowed: { type: 'boolean' }
         }
     },
     '#/components/schemas/NftItemTransferAction': {
@@ -4998,7 +5468,7 @@ const components = {
         properties: {
             sender: { $ref: '#/components/schemas/AccountAddress' },
             recipient: { $ref: '#/components/schemas/AccountAddress' },
-            nft: { type: 'string' },
+            nft: { type: 'string', format: 'maybe-address' },
             comment: { type: 'string' },
             encrypted_comment: { $ref: '#/components/schemas/EncryptedComment' },
             payload: { type: 'string' },
@@ -5050,22 +5520,25 @@ const components = {
     },
     '#/components/schemas/SubscriptionAction': {
         type: 'object',
-        required: ['subscriber', 'subscription', 'beneficiary', 'amount', 'initial'],
+        required: ['subscriber', 'subscription', 'beneficiary', 'admin', 'price', 'initial'],
         properties: {
             subscriber: { $ref: '#/components/schemas/AccountAddress' },
             subscription: { type: 'string', format: 'address' },
             beneficiary: { $ref: '#/components/schemas/AccountAddress' },
-            amount: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            admin: { $ref: '#/components/schemas/AccountAddress' },
+            amount: { deprecated: true, type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            price: { $ref: '#/components/schemas/Price' },
             initial: { type: 'boolean' }
         }
     },
     '#/components/schemas/UnSubscriptionAction': {
         type: 'object',
-        required: ['subscriber', 'subscription', 'beneficiary'],
+        required: ['subscriber', 'subscription', 'beneficiary', 'admin'],
         properties: {
             subscriber: { $ref: '#/components/schemas/AccountAddress' },
             subscription: { type: 'string', format: 'address' },
-            beneficiary: { $ref: '#/components/schemas/AccountAddress' }
+            beneficiary: { $ref: '#/components/schemas/AccountAddress' },
+            admin: { $ref: '#/components/schemas/AccountAddress' }
         }
     },
     '#/components/schemas/AuctionBidAction': {
@@ -5129,7 +5602,7 @@ const components = {
         type: 'object',
         required: ['dex', 'amount_in', 'amount_out', 'user_wallet', 'router'],
         properties: {
-            dex: { type: 'string', enum: ['stonfi', 'dedust', 'megatonfi'] },
+            dex: { type: 'string' },
             amount_in: { type: 'string', 'x-js-format': 'bigint' },
             amount_out: { type: 'string', 'x-js-format': 'bigint' },
             ton_in: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
@@ -5149,6 +5622,33 @@ const components = {
             nft: { $ref: '#/components/schemas/NftItem' },
             seller: { $ref: '#/components/schemas/AccountAddress' },
             buyer: { $ref: '#/components/schemas/AccountAddress' }
+        }
+    },
+    '#/components/schemas/DepositTokenStakeAction': {
+        type: 'object',
+        required: ['staker', 'protocol'],
+        properties: {
+            staker: { $ref: '#/components/schemas/AccountAddress' },
+            protocol: { $ref: '#/components/schemas/Protocol' },
+            stake_meta: { $ref: '#/components/schemas/Price' }
+        }
+    },
+    '#/components/schemas/WithdrawTokenStakeRequestAction': {
+        type: 'object',
+        required: ['staker', 'protocol'],
+        properties: {
+            staker: { $ref: '#/components/schemas/AccountAddress' },
+            protocol: { $ref: '#/components/schemas/Protocol' },
+            stake_meta: { $ref: '#/components/schemas/Price' }
+        }
+    },
+    '#/components/schemas/LiquidityDepositAction': {
+        type: 'object',
+        required: ['protocol', 'from', 'tokens'],
+        properties: {
+            protocol: { $ref: '#/components/schemas/Protocol' },
+            from: { $ref: '#/components/schemas/AccountAddress' },
+            tokens: { type: 'array', items: { $ref: '#/components/schemas/VaultDepositInfo' } }
         }
     },
     '#/components/schemas/ActionSimplePreview': {
@@ -5173,7 +5673,8 @@ const components = {
             'is_scam',
             'lt',
             'in_progress',
-            'extra'
+            'extra',
+            'progress'
         ],
         properties: {
             event_id: { type: 'string' },
@@ -5183,7 +5684,8 @@ const components = {
             is_scam: { type: 'boolean' },
             lt: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             in_progress: { type: 'boolean' },
-            extra: { type: 'integer', format: 'int64' }
+            extra: { type: 'integer', format: 'int64' },
+            progress: { type: 'number', format: 'float', minimum: 0, maximum: 1 }
         }
     },
     '#/components/schemas/AccountEvents': {
@@ -5193,6 +5695,42 @@ const components = {
             events: { type: 'array', items: { $ref: '#/components/schemas/AccountEvent' } },
             next_from: { type: 'integer', format: 'int64' }
         }
+    },
+    '#/components/schemas/Purchase': {
+        type: 'object',
+        required: [
+            'event_id',
+            'invoice_id',
+            'source',
+            'destination',
+            'lt',
+            'utime',
+            'amount',
+            'metadata'
+        ],
+        properties: {
+            event_id: { type: 'string' },
+            invoice_id: { type: 'string' },
+            source: { $ref: '#/components/schemas/AccountAddress' },
+            destination: { $ref: '#/components/schemas/AccountAddress' },
+            lt: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            utime: { type: 'integer', format: 'int64' },
+            amount: { $ref: '#/components/schemas/Price' },
+            metadata: { $ref: '#/components/schemas/Metadata' }
+        }
+    },
+    '#/components/schemas/AccountPurchases': {
+        type: 'object',
+        required: ['purchases', 'next_from'],
+        properties: {
+            purchases: { type: 'array', items: { $ref: '#/components/schemas/Purchase' } },
+            next_from: { type: 'integer', format: 'int64' }
+        }
+    },
+    '#/components/schemas/Metadata': {
+        type: 'object',
+        required: ['encrypted_binary'],
+        properties: { encrypted_binary: { type: 'string' }, decryption_key: { type: 'string' } }
     },
     '#/components/schemas/TraceID': {
         type: 'object',
@@ -5212,30 +5750,27 @@ const components = {
     '#/components/schemas/Subscription': {
         type: 'object',
         required: [
-            'address',
-            'wallet_address',
-            'beneficiary_address',
-            'amount',
+            'type',
+            'status',
             'period',
-            'start_time',
-            'timeout',
-            'last_payment_time',
-            'last_request_time',
             'subscription_id',
-            'failed_attempts'
+            'payment_per_period',
+            'wallet',
+            'next_charge_at',
+            'metadata'
         ],
         properties: {
-            address: { type: 'string', format: 'address' },
-            wallet_address: { type: 'string', format: 'address' },
-            beneficiary_address: { type: 'string', format: 'address' },
-            amount: { type: 'integer', format: 'int64' },
+            type: { type: 'string' },
+            status: { type: 'string', enum: ['not_ready', 'active', 'suspended', 'cancelled'] },
             period: { type: 'integer', format: 'int64' },
-            start_time: { type: 'integer', format: 'int64' },
-            timeout: { type: 'integer', format: 'int64' },
-            last_payment_time: { type: 'integer', format: 'int64' },
-            last_request_time: { type: 'integer', format: 'int64' },
-            subscription_id: { type: 'integer', format: 'int64' },
-            failed_attempts: { type: 'integer', format: 'int32' }
+            subscription_id: { type: 'string' },
+            payment_per_period: { $ref: '#/components/schemas/Price' },
+            wallet: { $ref: '#/components/schemas/AccountAddress' },
+            next_charge_at: { type: 'integer', format: 'int64' },
+            metadata: { $ref: '#/components/schemas/Metadata' },
+            address: { type: 'string', format: 'maybe-address' },
+            beneficiary: { $ref: '#/components/schemas/AccountAddress' },
+            admin: { $ref: '#/components/schemas/AccountAddress' }
         }
     },
     '#/components/schemas/Subscriptions': {
@@ -5297,7 +5832,7 @@ const components = {
         required: ['sites'],
         properties: {
             wallet: { $ref: '#/components/schemas/WalletDNS' },
-            next_resolver: { type: 'string', format: 'address' },
+            next_resolver: { type: 'string', format: 'maybe-address' },
             sites: { type: 'array', items: { type: 'string' } },
             storage: { type: 'string' }
         }
@@ -5351,7 +5886,8 @@ const components = {
             transfer_all_remaining_balance: { type: 'boolean' },
             ton: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             jettons: { type: 'array', items: { $ref: '#/components/schemas/JettonQuantity' } },
-            nfts: { type: 'array', items: { $ref: '#/components/schemas/NftItem' } }
+            nfts: { type: 'array', items: { $ref: '#/components/schemas/NftItem' } },
+            total_equivalent: { type: 'number', format: 'float' }
         }
     },
     '#/components/schemas/JettonQuantity': {
@@ -5452,7 +5988,8 @@ const components = {
             'value_flow',
             'is_scam',
             'lt',
-            'in_progress'
+            'in_progress',
+            'progress'
         ],
         properties: {
             event_id: { type: 'string' },
@@ -5461,7 +5998,8 @@ const components = {
             value_flow: { type: 'array', items: { $ref: '#/components/schemas/ValueFlow' } },
             is_scam: { type: 'boolean' },
             lt: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            in_progress: { type: 'boolean' }
+            in_progress: { type: 'boolean' },
+            progress: { type: 'number', format: 'float', minimum: 0, maximum: 1 }
         }
     },
     '#/components/schemas/JettonMetadata': {
@@ -5478,26 +6016,6 @@ const components = {
             websites: { type: 'array', items: { type: 'string' } },
             catalogs: { type: 'array', items: { type: 'string' } },
             custom_payload_api_uri: { type: 'string' }
-        }
-    },
-    '#/components/schemas/InscriptionBalances': {
-        type: 'object',
-        required: ['inscriptions'],
-        properties: {
-            inscriptions: {
-                type: 'array',
-                items: { $ref: '#/components/schemas/InscriptionBalance' }
-            }
-        }
-    },
-    '#/components/schemas/InscriptionBalance': {
-        type: 'object',
-        required: ['type', 'ticker', 'balance', 'decimals'],
-        properties: {
-            type: { type: 'string', enum: ['ton20', 'gram20'] },
-            ticker: { type: 'string' },
-            balance: { type: 'string', 'x-js-format': 'bigint' },
-            decimals: { type: 'integer' }
         }
     },
     '#/components/schemas/Jettons': {
@@ -5524,7 +6042,8 @@ const components = {
             metadata: { $ref: '#/components/schemas/JettonMetadata' },
             preview: { type: 'string' },
             verification: { $ref: '#/components/schemas/JettonVerificationType' },
-            holders_count: { type: 'integer', format: 'int32' }
+            holders_count: { type: 'integer', format: 'int32' },
+            scaled_ui: { $ref: '#/components/schemas/ScaledUI' }
         }
     },
     '#/components/schemas/JettonHolders': {
@@ -5549,7 +6068,10 @@ const components = {
     '#/components/schemas/JettonTransferPayload': {
         type: 'object',
         required: ['payload'],
-        properties: { custom_payload: { type: 'string' }, state_init: { type: 'string' } }
+        properties: {
+            custom_payload: { type: 'string', format: 'cell' },
+            state_init: { type: 'string', format: 'cell' }
+        }
     },
     '#/components/schemas/AccountStaking': {
         type: 'object',
@@ -5722,6 +6244,7 @@ const components = {
         required: ['code', 'code_hash', 'methods', 'compiler'],
         properties: {
             code: { type: 'string', format: 'cell' },
+            disassembled_code: { type: 'string' },
             code_hash: { type: 'string' },
             methods: { type: 'array', items: { $ref: '#/components/schemas/Method' } },
             compiler: { type: 'string', enum: ['func', 'fift', 'tact'] },
@@ -5778,9 +6301,346 @@ const components = {
         type: 'object',
         required: ['id', 'method'],
         properties: { id: { type: 'integer', format: 'int64' }, method: { type: 'string' } }
+    },
+    '#/components/schemas/NftOperations': {
+        type: 'object',
+        required: ['operations'],
+        properties: {
+            operations: { type: 'array', items: { $ref: '#/components/schemas/NftOperation' } },
+            next_from: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' }
+        }
+    },
+    '#/components/schemas/NftOperation': {
+        type: 'object',
+        required: ['operation', 'utime', 'lt', 'transaction_hash', 'item'],
+        properties: {
+            operation: { type: 'string' },
+            utime: { type: 'integer', format: 'int64' },
+            lt: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            transaction_hash: { type: 'string' },
+            source: { $ref: '#/components/schemas/AccountAddress' },
+            destination: { $ref: '#/components/schemas/AccountAddress' },
+            item: { $ref: '#/components/schemas/NftItem' }
+        }
+    },
+    '#/components/schemas/JettonOperations': {
+        type: 'object',
+        required: ['operations'],
+        properties: {
+            operations: { type: 'array', items: { $ref: '#/components/schemas/JettonOperation' } },
+            next_from: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' }
+        }
+    },
+    '#/components/schemas/JettonOperation': {
+        type: 'object',
+        required: [
+            'operation',
+            'utime',
+            'lt',
+            'jetton',
+            'transaction_hash',
+            'amount',
+            'trace_id',
+            'query_id'
+        ],
+        properties: {
+            operation: { type: 'string', enum: ['transfer', 'mint', 'burn'] },
+            utime: { type: 'integer', format: 'int64' },
+            lt: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            transaction_hash: { type: 'string' },
+            source: { $ref: '#/components/schemas/AccountAddress' },
+            destination: { $ref: '#/components/schemas/AccountAddress' },
+            amount: { type: 'string', 'x-js-format': 'bigint' },
+            jetton: { $ref: '#/components/schemas/JettonPreview' },
+            trace_id: { type: 'string' },
+            query_id: { type: 'string', 'x-js-format': 'bigint' },
+            payload: {}
+        }
+    },
+    '#/components/schemas/ExecGetMethodArgType': {
+        type: 'string',
+        enum: ['nan', 'null', 'tinyint', 'int257', 'slice', 'cell_boc_base64', 'slice_boc_hex']
+    },
+    '#/components/schemas/ExecGetMethodArg': {
+        type: 'object',
+        required: ['type', 'value'],
+        properties: {
+            type: { $ref: '#/components/schemas/ExecGetMethodArgType' },
+            value: { type: 'string' }
+        }
+    },
+    '#/components/schemas/Protocol': {
+        type: 'object',
+        required: ['name'],
+        properties: { name: { type: 'string' }, image: { type: 'string' } }
     }
 };
+/**
+ * Base abstract error class for all TonAPI SDK errors
+ * Not exported - only used for internal inheritance
+ */
+abstract class TonApiErrorAbstract extends Error {
+    abstract readonly type: string;
+    readonly message: string;
+    readonly originalCause?: unknown;
+
+    constructor(message: string, cause?: unknown) {
+        super(message);
+        this.message = message;
+        this.originalCause = cause;
+
+        // Maintain proper stack trace in V8
+        if (Error.captureStackTrace) {
+            Error.captureStackTrace(this, this.constructor);
+        }
+    }
+}
+
+/**
+ * HTTP error returned by TonAPI
+ * Represents 4xx and 5xx responses from the API
+ *
+ * @example
+ * ```typescript
+ * if (error instanceof TonApiHttpError) {
+ *   console.log('HTTP Status:', error.status);
+ *   console.log('Error code:', error.code);
+ *   console.log('Request URL:', error.url);
+ * }
+ * ```
+ */
+export class TonApiHttpError extends TonApiErrorAbstract {
+    readonly type = 'http_error' as const;
+    readonly status: number;
+    readonly code?: string;
+    readonly url: string;
+
+    constructor(status: number, message: string, url: string, code?: string, cause?: unknown) {
+        const formattedMessage = code
+            ? `HTTP ${status} [${code}]: ${message}`
+            : `HTTP ${status}: ${message}`;
+        super(formattedMessage, cause);
+        this.name = 'TonApiHttpError';
+        this.status = status;
+        this.url = url;
+        this.code = code;
+    }
+}
+
+/**
+ * Network error (connection failed, timeout, etc.)
+ * Thrown when the HTTP request itself fails, not when it returns an error response
+ *
+ * @example
+ * ```typescript
+ * if (error instanceof TonApiNetworkError) {
+ *   console.log('Network error:', error.message);
+ *   console.log('Cause:', error.originalCause);
+ * }
+ * ```
+ */
+export class TonApiNetworkError extends TonApiErrorAbstract {
+    readonly type = 'network_error' as const;
+
+    constructor(message: string, cause: unknown) {
+        const formattedMessage = `Network error: ${message}`;
+        super(formattedMessage, cause);
+        this.name = 'TonApiNetworkError';
+    }
+}
+
+/**
+ * Parsing error for Address, Cell, BigInt, TupleItem, or Unknown
+ * Thrown when SDK fails to parse data returned from TonAPI
+ *
+ * @example
+ * ```typescript
+ * if (error instanceof TonApiParsingError) {
+ *   console.log('Parsing type:', error.parsingType); // 'Address', 'Cell', 'BigInt', 'TupleItem', 'Unknown'
+ *   console.log('Error message:', error.message);
+ *   console.log('Original response:', error.response);
+ * }
+ * ```
+ */
+export class TonApiParsingError extends TonApiErrorAbstract {
+    readonly type = 'parsing_error' as const;
+    readonly parsingType: 'Address' | 'MaybeAddress' | 'Cell' | 'BigInt' | 'TupleItem' | 'Unknown';
+    readonly response: unknown;
+
+    constructor(
+        parsingType: 'Address' | 'MaybeAddress' | 'Cell' | 'BigInt' | 'TupleItem' | 'Unknown',
+        message: string,
+        cause: unknown,
+        response: unknown
+    ) {
+        const formattedMessage = `SDK parsing error [${parsingType}]: ${message}`;
+        super(formattedMessage, cause);
+        this.name = 'TonApiParsingError';
+        this.parsingType = parsingType;
+        this.response = response;
+
+        // Log to console with request to report issue
+        console.error(
+            `[TonAPI SDK] Parsing error occurred. This might be a bug in the SDK.\n` +
+                `Please report this issue at: https://github.com/tonkeeper/tonapi-js/issues\n` +
+                `Error details:`,
+            {
+                type: parsingType,
+                message: message,
+                response: response
+            }
+        );
+    }
+}
+
+/**
+ * Validation error for client-side input validation
+ * Thrown when user provides invalid input (e.g., invalid address string, invalid Cell string)
+ * This happens before making any network request
+ *
+ * @example
+ * ```typescript
+ * if (error instanceof TonApiValidationError) {
+ *   console.log('Validation type:', error.validationType); // 'Address' or 'Cell'
+ *   console.log('Error message:', error.message);
+ *   console.log('Invalid input:', error.invalidInput);
+ * }
+ * ```
+ */
+export class TonApiValidationError extends TonApiErrorAbstract {
+    readonly type = 'validation_error' as const;
+    readonly validationType: 'Address' | 'Cell';
+    readonly invalidInput: string;
+
+    constructor(
+        validationType: 'Address' | 'Cell',
+        message: string,
+        invalidInput: string,
+        cause?: unknown
+    ) {
+        const formattedMessage = `Validation error [${validationType}]: ${message}`;
+        super(formattedMessage, cause);
+        this.name = 'TonApiValidationError';
+        this.validationType = validationType;
+        this.invalidInput = invalidInput;
+    }
+}
+
+/**
+ * Unknown error type
+ * Thrown when an error occurs that doesn't fit other categories
+ *
+ * @example
+ * ```typescript
+ * if (error instanceof TonApiUnknownError) {
+ *   console.log('Unknown error:', error.message);
+ *   console.log('Cause:', error.originalCause);
+ * }
+ * ```
+ */
+export class TonApiUnknownError extends TonApiErrorAbstract {
+    readonly type = 'unknown_error' as const;
+
+    constructor(message: string, cause: unknown) {
+        const formattedMessage = `Unknown error: ${message}`;
+        super(formattedMessage, cause);
+        this.name = 'TonApiUnknownError';
+    }
+}
+
+/**
+ * Union type of all possible TonAPI errors
+ * Use this type in Result<T> and for error handling
+ *
+ * @example
+ * ```typescript
+ * const { data, error } = await getAccount(address);
+ *
+ * if (error) {
+ *   // Type-safe instanceof checks
+ *   if (error instanceof TonApiHttpError) {
+ *     console.log(`HTTP ${error.status}: ${error.message}`);
+ *   } else if (error instanceof TonApiNetworkError) {
+ *     console.log(`Network error: ${error.message}`);
+ *   } else if (error instanceof TonApiParsingError) {
+ *     console.log(`Parsing ${error.parsingType} failed: ${error.message}`);
+ *   } else if (error instanceof TonApiValidationError) {
+ *     console.log(`Validation ${error.validationType} failed: ${error.message}`);
+ *   } else if (error instanceof TonApiUnknownError) {
+ *     console.log(`Unknown error: ${error.message}`);
+ *   }
+ *
+ *   // Or use discriminated union
+ *   switch (error.type) {
+ *     case 'http_error':
+ *       console.log(error.status, error.code, error.url);
+ *       break;
+ *     case 'network_error':
+ *       console.log(error.originalCause);
+ *       break;
+ *     case 'parsing_error':
+ *       console.log(error.parsingType);
+ *       break;
+ *     case 'validation_error':
+ *       console.log(error.validationType, error.invalidInput);
+ *       break;
+ *     case 'unknown_error':
+ *       console.log(error.originalCause);
+ *       break;
+ *   }
+ * }
+ * ```
+ */
+export type TonApiError =
+    | TonApiHttpError
+    | TonApiNetworkError
+    | TonApiParsingError
+    | TonApiValidationError
+    | TonApiUnknownError;
+
 type ComponentRef = keyof typeof components;
+
+/**
+ * Custom Promise interface with typed error handling
+ * This allows TypeScript to infer the correct error type in .catch() handlers
+ * and preserves error typing through .then() and .finally() chains
+ */
+export interface TonApiPromise<T, E = TonApiError> extends Promise<T> {
+    then<TResult1 = T, TResult2 = never>(
+        onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | null | undefined,
+        onrejected?: ((reason: E) => TResult2 | PromiseLike<TResult2>) | null | undefined
+    ): TonApiPromise<TResult1 | TResult2, E>;
+
+    catch<TResult = never>(
+        onrejected?: ((reason: E) => TResult | PromiseLike<TResult>) | null | undefined
+    ): TonApiPromise<T | TResult, E>;
+
+    finally(onfinally?: (() => void) | null | undefined): TonApiPromise<T, E>;
+}
+
+export type Result<T> = { data: T; error: null } | { data: null; error: TonApiError };
+
+/**
+ * Conditional return type for Advanced API methods with throwOnError support
+ * @template T - The data type returned on success
+ * @template ThrowOnError - Boolean flag determining if errors should be thrown
+ *
+ * When ThrowOnError is true: returns Promise<T> (throws on error)
+ * When ThrowOnError is false: returns Promise<Result<T>> (returns {data, error})
+ */
+export type MethodResult<T, ThrowOnError extends boolean = false> = ThrowOnError extends true
+    ? Promise<T>
+    : Promise<Result<T>>;
+
+/**
+ * Sync version of MethodResult for use with async functions
+ * (async functions automatically wrap return type in Promise)
+ * When ThrowOnError is true, returns T but the Promise will reject with TonApiError
+ * When ThrowOnError is false, returns Result<T>
+ */
+type MethodResultSync<T, ThrowOnError extends boolean = false> = ThrowOnError extends true
+    ? T
+    : Result<T>;
 
 function snakeToCamel(snakeCaseString: string): string {
     return snakeCaseString.replace(/(_\w)/g, match => match[1]?.toUpperCase() ?? '');
@@ -5790,77 +6650,216 @@ function camelToSnake(camel: string): string {
     return camel.replace(/([A-Z])/g, match => `_${match.toLowerCase()}`);
 }
 
-function cellParse(src: string): Cell {
-    return Cell.fromHex(src);
+function cellParse(src: string, response: unknown): Cell {
+    try {
+        return Cell.fromHex(src);
+    } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        throw new TonApiParsingError('Cell', msg, e, response);
+    }
 }
 
 function parseHexToBigInt(str: string) {
     return str.startsWith('-') ? BigInt(str.slice(1)) * -1n : BigInt(str);
 }
 
-async function prepareResponse<U>(promise: Promise<any>, orSchema?: any): Promise<U> {
-    return await promise
-        .then(obj => prepareResponseData<U>(obj, orSchema))
-        .catch(async response => {
-            let errorMessage: string = 'Unknown error occurred';
+function addressToString(value: Address | string | undefined): string | undefined {
+    if (value === undefined) {
+        return undefined;
+    }
 
-            if (response instanceof Error) {
-                errorMessage = response.message || 'Unknown fetch error';
-            } else if (
-                response &&
-                typeof response === 'object' &&
-                typeof response.error === 'string'
-            ) {
-                try {
-                    const errorJson = JSONParse(response.error);
-                    errorMessage =
-                        typeof errorJson === 'string'
-                            ? errorJson
-                            : errorJson?.error || `Wrong error response: ${response.error}`;
-                } catch (jsonParseError: unknown) {
-                    if (jsonParseError instanceof Error) {
-                        errorMessage = `Failed to parse error response: ${jsonParseError.message}`;
-                    } else {
-                        errorMessage = 'Failed to parse error response: Unknown parsing error';
-                    }
-                }
-            }
+    if (typeof value === 'string') {
+        // Validate format without parsing
+        if (!Address.isFriendly(value) && !Address.isRaw(value)) {
+            throw new TonApiValidationError('Address', `Invalid address format: ${value}`, value);
+        }
+        // Return string as-is, let the API handle it
+        return value;
+    }
 
-            throw new Error(errorMessage, { cause: response });
-        });
+    // Return raw format for Address objects
+    return value.toRawString();
 }
 
-function prepareResponseData<U>(obj: any, orSchema?: any): U {
+function tokenOrAddressToString(value: Address | string | undefined): string | undefined {
+    if (value === undefined) {
+        return undefined;
+    }
+
+    if (typeof value === 'string') {
+        // Return string as-is without validation
+        // This allows cryptocurrency codes like "ton", "btc" to pass through
+        return value;
+    }
+
+    // Return raw format for Address objects
+    return value.toRawString();
+}
+
+function cellToString(
+    value: Cell | string | undefined,
+    format: 'hex' | 'base64'
+): string | undefined {
+    if (value === undefined) {
+        return undefined;
+    }
+
+    if (typeof value === 'string') {
+        // Parse and convert to expected format
+        let cell: Cell;
+        try {
+            cell = Cell.fromHex(value);
+        } catch {
+            try {
+                cell = Cell.fromBase64(value);
+            } catch (e) {
+                const msg = e instanceof Error ? e.message : String(e);
+                throw new TonApiValidationError('Cell', `Invalid cell format: ${msg}`, value);
+            }
+        }
+        // Convert to expected format
+        return format === 'base64' ? cell.toBoc().toString('base64') : cell.toBoc().toString('hex');
+    }
+
+    return format === 'base64' ? value.toBoc().toString('base64') : value.toBoc().toString('hex');
+}
+
+/**
+ * Prepares and validates API response data
+ * @template U - The success response type
+ * @template E - The error type (defaults to TonApiError)
+ * @throws {E} Always throws error of type E on failure
+ */
+function prepareResponse<U, E = TonApiError>(
+    promise: Promise<any>,
+    orSchema?: any
+): TonApiPromise<U, E> {
+    return promise
+        .then(obj => {
+            try {
+                return prepareResponseData<U>(obj, orSchema, obj);
+            } catch (parseError: unknown) {
+                if (parseError instanceof TonApiParsingError) {
+                    throw parseError;
+                }
+
+                const message =
+                    parseError instanceof Error
+                        ? `SDK parsing error: ${parseError.message}`
+                        : 'SDK parsing error: Unknown error';
+
+                throw new TonApiParsingError('Unknown', message, parseError, obj);
+            }
+        })
+        .catch((response: any) => {
+            // Re-throw our custom errors without wrapping
+            if (
+                response instanceof TonApiParsingError ||
+                response instanceof TonApiNetworkError ||
+                response instanceof TonApiHttpError ||
+                response instanceof TonApiValidationError ||
+                response instanceof TonApiUnknownError
+            ) {
+                throw response;
+            }
+
+            if (response instanceof Error) {
+                throw new TonApiNetworkError(response.message || 'Network error', response);
+            }
+
+            if (response && typeof response === 'object' && response.status !== undefined) {
+                const status = response.status;
+                const url = response.url || '';
+                let message: string = 'Request failed';
+                let code: string | undefined = undefined;
+
+                if (typeof response.error === 'string') {
+                    try {
+                        const errorJson = JSONParse(response.error);
+
+                        if (typeof errorJson === 'string') {
+                            message = errorJson;
+                        } else if (errorJson && typeof errorJson === 'object') {
+                            message = errorJson.error || errorJson.message || 'Request failed';
+                            code = errorJson.code || errorJson.error_code;
+                        }
+                    } catch (jsonParseError: unknown) {
+                        message = 'Failed to parse error response';
+                    }
+                }
+
+                throw new TonApiHttpError(status, message, url, code, response);
+            }
+
+            throw new TonApiUnknownError('Unknown error occurred', response);
+        }) as TonApiPromise<U, E>;
+}
+
+function prepareResponseData<U>(obj: any, orSchema?: any, originalResponse: unknown = obj): U {
     const ref = (orSchema && orSchema.$ref) as ComponentRef | undefined;
     const schema = ref ? components[ref] : orSchema;
 
     if (Array.isArray(obj)) {
         const itemSchema = schema && schema.items;
 
-        return obj.map(item => prepareResponseData(item, itemSchema)) as unknown as U;
+        return obj.map(item =>
+            prepareResponseData(item, itemSchema, originalResponse)
+        ) as unknown as U;
     } else if (schema) {
         if (schema.type === 'string') {
             if (schema.format === 'address') {
-                return Address.parse(obj as string) as U;
+                try {
+                    return Address.parse(obj as string) as U;
+                } catch (e) {
+                    const msg = e instanceof Error ? e.message : String(e);
+                    throw new TonApiParsingError('Address', msg, e, originalResponse);
+                }
+            }
+
+            if (schema.format === 'maybe-address') {
+                if (!obj || obj === '') {
+                    return null as U;
+                }
+                try {
+                    return Address.parse(obj as string) as U;
+                } catch (e) {
+                    const msg = e instanceof Error ? e.message : String(e);
+                    throw new TonApiParsingError('MaybeAddress', msg, e, originalResponse);
+                }
             }
 
             if (schema.format === 'cell') {
-                return obj && (cellParse(obj as string) as U);
+                return obj && (cellParse(obj as string, originalResponse) as U);
             }
 
             if (schema['x-js-format'] === 'bigint') {
-                return BigInt(obj as string) as U;
+                try {
+                    return BigInt(obj as string) as U;
+                } catch (e) {
+                    const msg = e instanceof Error ? e.message : String(e);
+                    throw new TonApiParsingError('BigInt', msg, e, originalResponse);
+                }
             }
 
             // maybe not used
             if (schema.format === 'cell-base64') {
-                return obj && (Cell.fromBase64(obj as string) as U);
+                try {
+                    return obj && (Cell.fromBase64(obj as string) as U);
+                } catch (e) {
+                    const msg = e instanceof Error ? e.message : String(e);
+                    throw new TonApiParsingError('Cell', msg, e, originalResponse);
+                }
             }
         }
 
         if (schema.type === 'integer') {
             if (schema['x-js-format'] === 'bigint') {
-                return BigInt(obj as number) as U;
+                try {
+                    return BigInt(obj as number) as U;
+                } catch (e) {
+                    const msg = e instanceof Error ? e.message : String(e);
+                    throw new TonApiParsingError('BigInt', msg, e, originalResponse);
+                }
             }
 
             return Number(obj as number) as U;
@@ -5874,7 +6873,7 @@ function prepareResponseData<U>(obj: any, orSchema?: any): U {
                         return {
                             type: 'tuple',
                             items: obj.tuple.map((item: any) =>
-                                prepareResponseData(item, itemSchema)
+                                prepareResponseData(item, itemSchema, originalResponse)
                             )
                         } as U;
                     case 'num':
@@ -5885,12 +6884,12 @@ function prepareResponseData<U>(obj: any, orSchema?: any): U {
                     case 'cell':
                         return {
                             type: 'cell',
-                            cell: cellParse(obj.cell as string)
+                            cell: cellParse(obj.cell as string, originalResponse)
                         } as U;
                     case 'slice':
                         return {
                             type: 'slice',
-                            slice: cellParse(obj.slice as string)
+                            slice: cellParse(obj.slice as string, originalResponse)
                         } as U;
                     case 'null':
                         return {
@@ -5901,7 +6900,12 @@ function prepareResponseData<U>(obj: any, orSchema?: any): U {
                             type: 'nan'
                         } as U;
                     default:
-                        throw new Error(`Unknown tuple item type: ${obj.type}`);
+                        throw new TonApiParsingError(
+                            'TupleItem',
+                            `Unknown tuple item type: ${obj.type}`,
+                            obj,
+                            originalResponse
+                        );
                 }
             }
         }
@@ -5913,7 +6917,7 @@ function prepareResponseData<U>(obj: any, orSchema?: any): U {
             (acc, key) => {
                 if (!schema) {
                     // If schema is undefined, do not convert keys
-                    acc[key] = prepareResponseData(obj[key], undefined);
+                    acc[key] = prepareResponseData(obj[key], undefined, originalResponse);
                     return acc;
                 }
 
@@ -5926,7 +6930,7 @@ function prepareResponseData<U>(obj: any, orSchema?: any): U {
                 // Use the specific property schema or the additionalProperties schema
                 const propertySchema = isDefinedProperty ? objSchema : schema.additionalProperties;
 
-                acc[camelCaseKey] = prepareResponseData(obj[key], propertySchema);
+                acc[camelCaseKey] = prepareResponseData(obj[key], propertySchema, originalResponse);
                 return acc;
             },
             {} as Record<string, unknown>
@@ -5946,20 +6950,26 @@ function prepareRequestData(data: any, orSchema?: any): any {
         return data.map(item => prepareRequestData(item, itemSchema));
     } else if (schema) {
         if (schema.type === 'string') {
-            if (schema.format === 'address') {
-                return (data as Address).toRawString();
-            }
-
-            if (schema.format === 'cell') {
-                return (data as Cell).toBoc().toString('hex');
-            }
-
-            if (schema.format === 'cell-base64') {
-                return (data as Cell).toBoc().toString('base64');
+            // Check x-js-format first for custom formats
+            if (schema['x-js-format'] === 'token-or-address') {
+                return tokenOrAddressToString(data as Address | string);
             }
 
             if (schema['x-js-format'] === 'bigint') {
                 return (data as bigint).toString();
+            }
+
+            // Then check standard format field
+            if (schema.format === 'address') {
+                return addressToString(data as Address | string);
+            }
+
+            if (schema.format === 'cell') {
+                return cellToString(data as Cell | string, 'hex');
+            }
+
+            if (schema.format === 'cell-base64') {
+                return cellToString(data as Cell | string, 'base64');
             }
         }
     }
@@ -5988,3216 +6998,3951 @@ function prepareRequestData(data: any, orSchema?: any): any {
  *
  * Provide access to indexed TON blockchain
  */
+
+/**
+ * TonAPI Client - instance-based approach (recommended)
+ *
+ * @example
+ * ```typescript
+ * const client = new TonApiClient({
+ *   baseUrl: 'https://tonapi.io',
+ *   apiKey: process.env.TON_API_KEY
+ * });
+ *
+ * try {
+ *   const account = await client.getAccount(address);
+ *   console.log(account);
+ * } catch (error) {
+ *   console.error('Error:', error.message);
+ * }
+ * ```
+ */
 export class TonApiClient {
-    http: HttpClient;
+    private http: HttpClient;
 
     constructor(apiConfig: ApiConfig = {}) {
         this.http = new HttpClient(apiConfig);
     }
 
-    utilities = {
-        /**
-         * @description Get the openapi.json file
-         *
-         * @tags Utilities
-         * @name GetOpenapiJson
-         * @request GET:/v2/openapi.json
-         */
-        getOpenapiJson: (params: RequestParams = {}) => {
-            const req = this.http.request<GetOpenapiJsonData, Error>({
-                path: `/v2/openapi.json`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
+    /**
+     * @description Get the openapi.json file
+     *
+     * @tags Utilities
+     * @name GetOpenapiJson
+     * @request GET:/v2/openapi.json
+     */
+    /**
+     * @description Get the openapi.json file
+     *
+     * @tags Utilities
+     * @name GetOpenapiJson
+     * @request GET:/v2/openapi.json
+     */
+    getOpenapiJson(params: RequestParams = {}): TonApiPromise<GetOpenapiJsonData, TonApiError> {
+        const req = this.http.request<GetOpenapiJsonData, TonApiError>({
+            path: `/v2/openapi.json`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
 
-            return prepareResponse<GetOpenapiJsonData>(req, {});
-        },
+        return prepareResponse<GetOpenapiJsonData, TonApiError>(req, {});
+    }
 
-        /**
-         * @description Get the openapi.yml file
-         *
-         * @tags Utilities
-         * @name GetOpenapiYml
-         * @request GET:/v2/openapi.yml
-         */
-        getOpenapiYml: (params: RequestParams = {}) => {
-            const req = this.http.request<GetOpenapiYmlData, Error>({
-                path: `/v2/openapi.yml`,
-                method: 'GET',
-                ...params
-            });
+    /**
+     * @description Get the openapi.yml file
+     *
+     * @tags Utilities
+     * @name GetOpenapiYml
+     * @request GET:/v2/openapi.yml
+     */
+    /**
+     * @description Get the openapi.yml file
+     *
+     * @tags Utilities
+     * @name GetOpenapiYml
+     * @request GET:/v2/openapi.yml
+     */
+    getOpenapiYml(params: RequestParams = {}): TonApiPromise<GetOpenapiYmlData, TonApiError> {
+        const req = this.http.request<GetOpenapiYmlData, TonApiError>({
+            path: `/v2/openapi.yml`,
+            method: 'GET',
+            ...params
+        });
 
-            return prepareResponse<GetOpenapiYmlData>(req);
-        },
+        return prepareResponse<GetOpenapiYmlData, TonApiError>(req);
+    }
 
-        /**
-         * @description Status
-         *
-         * @tags Utilities
-         * @name Status
-         * @request GET:/v2/status
-         */
-        status: (params: RequestParams = {}) => {
-            const req = this.http.request<StatusData, Error>({
-                path: `/v2/status`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
+    /**
+     * @description Status
+     *
+     * @tags Utilities
+     * @name Status
+     * @request GET:/v2/status
+     */
+    /**
+     * @description Status
+     *
+     * @tags Utilities
+     * @name Status
+     * @request GET:/v2/status
+     */
+    status(params: RequestParams = {}): TonApiPromise<StatusData, TonApiError> {
+        const req = this.http.request<StatusData, TonApiError>({
+            path: `/v2/status`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
 
-            return prepareResponse<StatusData>(req, { $ref: '#/components/schemas/ServiceStatus' });
-        },
+        return prepareResponse<StatusData, TonApiError>(req, {
+            $ref: '#/components/schemas/ServiceStatus'
+        });
+    }
 
-        /**
-         * @description parse address and display in all formats
-         *
-         * @tags Utilities
-         * @name AddressParse
-         * @request GET:/v2/address/{account_id}/parse
-         */
-        addressParse: (accountId_Address: Address, params: RequestParams = {}) => {
-            const accountId = accountId_Address.toRawString();
-            const req = this.http.request<AddressParseData, Error>({
-                path: `/v2/address/${accountId}/parse`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
+    /**
+     * @description parse address and display in all formats
+     *
+     * @tags Utilities
+     * @name AddressParse
+     * @request GET:/v2/address/{account_id}/parse
+     */
+    /**
+     * @description parse address and display in all formats
+     *
+     * @tags Utilities
+     * @name AddressParse
+     * @request GET:/v2/address/{account_id}/parse
+     */
+    addressParse(
+        accountId_Address: Address | string,
+        params: RequestParams = {}
+    ): TonApiPromise<AddressParseData, TonApiError> {
+        const accountId = addressToString(accountId_Address);
+        const req = this.http.request<AddressParseData, TonApiError>({
+            path: `/v2/address/${accountId}/parse`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
 
-            return prepareResponse<AddressParseData>(req, {
-                type: 'object',
-                required: ['raw_form', 'bounceable', 'non_bounceable', 'given_type', 'test_only'],
-                properties: {
-                    raw_form: { type: 'string', format: 'address' },
-                    bounceable: {
-                        required: ['b64', 'b64url'],
-                        type: 'object',
-                        properties: { b64: { type: 'string' }, b64url: { type: 'string' } }
-                    },
-                    non_bounceable: {
-                        required: ['b64', 'b64url'],
-                        type: 'object',
-                        properties: { b64: { type: 'string' }, b64url: { type: 'string' } }
-                    },
-                    given_type: { type: 'string' },
-                    test_only: { type: 'boolean' }
-                }
-            });
-        }
-    };
-    blockchain = {
-        /**
-         * @description Get reduced blockchain blocks data
-         *
-         * @tags Blockchain
-         * @name GetReducedBlockchainBlocks
-         * @request GET:/v2/blockchain/reduced/blocks
-         */
-        getReducedBlockchainBlocks: (
-            query: {
-                /** @format int64 */
-                from: number;
-                /** @format int64 */
-                to: number;
-            },
-            params: RequestParams = {}
-        ) => {
-            const req = this.http.request<GetReducedBlockchainBlocksData, Error>({
-                path: `/v2/blockchain/reduced/blocks`,
-                method: 'GET',
-                query: query,
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetReducedBlockchainBlocksData>(req, {
-                $ref: '#/components/schemas/ReducedBlocks'
-            });
-        },
-
-        /**
-         * @description Get blockchain block data
-         *
-         * @tags Blockchain
-         * @name GetBlockchainBlock
-         * @request GET:/v2/blockchain/blocks/{block_id}
-         */
-        getBlockchainBlock: (blockId: string, params: RequestParams = {}) => {
-            const req = this.http.request<GetBlockchainBlockData, Error>({
-                path: `/v2/blockchain/blocks/${blockId}`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetBlockchainBlockData>(req, {
-                $ref: '#/components/schemas/BlockchainBlock'
-            });
-        },
-
-        /**
-         * @description Get blockchain block shards
-         *
-         * @tags Blockchain
-         * @name GetBlockchainMasterchainShards
-         * @request GET:/v2/blockchain/masterchain/{masterchain_seqno}/shards
-         */
-        getBlockchainMasterchainShards: (masterchainSeqno: number, params: RequestParams = {}) => {
-            const req = this.http.request<GetBlockchainMasterchainShardsData, Error>({
-                path: `/v2/blockchain/masterchain/${masterchainSeqno}/shards`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetBlockchainMasterchainShardsData>(req, {
-                $ref: '#/components/schemas/BlockchainBlockShards'
-            });
-        },
-
-        /**
-         * @description Get all blocks in all shards and workchains between target and previous masterchain block according to shards last blocks snapshot in masterchain.  We don't recommend to build your app around this method because it has problem with scalability and will work very slow in the future.
-         *
-         * @tags Blockchain
-         * @name GetBlockchainMasterchainBlocks
-         * @request GET:/v2/blockchain/masterchain/{masterchain_seqno}/blocks
-         */
-        getBlockchainMasterchainBlocks: (masterchainSeqno: number, params: RequestParams = {}) => {
-            const req = this.http.request<GetBlockchainMasterchainBlocksData, Error>({
-                path: `/v2/blockchain/masterchain/${masterchainSeqno}/blocks`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetBlockchainMasterchainBlocksData>(req, {
-                $ref: '#/components/schemas/BlockchainBlocks'
-            });
-        },
-
-        /**
-         * @description Get all transactions in all shards and workchains between target and previous masterchain block according to shards last blocks snapshot in masterchain. We don't recommend to build your app around this method because it has problem with scalability and will work very slow in the future.
-         *
-         * @tags Blockchain
-         * @name GetBlockchainMasterchainTransactions
-         * @request GET:/v2/blockchain/masterchain/{masterchain_seqno}/transactions
-         */
-        getBlockchainMasterchainTransactions: (
-            masterchainSeqno: number,
-            params: RequestParams = {}
-        ) => {
-            const req = this.http.request<GetBlockchainMasterchainTransactionsData, Error>({
-                path: `/v2/blockchain/masterchain/${masterchainSeqno}/transactions`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetBlockchainMasterchainTransactionsData>(req, {
-                $ref: '#/components/schemas/Transactions'
-            });
-        },
-
-        /**
-         * @description Get blockchain config from a specific block, if present.
-         *
-         * @tags Blockchain
-         * @name GetBlockchainConfigFromBlock
-         * @request GET:/v2/blockchain/masterchain/{masterchain_seqno}/config
-         */
-        getBlockchainConfigFromBlock: (masterchainSeqno: number, params: RequestParams = {}) => {
-            const req = this.http.request<GetBlockchainConfigFromBlockData, Error>({
-                path: `/v2/blockchain/masterchain/${masterchainSeqno}/config`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetBlockchainConfigFromBlockData>(req, {
-                $ref: '#/components/schemas/BlockchainConfig'
-            });
-        },
-
-        /**
-         * @description Get raw blockchain config from a specific block, if present.
-         *
-         * @tags Blockchain
-         * @name GetRawBlockchainConfigFromBlock
-         * @request GET:/v2/blockchain/masterchain/{masterchain_seqno}/config/raw
-         */
-        getRawBlockchainConfigFromBlock: (masterchainSeqno: number, params: RequestParams = {}) => {
-            const req = this.http.request<GetRawBlockchainConfigFromBlockData, Error>({
-                path: `/v2/blockchain/masterchain/${masterchainSeqno}/config/raw`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetRawBlockchainConfigFromBlockData>(req, {
-                $ref: '#/components/schemas/RawBlockchainConfig'
-            });
-        },
-
-        /**
-         * @description Get transactions from block
-         *
-         * @tags Blockchain
-         * @name GetBlockchainBlockTransactions
-         * @request GET:/v2/blockchain/blocks/{block_id}/transactions
-         */
-        getBlockchainBlockTransactions: (blockId: string, params: RequestParams = {}) => {
-            const req = this.http.request<GetBlockchainBlockTransactionsData, Error>({
-                path: `/v2/blockchain/blocks/${blockId}/transactions`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetBlockchainBlockTransactionsData>(req, {
-                $ref: '#/components/schemas/Transactions'
-            });
-        },
-
-        /**
-         * @description Get transaction data
-         *
-         * @tags Blockchain
-         * @name GetBlockchainTransaction
-         * @request GET:/v2/blockchain/transactions/{transaction_id}
-         */
-        getBlockchainTransaction: (transactionId: string, params: RequestParams = {}) => {
-            const req = this.http.request<GetBlockchainTransactionData, Error>({
-                path: `/v2/blockchain/transactions/${transactionId}`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetBlockchainTransactionData>(req, {
-                $ref: '#/components/schemas/Transaction'
-            });
-        },
-
-        /**
-         * @description Get transaction data by message hash
-         *
-         * @tags Blockchain
-         * @name GetBlockchainTransactionByMessageHash
-         * @request GET:/v2/blockchain/messages/{msg_id}/transaction
-         */
-        getBlockchainTransactionByMessageHash: (msgId: string, params: RequestParams = {}) => {
-            const req = this.http.request<GetBlockchainTransactionByMessageHashData, Error>({
-                path: `/v2/blockchain/messages/${msgId}/transaction`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetBlockchainTransactionByMessageHashData>(req, {
-                $ref: '#/components/schemas/Transaction'
-            });
-        },
-
-        /**
-         * @description Get blockchain validators
-         *
-         * @tags Blockchain
-         * @name GetBlockchainValidators
-         * @request GET:/v2/blockchain/validators
-         */
-        getBlockchainValidators: (params: RequestParams = {}) => {
-            const req = this.http.request<GetBlockchainValidatorsData, Error>({
-                path: `/v2/blockchain/validators`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetBlockchainValidatorsData>(req, {
-                $ref: '#/components/schemas/Validators'
-            });
-        },
-
-        /**
-         * @description Get last known masterchain block
-         *
-         * @tags Blockchain
-         * @name GetBlockchainMasterchainHead
-         * @request GET:/v2/blockchain/masterchain-head
-         */
-        getBlockchainMasterchainHead: (params: RequestParams = {}) => {
-            const req = this.http.request<GetBlockchainMasterchainHeadData, Error>({
-                path: `/v2/blockchain/masterchain-head`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetBlockchainMasterchainHeadData>(req, {
-                $ref: '#/components/schemas/BlockchainBlock'
-            });
-        },
-
-        /**
-         * @description Get low-level information about an account taken directly from the blockchain.
-         *
-         * @tags Blockchain
-         * @name GetBlockchainRawAccount
-         * @request GET:/v2/blockchain/accounts/{account_id}
-         */
-        getBlockchainRawAccount: (accountId_Address: Address, params: RequestParams = {}) => {
-            const accountId = accountId_Address.toRawString();
-            const req = this.http.request<GetBlockchainRawAccountData, Error>({
-                path: `/v2/blockchain/accounts/${accountId}`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetBlockchainRawAccountData>(req, {
-                $ref: '#/components/schemas/BlockchainRawAccount'
-            });
-        },
-
-        /**
-         * @description Get account transactions
-         *
-         * @tags Blockchain
-         * @name GetBlockchainAccountTransactions
-         * @request GET:/v2/blockchain/accounts/{account_id}/transactions
-         */
-        getBlockchainAccountTransactions: (
-            accountId_Address: Address,
-            query?: {
-                /**
-                 * omit this parameter to get last transactions
-                 * @format bigint
-                 * @example 39787624000003
-                 */
-                after_lt?: bigint;
-                /**
-                 * omit this parameter to get last transactions
-                 * @format bigint
-                 * @example 39787624000003
-                 */
-                before_lt?: bigint;
-                /**
-                 * @format int32
-                 * @min 1
-                 * @max 1000
-                 * @default 100
-                 * @example 100
-                 */
-                limit?: number;
-                /**
-                 * used to sort the result-set in ascending or descending order by lt.
-                 * @default "desc"
-                 */
-                sort_order?: 'desc' | 'asc';
-            },
-            params: RequestParams = {}
-        ) => {
-            const accountId = accountId_Address.toRawString();
-            const req = this.http.request<GetBlockchainAccountTransactionsData, Error>({
-                path: `/v2/blockchain/accounts/${accountId}/transactions`,
-                method: 'GET',
-                query: query,
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetBlockchainAccountTransactionsData>(req, {
-                $ref: '#/components/schemas/Transactions'
-            });
-        },
-
-        /**
-         * @description Execute get method for account
-         *
-         * @tags Blockchain
-         * @name ExecGetMethodForBlockchainAccount
-         * @request GET:/v2/blockchain/accounts/{account_id}/methods/{method_name}
-         */
-        execGetMethodForBlockchainAccount: (
-            accountId_Address: Address,
-            methodName: string,
-            query?: {
-                /**
-                 * Supported values:
-                 * "NaN" for NaN type,
-                 * "Null" for Null type,
-                 * 10-base digits for tiny int type (Example: 100500),
-                 * 0x-prefixed hex digits for int257 (Example: 0xfa01d78381ae32),
-                 * all forms of addresses for slice type (Example: 0:6e731f2e28b73539a7f85ac47ca104d5840b229351189977bb6151d36b5e3f5e),
-                 * single-root base64-encoded BOC for cell (Example: "te6ccgEBAQEAAgAAAA=="),
-                 * single-root hex-encoded BOC for slice (Example: b5ee9c72010101010002000000)
-                 * @example ["0:9a33970f617bcd71acf2cd28357c067aa31859c02820d8f01d74c88063a8f4d8"]
-                 */
-                args?: string[];
-                /**
-                 * A temporary fix to switch to a scheme with direct ordering of arguments.
-                 * If equal to false, then the method takes arguments in direct order,
-                 * e.g. for get_nft_content(int index, cell individual_content) we pass a list of arguments [index, individual_content].
-                 * If equal to true, then the method takes arguments in reverse order, e.g. [individual_content, index].
-                 * @default true
-                 */
-                fix_order?: boolean;
-            },
-            params: RequestParams = {}
-        ) => {
-            const accountId = accountId_Address.toRawString();
-            const req = this.http.request<ExecGetMethodForBlockchainAccountData, Error>({
-                path: `/v2/blockchain/accounts/${accountId}/methods/${methodName}`,
-                method: 'GET',
-                query: query,
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<ExecGetMethodForBlockchainAccountData>(req, {
-                $ref: '#/components/schemas/MethodExecutionResult'
-            });
-        },
-
-        /**
-         * @description Send message to blockchain
-         *
-         * @tags Blockchain
-         * @name SendBlockchainMessage
-         * @request POST:/v2/blockchain/message
-         */
-        sendBlockchainMessage: (
-            data: {
-                /** @format cell */
-                boc?: Cell;
-                /** @maxItems 5 */
-                batch?: Cell[];
-                meta?: Record<string, string>;
-            },
-            params: RequestParams = {}
-        ) => {
-            const req = this.http.request<SendBlockchainMessageData, Error>({
-                path: `/v2/blockchain/message`,
-                method: 'POST',
-                body: prepareRequestData(data, {
+        return prepareResponse<AddressParseData, TonApiError>(req, {
+            type: 'object',
+            required: ['raw_form', 'bounceable', 'non_bounceable', 'given_type', 'test_only'],
+            properties: {
+                raw_form: { type: 'string', format: 'address' },
+                bounceable: {
+                    required: ['b64', 'b64url'],
                     type: 'object',
-                    properties: {
-                        boc: { type: 'string', format: 'cell' },
-                        batch: {
-                            type: 'array',
-                            maxItems: 5,
-                            items: { type: 'string', format: 'cell' }
-                        },
-                        meta: { type: 'object', additionalProperties: { type: 'string' } }
-                    }
-                }),
-                ...params
-            });
-
-            return prepareResponse<SendBlockchainMessageData>(req);
-        },
-
-        /**
-         * @description Get blockchain config
-         *
-         * @tags Blockchain
-         * @name GetBlockchainConfig
-         * @request GET:/v2/blockchain/config
-         */
-        getBlockchainConfig: (params: RequestParams = {}) => {
-            const req = this.http.request<GetBlockchainConfigData, Error>({
-                path: `/v2/blockchain/config`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetBlockchainConfigData>(req, {
-                $ref: '#/components/schemas/BlockchainConfig'
-            });
-        },
-
-        /**
-         * @description Get raw blockchain config
-         *
-         * @tags Blockchain
-         * @name GetRawBlockchainConfig
-         * @request GET:/v2/blockchain/config/raw
-         */
-        getRawBlockchainConfig: (params: RequestParams = {}) => {
-            const req = this.http.request<GetRawBlockchainConfigData, Error>({
-                path: `/v2/blockchain/config/raw`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetRawBlockchainConfigData>(req, {
-                $ref: '#/components/schemas/RawBlockchainConfig'
-            });
-        },
-
-        /**
-         * @description Blockchain account inspect
-         *
-         * @tags Blockchain
-         * @name BlockchainAccountInspect
-         * @request GET:/v2/blockchain/accounts/{account_id}/inspect
-         */
-        blockchainAccountInspect: (accountId_Address: Address, params: RequestParams = {}) => {
-            const accountId = accountId_Address.toRawString();
-            const req = this.http.request<BlockchainAccountInspectData, Error>({
-                path: `/v2/blockchain/accounts/${accountId}/inspect`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<BlockchainAccountInspectData>(req, {
-                $ref: '#/components/schemas/BlockchainAccountInspect'
-            });
-        },
-
-        /**
-         * @description Status
-         *
-         * @tags Utilities
-         * @name Status
-         * @request GET:/v2/status
-         * @deprecated
-         */
-        status: (requestParams: RequestParams = {}) => {
-            const req = this.http.request<StatusData, Error>({
-                path: `/v2/status`,
-                method: 'GET',
-                format: 'json',
-                ...requestParams
-            });
-
-            return prepareResponse<StatusData>(req, { $ref: '#/components/schemas/ServiceStatus' });
-        }
-    };
-    accounts = {
-        /**
-         * @description Get human-friendly information about several accounts without low-level details.
-         *
-         * @tags Accounts
-         * @name GetAccounts
-         * @request POST:/v2/accounts/_bulk
-         */
-        getAccounts: (
-            data: {
-                accountIds: Address[];
-            },
-            query?: {
-                /** @example "usd" */
-                currency?: string;
-            },
-            params: RequestParams = {}
-        ) => {
-            const req = this.http.request<GetAccountsData, Error>({
-                path: `/v2/accounts/_bulk`,
-                method: 'POST',
-                query: query,
-                body: prepareRequestData(data, {
-                    type: 'object',
-                    required: ['accountIds'],
-                    properties: {
-                        accountIds: { type: 'array', items: { type: 'string', format: 'address' } }
-                    }
-                }),
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetAccountsData>(req, { $ref: '#/components/schemas/Accounts' });
-        },
-
-        /**
-         * @description Get human-friendly information about an account without low-level details.
-         *
-         * @tags Accounts
-         * @name GetAccount
-         * @request GET:/v2/accounts/{account_id}
-         */
-        getAccount: (accountId_Address: Address, params: RequestParams = {}) => {
-            const accountId = accountId_Address.toRawString();
-            const req = this.http.request<GetAccountData, Error>({
-                path: `/v2/accounts/${accountId}`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetAccountData>(req, { $ref: '#/components/schemas/Account' });
-        },
-
-        /**
-         * @description Get account's domains
-         *
-         * @tags Accounts
-         * @name AccountDnsBackResolve
-         * @request GET:/v2/accounts/{account_id}/dns/backresolve
-         */
-        accountDnsBackResolve: (accountId_Address: Address, params: RequestParams = {}) => {
-            const accountId = accountId_Address.toRawString();
-            const req = this.http.request<AccountDnsBackResolveData, Error>({
-                path: `/v2/accounts/${accountId}/dns/backresolve`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<AccountDnsBackResolveData>(req, {
-                $ref: '#/components/schemas/DomainNames'
-            });
-        },
-
-        /**
-         * @description Get all Jettons balances by owner address
-         *
-         * @tags Accounts
-         * @name GetAccountJettonsBalances
-         * @request GET:/v2/accounts/{account_id}/jettons
-         */
-        getAccountJettonsBalances: (
-            accountId_Address: Address,
-            query?: {
-                /**
-                 * accept ton and all possible fiat currencies, separated by commas
-                 * @example ["ton","usd","rub"]
-                 */
-                currencies?: string[];
-                /**
-                 * comma separated list supported extensions
-                 * @example ["custom_payload"]
-                 */
-                supported_extensions?: string[];
-            },
-            params: RequestParams = {}
-        ) => {
-            const accountId = accountId_Address.toRawString();
-            const req = this.http.request<GetAccountJettonsBalancesData, Error>({
-                path: `/v2/accounts/${accountId}/jettons`,
-                method: 'GET',
-                query: query,
-                queryImplode: ['currencies', 'supported_extensions'],
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetAccountJettonsBalancesData>(req, {
-                $ref: '#/components/schemas/JettonsBalances'
-            });
-        },
-
-        /**
-         * @description Get Jetton balance by owner address
-         *
-         * @tags Accounts
-         * @name GetAccountJettonBalance
-         * @request GET:/v2/accounts/{account_id}/jettons/{jetton_id}
-         */
-        getAccountJettonBalance: (
-            accountId_Address: Address,
-            jettonId_Address: Address,
-            query?: {
-                /**
-                 * accept ton and all possible fiat currencies, separated by commas
-                 * @example ["ton","usd","rub"]
-                 */
-                currencies?: string[];
-                /**
-                 * comma separated list supported extensions
-                 * @example ["custom_payload"]
-                 */
-                supported_extensions?: string[];
-            },
-            params: RequestParams = {}
-        ) => {
-            const accountId = accountId_Address.toRawString();
-            const jettonId = jettonId_Address.toRawString();
-            const req = this.http.request<GetAccountJettonBalanceData, Error>({
-                path: `/v2/accounts/${accountId}/jettons/${jettonId}`,
-                method: 'GET',
-                query: query,
-                queryImplode: ['currencies', 'supported_extensions'],
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetAccountJettonBalanceData>(req, {
-                $ref: '#/components/schemas/JettonBalance'
-            });
-        },
-
-        /**
-         * @description Get the transfer jettons history for account
-         *
-         * @tags Accounts
-         * @name GetAccountJettonsHistory
-         * @request GET:/v2/accounts/{account_id}/jettons/history
-         */
-        getAccountJettonsHistory: (
-            accountId_Address: Address,
-            query: {
-                /**
-                 * omit this parameter to get last events
-                 * @format bigint
-                 * @example 25758317000002
-                 */
-                before_lt?: bigint;
-                /**
-                 * @min 1
-                 * @max 1000
-                 * @example 100
-                 */
-                limit: number;
-                /**
-                 * @format int64
-                 * @max 2114380800
-                 * @example 1668436763
-                 */
-                start_date?: number;
-                /**
-                 * @format int64
-                 * @max 2114380800
-                 * @example 1668436763
-                 */
-                end_date?: number;
-            },
-            params: RequestParams = {}
-        ) => {
-            const accountId = accountId_Address.toRawString();
-            const req = this.http.request<GetAccountJettonsHistoryData, Error>({
-                path: `/v2/accounts/${accountId}/jettons/history`,
-                method: 'GET',
-                query: query,
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetAccountJettonsHistoryData>(req, {
-                $ref: '#/components/schemas/AccountEvents'
-            });
-        },
-
-        /**
-         * @description Get the transfer jetton history for account and jetton
-         *
-         * @tags Accounts
-         * @name GetAccountJettonHistoryById
-         * @request GET:/v2/accounts/{account_id}/jettons/{jetton_id}/history
-         */
-        getAccountJettonHistoryById: (
-            accountId_Address: Address,
-            jettonId_Address: Address,
-            query: {
-                /**
-                 * omit this parameter to get last events
-                 * @format bigint
-                 * @example 25758317000002
-                 */
-                before_lt?: bigint;
-                /**
-                 * @min 1
-                 * @max 1000
-                 * @example 100
-                 */
-                limit: number;
-                /**
-                 * @format int64
-                 * @max 2114380800
-                 * @example 1668436763
-                 */
-                start_date?: number;
-                /**
-                 * @format int64
-                 * @max 2114380800
-                 * @example 1668436763
-                 */
-                end_date?: number;
-            },
-            params: RequestParams = {}
-        ) => {
-            const accountId = accountId_Address.toRawString();
-            const jettonId = jettonId_Address.toRawString();
-            const req = this.http.request<GetAccountJettonHistoryByIdData, Error>({
-                path: `/v2/accounts/${accountId}/jettons/${jettonId}/history`,
-                method: 'GET',
-                query: query,
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetAccountJettonHistoryByIdData>(req, {
-                $ref: '#/components/schemas/AccountEvents'
-            });
-        },
-
-        /**
-         * @description Get all NFT items by owner address
-         *
-         * @tags Accounts
-         * @name GetAccountNftItems
-         * @request GET:/v2/accounts/{account_id}/nfts
-         */
-        getAccountNftItems: (
-            accountId_Address: Address,
-            query?: {
-                /**
-                 * nft collection
-                 * @format address
-                 * @example "0:06d811f426598591b32b2c49f29f66c821368e4acb1de16762b04e0174532465"
-                 */
-                collection?: Address;
-                /**
-                 * @min 1
-                 * @max 1000
-                 * @default 1000
-                 */
-                limit?: number;
-                /**
-                 * @min 0
-                 * @default 0
-                 */
-                offset?: number;
-                /**
-                 * Selling nft items in ton implemented usually via transfer items to special selling account. This option enables including items which owned not directly.
-                 * @default false
-                 */
-                indirect_ownership?: boolean;
-            },
-            params: RequestParams = {}
-        ) => {
-            const accountId = accountId_Address.toRawString();
-            const req = this.http.request<GetAccountNftItemsData, Error>({
-                path: `/v2/accounts/${accountId}/nfts`,
-                method: 'GET',
-                query: query && {
-                    ...query,
-                    collection: query.collection?.toRawString()
+                    properties: { b64: { type: 'string' }, b64url: { type: 'string' } }
                 },
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetAccountNftItemsData>(req, {
-                $ref: '#/components/schemas/NftItems'
-            });
-        },
-
-        /**
-         * @description Get events for an account. Each event is built on top of a trace which is a series of transactions caused by one inbound message. TonAPI looks for known patterns inside the trace and splits the trace into actions, where a single action represents a meaningful high-level operation like a Jetton Transfer or an NFT Purchase. Actions are expected to be shown to users. It is advised not to build any logic on top of actions because actions can be changed at any time.
-         *
-         * @tags Accounts
-         * @name GetAccountEvents
-         * @request GET:/v2/accounts/{account_id}/events
-         */
-        getAccountEvents: (
-            accountId_Address: Address,
-            query: {
-                /**
-                 * Show only events that are initiated by this account
-                 * @default false
-                 */
-                initiator?: boolean;
-                /**
-                 * filter actions where requested account is not real subject (for example sender or receiver jettons)
-                 * @default false
-                 */
-                subject_only?: boolean;
-                /**
-                 * omit this parameter to get last events
-                 * @format bigint
-                 * @example 25758317000002
-                 */
-                before_lt?: bigint;
-                /**
-                 * @min 1
-                 * @max 100
-                 * @example 20
-                 */
-                limit: number;
-                /**
-                 * @format int64
-                 * @max 2114380800
-                 * @example 1668436763
-                 */
-                start_date?: number;
-                /**
-                 * @format int64
-                 * @max 2114380800
-                 * @example 1668436763
-                 */
-                end_date?: number;
-            },
-            params: RequestParams = {}
-        ) => {
-            const accountId = accountId_Address.toRawString();
-            const req = this.http.request<GetAccountEventsData, Error>({
-                path: `/v2/accounts/${accountId}/events`,
-                method: 'GET',
-                query: query,
-                queryImplode: ['initiator'],
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetAccountEventsData>(req, {
-                $ref: '#/components/schemas/AccountEvents'
-            });
-        },
-
-        /**
-         * @description Get event for an account by event_id
-         *
-         * @tags Accounts
-         * @name GetAccountEvent
-         * @request GET:/v2/accounts/{account_id}/events/{event_id}
-         */
-        getAccountEvent: (
-            accountId_Address: Address,
-            eventId: string,
-            query?: {
-                /**
-                 * filter actions where requested account is not real subject (for example sender or receiver jettons)
-                 * @default false
-                 */
-                subject_only?: boolean;
-            },
-            params: RequestParams = {}
-        ) => {
-            const accountId = accountId_Address.toRawString();
-            const req = this.http.request<GetAccountEventData, Error>({
-                path: `/v2/accounts/${accountId}/events/${eventId}`,
-                method: 'GET',
-                query: query,
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetAccountEventData>(req, {
-                $ref: '#/components/schemas/AccountEvent'
-            });
-        },
-
-        /**
-         * @description Get traces for account
-         *
-         * @tags Accounts
-         * @name GetAccountTraces
-         * @request GET:/v2/accounts/{account_id}/traces
-         */
-        getAccountTraces: (
-            accountId_Address: Address,
-            query?: {
-                /**
-                 * omit this parameter to get last events
-                 * @format bigint
-                 * @example 25758317000002
-                 */
-                before_lt?: bigint;
-                /**
-                 * @min 1
-                 * @max 1000
-                 * @default 100
-                 * @example 100
-                 */
-                limit?: number;
-            },
-            params: RequestParams = {}
-        ) => {
-            const accountId = accountId_Address.toRawString();
-            const req = this.http.request<GetAccountTracesData, Error>({
-                path: `/v2/accounts/${accountId}/traces`,
-                method: 'GET',
-                query: query,
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetAccountTracesData>(req, {
-                $ref: '#/components/schemas/TraceIDs'
-            });
-        },
-
-        /**
-         * @description Get all subscriptions by wallet address
-         *
-         * @tags Accounts
-         * @name GetAccountSubscriptions
-         * @request GET:/v2/accounts/{account_id}/subscriptions
-         */
-        getAccountSubscriptions: (accountId_Address: Address, params: RequestParams = {}) => {
-            const accountId = accountId_Address.toRawString();
-            const req = this.http.request<GetAccountSubscriptionsData, Error>({
-                path: `/v2/accounts/${accountId}/subscriptions`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetAccountSubscriptionsData>(req, {
-                $ref: '#/components/schemas/Subscriptions'
-            });
-        },
-
-        /**
-         * @description Update internal cache for a particular account
-         *
-         * @tags Accounts
-         * @name ReindexAccount
-         * @request POST:/v2/accounts/{account_id}/reindex
-         */
-        reindexAccount: (accountId_Address: Address, params: RequestParams = {}) => {
-            const accountId = accountId_Address.toRawString();
-            const req = this.http.request<ReindexAccountData, Error>({
-                path: `/v2/accounts/${accountId}/reindex`,
-                method: 'POST',
-                ...params
-            });
-
-            return prepareResponse<ReindexAccountData>(req);
-        },
-
-        /**
-         * @description Search by account domain name
-         *
-         * @tags Accounts
-         * @name SearchAccounts
-         * @request GET:/v2/accounts/search
-         */
-        searchAccounts: (
-            query: {
-                /**
-                 * @minLength 3
-                 * @maxLength 15
-                 */
-                name: string;
-            },
-            params: RequestParams = {}
-        ) => {
-            const req = this.http.request<SearchAccountsData, Error>({
-                path: `/v2/accounts/search`,
-                method: 'GET',
-                query: query,
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<SearchAccountsData>(req, {
-                $ref: '#/components/schemas/FoundAccounts'
-            });
-        },
-
-        /**
-         * @description Get expiring account .ton dns
-         *
-         * @tags Accounts
-         * @name GetAccountDnsExpiring
-         * @request GET:/v2/accounts/{account_id}/dns/expiring
-         */
-        getAccountDnsExpiring: (
-            accountId_Address: Address,
-            query?: {
-                /**
-                 * number of days before expiration
-                 * @min 1
-                 * @max 3660
-                 */
-                period?: number;
-            },
-            params: RequestParams = {}
-        ) => {
-            const accountId = accountId_Address.toRawString();
-            const req = this.http.request<GetAccountDnsExpiringData, Error>({
-                path: `/v2/accounts/${accountId}/dns/expiring`,
-                method: 'GET',
-                query: query,
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetAccountDnsExpiringData>(req, {
-                $ref: '#/components/schemas/DnsExpiring'
-            });
-        },
-
-        /**
-         * @description Get public key by account id
-         *
-         * @tags Accounts
-         * @name GetAccountPublicKey
-         * @request GET:/v2/accounts/{account_id}/publickey
-         */
-        getAccountPublicKey: (accountId_Address: Address, params: RequestParams = {}) => {
-            const accountId = accountId_Address.toRawString();
-            const req = this.http.request<GetAccountPublicKeyData, Error>({
-                path: `/v2/accounts/${accountId}/publickey`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetAccountPublicKeyData>(req, {
-                type: 'object',
-                required: ['public_key'],
-                properties: { public_key: { type: 'string' } }
-            });
-        },
-
-        /**
-         * @description Get account's multisigs
-         *
-         * @tags Accounts
-         * @name GetAccountMultisigs
-         * @request GET:/v2/accounts/{account_id}/multisigs
-         */
-        getAccountMultisigs: (accountId_Address: Address, params: RequestParams = {}) => {
-            const accountId = accountId_Address.toRawString();
-            const req = this.http.request<GetAccountMultisigsData, Error>({
-                path: `/v2/accounts/${accountId}/multisigs`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetAccountMultisigsData>(req, {
-                $ref: '#/components/schemas/Multisigs'
-            });
-        },
-
-        /**
-         * @description Get account's balance change
-         *
-         * @tags Accounts
-         * @name GetAccountDiff
-         * @request GET:/v2/accounts/{account_id}/diff
-         */
-        getAccountDiff: (
-            accountId_Address: Address,
-            query: {
-                /**
-                 * @format int64
-                 * @max 2114380800
-                 * @example 1668436763
-                 */
-                start_date: number;
-                /**
-                 * @format int64
-                 * @max 2114380800
-                 * @example 1668436763
-                 */
-                end_date: number;
-            },
-            params: RequestParams = {}
-        ) => {
-            const accountId = accountId_Address.toRawString();
-            const req = this.http.request<GetAccountDiffData, Error>({
-                path: `/v2/accounts/${accountId}/diff`,
-                method: 'GET',
-                query: query,
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetAccountDiffData>(req, {
-                type: 'object',
-                required: ['balance_change'],
-                properties: { balance_change: { type: 'integer', format: 'int64' } }
-            });
-        },
-
-        /**
-         * @description Get the transfer history of extra currencies for an account.
-         *
-         * @tags Accounts
-         * @name GetAccountExtraCurrencyHistoryById
-         * @request GET:/v2/accounts/{account_id}/extra-currency/{id}/history
-         */
-        getAccountExtraCurrencyHistoryById: (
-            accountId_Address: Address,
-            id: number,
-            query: {
-                /**
-                 * omit this parameter to get last events
-                 * @format bigint
-                 * @example 25758317000002
-                 */
-                before_lt?: bigint;
-                /**
-                 * @min 1
-                 * @max 1000
-                 * @example 100
-                 */
-                limit: number;
-                /**
-                 * @format int64
-                 * @max 2114380800
-                 * @example 1668436763
-                 */
-                start_date?: number;
-                /**
-                 * @format int64
-                 * @max 2114380800
-                 * @example 1668436763
-                 */
-                end_date?: number;
-            },
-            params: RequestParams = {}
-        ) => {
-            const accountId = accountId_Address.toRawString();
-            const req = this.http.request<GetAccountExtraCurrencyHistoryByIdData, Error>({
-                path: `/v2/accounts/${accountId}/extra-currency/${id}/history`,
-                method: 'GET',
-                query: query,
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetAccountExtraCurrencyHistoryByIdData>(req, {
-                $ref: '#/components/schemas/AccountEvents'
-            });
-        },
-
-        /**
-         * @description parse address and display in all formats
-         *
-         * @tags Utilities
-         * @name AddressParse
-         * @request GET:/v2/address/{account_id}/parse
-         * @deprecated
-         */
-        addressParse: (accountId_Address: Address, requestParams: RequestParams = {}) => {
-            const accountId = accountId_Address.toRawString();
-            const req = this.http.request<AddressParseData, Error>({
-                path: `/v2/address/${accountId}/parse`,
-                method: 'GET',
-                format: 'json',
-                ...requestParams
-            });
-
-            return prepareResponse<AddressParseData>(req, {
-                type: 'object',
-                required: ['raw_form', 'bounceable', 'non_bounceable', 'given_type', 'test_only'],
-                properties: {
-                    raw_form: { type: 'string', format: 'address' },
-                    bounceable: {
-                        required: ['b64', 'b64url'],
-                        type: 'object',
-                        properties: { b64: { type: 'string' }, b64url: { type: 'string' } }
-                    },
-                    non_bounceable: {
-                        required: ['b64', 'b64url'],
-                        type: 'object',
-                        properties: { b64: { type: 'string' }, b64url: { type: 'string' } }
-                    },
-                    given_type: { type: 'string' },
-                    test_only: { type: 'boolean' }
-                }
-            });
-        }
-    };
-    nft = {
-        /**
-         * @description Get the transfer nft history
-         *
-         * @tags NFT
-         * @name GetAccountNftHistory
-         * @request GET:/v2/accounts/{account_id}/nfts/history
-         */
-        getAccountNftHistory: (
-            accountId_Address: Address,
-            query: {
-                /**
-                 * omit this parameter to get last events
-                 * @format bigint
-                 * @example 25758317000002
-                 */
-                before_lt?: bigint;
-                /**
-                 * @min 1
-                 * @max 1000
-                 * @example 100
-                 */
-                limit: number;
-                /**
-                 * @format int64
-                 * @max 2114380800
-                 * @example 1668436763
-                 */
-                start_date?: number;
-                /**
-                 * @format int64
-                 * @max 2114380800
-                 * @example 1668436763
-                 */
-                end_date?: number;
-            },
-            params: RequestParams = {}
-        ) => {
-            const accountId = accountId_Address.toRawString();
-            const req = this.http.request<GetAccountNftHistoryData, Error>({
-                path: `/v2/accounts/${accountId}/nfts/history`,
-                method: 'GET',
-                query: query,
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetAccountNftHistoryData>(req, {
-                $ref: '#/components/schemas/AccountEvents'
-            });
-        },
-
-        /**
-         * @description Get NFT collections
-         *
-         * @tags NFT
-         * @name GetNftCollections
-         * @request GET:/v2/nfts/collections
-         */
-        getNftCollections: (
-            query?: {
-                /**
-                 * @format int32
-                 * @min 1
-                 * @max 1000
-                 * @default 100
-                 * @example 15
-                 */
-                limit?: number;
-                /**
-                 * @format int32
-                 * @min 0
-                 * @default 0
-                 * @example 10
-                 */
-                offset?: number;
-            },
-            params: RequestParams = {}
-        ) => {
-            const req = this.http.request<GetNftCollectionsData, Error>({
-                path: `/v2/nfts/collections`,
-                method: 'GET',
-                query: query,
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetNftCollectionsData>(req, {
-                $ref: '#/components/schemas/NftCollections'
-            });
-        },
-
-        /**
-         * @description Get NFT collection by collection address
-         *
-         * @tags NFT
-         * @name GetNftCollection
-         * @request GET:/v2/nfts/collections/{account_id}
-         */
-        getNftCollection: (accountId_Address: Address, params: RequestParams = {}) => {
-            const accountId = accountId_Address.toRawString();
-            const req = this.http.request<GetNftCollectionData, Error>({
-                path: `/v2/nfts/collections/${accountId}`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetNftCollectionData>(req, {
-                $ref: '#/components/schemas/NftCollection'
-            });
-        },
-
-        /**
-         * @description Get NFT collection items by their addresses
-         *
-         * @tags NFT
-         * @name GetNftCollectionItemsByAddresses
-         * @request POST:/v2/nfts/collections/_bulk
-         */
-        getNftCollectionItemsByAddresses: (
-            data: {
-                accountIds: Address[];
-            },
-            params: RequestParams = {}
-        ) => {
-            const req = this.http.request<GetNftCollectionItemsByAddressesData, Error>({
-                path: `/v2/nfts/collections/_bulk`,
-                method: 'POST',
-                body: prepareRequestData(data, {
+                non_bounceable: {
+                    required: ['b64', 'b64url'],
                     type: 'object',
-                    required: ['accountIds'],
-                    properties: {
-                        accountIds: { type: 'array', items: { type: 'string', format: 'address' } }
-                    }
-                }),
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetNftCollectionItemsByAddressesData>(req, {
-                $ref: '#/components/schemas/NftCollections'
-            });
-        },
-
-        /**
-         * @description Get NFT items from collection by collection address
-         *
-         * @tags NFT
-         * @name GetItemsFromCollection
-         * @request GET:/v2/nfts/collections/{account_id}/items
-         */
-        getItemsFromCollection: (
-            accountId_Address: Address,
-            query?: {
-                /**
-                 * @min 1
-                 * @max 1000
-                 * @default 1000
-                 */
-                limit?: number;
-                /**
-                 * @min 0
-                 * @default 0
-                 */
-                offset?: number;
-            },
-            params: RequestParams = {}
-        ) => {
-            const accountId = accountId_Address.toRawString();
-            const req = this.http.request<GetItemsFromCollectionData, Error>({
-                path: `/v2/nfts/collections/${accountId}/items`,
-                method: 'GET',
-                query: query,
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetItemsFromCollectionData>(req, {
-                $ref: '#/components/schemas/NftItems'
-            });
-        },
-
-        /**
-         * @description Get NFT items by their addresses
-         *
-         * @tags NFT
-         * @name GetNftItemsByAddresses
-         * @request POST:/v2/nfts/_bulk
-         */
-        getNftItemsByAddresses: (
-            data: {
-                accountIds: Address[];
-            },
-            params: RequestParams = {}
-        ) => {
-            const req = this.http.request<GetNftItemsByAddressesData, Error>({
-                path: `/v2/nfts/_bulk`,
-                method: 'POST',
-                body: prepareRequestData(data, {
-                    type: 'object',
-                    required: ['accountIds'],
-                    properties: {
-                        accountIds: { type: 'array', items: { type: 'string', format: 'address' } }
-                    }
-                }),
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetNftItemsByAddressesData>(req, {
-                $ref: '#/components/schemas/NftItems'
-            });
-        },
-
-        /**
-         * @description Get NFT item by its address
-         *
-         * @tags NFT
-         * @name GetNftItemByAddress
-         * @request GET:/v2/nfts/{account_id}
-         */
-        getNftItemByAddress: (accountId_Address: Address, params: RequestParams = {}) => {
-            const accountId = accountId_Address.toRawString();
-            const req = this.http.request<GetNftItemByAddressData, Error>({
-                path: `/v2/nfts/${accountId}`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetNftItemByAddressData>(req, {
-                $ref: '#/components/schemas/NftItem'
-            });
-        },
-
-        /**
-         * @description Get the transfer nfts history for account
-         *
-         * @tags NFT
-         * @name GetNftHistoryById
-         * @request GET:/v2/nfts/{account_id}/history
-         */
-        getNftHistoryById: (
-            accountId_Address: Address,
-            query: {
-                /**
-                 * omit this parameter to get last events
-                 * @format bigint
-                 * @example 25758317000002
-                 */
-                before_lt?: bigint;
-                /**
-                 * @min 1
-                 * @max 1000
-                 * @example 100
-                 */
-                limit: number;
-                /**
-                 * @format int64
-                 * @max 2114380800
-                 * @example 1668436763
-                 */
-                start_date?: number;
-                /**
-                 * @format int64
-                 * @max 2114380800
-                 * @example 1668436763
-                 */
-                end_date?: number;
-            },
-            params: RequestParams = {}
-        ) => {
-            const accountId = accountId_Address.toRawString();
-            const req = this.http.request<GetNftHistoryByIdData, Error>({
-                path: `/v2/nfts/${accountId}/history`,
-                method: 'GET',
-                query: query,
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetNftHistoryByIdData>(req, {
-                $ref: '#/components/schemas/AccountEvents'
-            });
-        }
-    };
-    dns = {
-        /**
-         * @description Get full information about domain name
-         *
-         * @tags DNS
-         * @name GetDnsInfo
-         * @request GET:/v2/dns/{domain_name}
-         */
-        getDnsInfo: (domainName: string, params: RequestParams = {}) => {
-            const req = this.http.request<GetDnsInfoData, Error>({
-                path: `/v2/dns/${domainName}`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetDnsInfoData>(req, {
-                $ref: '#/components/schemas/DomainInfo'
-            });
-        },
-
-        /**
-         * @description DNS resolve for domain name
-         *
-         * @tags DNS
-         * @name DnsResolve
-         * @request GET:/v2/dns/{domain_name}/resolve
-         */
-        dnsResolve: (domainName: string, params: RequestParams = {}) => {
-            const req = this.http.request<DnsResolveData, Error>({
-                path: `/v2/dns/${domainName}/resolve`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<DnsResolveData>(req, { $ref: '#/components/schemas/DnsRecord' });
-        },
-
-        /**
-         * @description Get domain bids
-         *
-         * @tags DNS
-         * @name GetDomainBids
-         * @request GET:/v2/dns/{domain_name}/bids
-         */
-        getDomainBids: (domainName: string, params: RequestParams = {}) => {
-            const req = this.http.request<GetDomainBidsData, Error>({
-                path: `/v2/dns/${domainName}/bids`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetDomainBidsData>(req, {
-                $ref: '#/components/schemas/DomainBids'
-            });
-        },
-
-        /**
-         * @description Get all auctions
-         *
-         * @tags DNS
-         * @name GetAllAuctions
-         * @request GET:/v2/dns/auctions
-         */
-        getAllAuctions: (
-            query?: {
-                /**
-                 * domain filter for current auctions "ton" or "t.me"
-                 * @example "ton"
-                 */
-                tld?: string;
-            },
-            params: RequestParams = {}
-        ) => {
-            const req = this.http.request<GetAllAuctionsData, Error>({
-                path: `/v2/dns/auctions`,
-                method: 'GET',
-                query: query,
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetAllAuctionsData>(req, {
-                $ref: '#/components/schemas/Auctions'
-            });
-        }
-    };
-    traces = {
-        /**
-         * @description Get the trace by trace ID or hash of any transaction in trace
-         *
-         * @tags Traces
-         * @name GetTrace
-         * @request GET:/v2/traces/{trace_id}
-         */
-        getTrace: (traceId: string, params: RequestParams = {}) => {
-            const req = this.http.request<GetTraceData, Error>({
-                path: `/v2/traces/${traceId}`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetTraceData>(req, { $ref: '#/components/schemas/Trace' });
-        }
-    };
-    events = {
-        /**
-         * @description Get an event either by event ID or a hash of any transaction in a trace. An event is built on top of a trace which is a series of transactions caused by one inbound message. TonAPI looks for known patterns inside the trace and splits the trace into actions, where a single action represents a meaningful high-level operation like a Jetton Transfer or an NFT Purchase. Actions are expected to be shown to users. It is advised not to build any logic on top of actions because actions can be changed at any time.
-         *
-         * @tags Events
-         * @name GetEvent
-         * @request GET:/v2/events/{event_id}
-         */
-        getEvent: (eventId: string, params: RequestParams = {}) => {
-            const req = this.http.request<GetEventData, Error>({
-                path: `/v2/events/${eventId}`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetEventData>(req, { $ref: '#/components/schemas/Event' });
-        }
-    };
-    inscriptions = {
-        /**
-         * @description Get all inscriptions by owner address. It's experimental API and can be dropped in the future.
-         *
-         * @tags Inscriptions
-         * @name GetAccountInscriptions
-         * @request GET:/v2/experimental/accounts/{account_id}/inscriptions
-         */
-        getAccountInscriptions: (
-            accountId_Address: Address,
-            query?: {
-                /**
-                 * @min 1
-                 * @max 1000
-                 * @default 1000
-                 */
-                limit?: number;
-                /**
-                 * @min 0
-                 * @default 0
-                 */
-                offset?: number;
-            },
-            params: RequestParams = {}
-        ) => {
-            const accountId = accountId_Address.toRawString();
-            const req = this.http.request<GetAccountInscriptionsData, Error>({
-                path: `/v2/experimental/accounts/${accountId}/inscriptions`,
-                method: 'GET',
-                query: query,
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetAccountInscriptionsData>(req, {
-                $ref: '#/components/schemas/InscriptionBalances'
-            });
-        },
-
-        /**
-         * @description Get the transfer inscriptions history for account. It's experimental API and can be dropped in the future.
-         *
-         * @tags Inscriptions
-         * @name GetAccountInscriptionsHistory
-         * @request GET:/v2/experimental/accounts/{account_id}/inscriptions/history
-         */
-        getAccountInscriptionsHistory: (
-            accountId_Address: Address,
-            query?: {
-                /**
-                 * omit this parameter to get last events
-                 * @format bigint
-                 * @example 25758317000002
-                 */
-                before_lt?: bigint;
-                /**
-                 * @min 1
-                 * @max 1000
-                 * @default 100
-                 * @example 100
-                 */
-                limit?: number;
-            },
-            params: RequestParams = {}
-        ) => {
-            const accountId = accountId_Address.toRawString();
-            const req = this.http.request<GetAccountInscriptionsHistoryData, Error>({
-                path: `/v2/experimental/accounts/${accountId}/inscriptions/history`,
-                method: 'GET',
-                query: query,
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetAccountInscriptionsHistoryData>(req, {
-                $ref: '#/components/schemas/AccountEvents'
-            });
-        },
-
-        /**
-         * @description Get the transfer inscriptions history for account. It's experimental API and can be dropped in the future.
-         *
-         * @tags Inscriptions
-         * @name GetAccountInscriptionsHistoryByTicker
-         * @request GET:/v2/experimental/accounts/{account_id}/inscriptions/{ticker}/history
-         */
-        getAccountInscriptionsHistoryByTicker: (
-            accountId_Address: Address,
-            ticker: string,
-            query?: {
-                /**
-                 * omit this parameter to get last events
-                 * @format bigint
-                 * @example 25758317000002
-                 */
-                before_lt?: bigint;
-                /**
-                 * @min 1
-                 * @max 1000
-                 * @default 100
-                 * @example 100
-                 */
-                limit?: number;
-            },
-            params: RequestParams = {}
-        ) => {
-            const accountId = accountId_Address.toRawString();
-            const req = this.http.request<GetAccountInscriptionsHistoryByTickerData, Error>({
-                path: `/v2/experimental/accounts/${accountId}/inscriptions/${ticker}/history`,
-                method: 'GET',
-                query: query,
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetAccountInscriptionsHistoryByTickerData>(req, {
-                $ref: '#/components/schemas/AccountEvents'
-            });
-        },
-
-        /**
-         * @description return comment for making operation with inscription. please don't use it if you don't know what you are doing
-         *
-         * @tags Inscriptions
-         * @name GetInscriptionOpTemplate
-         * @request GET:/v2/experimental/inscriptions/op-template
-         */
-        getInscriptionOpTemplate: (
-            query: {
-                /** @example "ton20" */
-                type: 'ton20' | 'gram20';
-                destination?: string;
-                comment?: string;
-                /** @example "transfer" */
-                operation: 'transfer';
-                /**
-                 * @format bigint
-                 * @example "1000000000"
-                 */
-                amount: bigint;
-                /** @example "nano" */
-                ticker: string;
-                /** @example "UQAs87W4yJHlF8mt29ocA4agnMrLsOP69jC1HPyBUjJay7Mg" */
-                who: string;
-            },
-            params: RequestParams = {}
-        ) => {
-            const req = this.http.request<GetInscriptionOpTemplateData, Error>({
-                path: `/v2/experimental/inscriptions/op-template`,
-                method: 'GET',
-                query: query,
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetInscriptionOpTemplateData>(req, {
-                type: 'object',
-                required: ['comment', 'destination'],
-                properties: { comment: { type: 'string' }, destination: { type: 'string' } }
-            });
-        }
-    };
-    jettons = {
-        /**
-         * @description Get a list of all indexed jetton masters in the blockchain.
-         *
-         * @tags Jettons
-         * @name GetJettons
-         * @request GET:/v2/jettons
-         */
-        getJettons: (
-            query?: {
-                /**
-                 * @format int32
-                 * @min 1
-                 * @max 1000
-                 * @default 100
-                 * @example 15
-                 */
-                limit?: number;
-                /**
-                 * @format int32
-                 * @min 0
-                 * @default 0
-                 * @example 10
-                 */
-                offset?: number;
-            },
-            params: RequestParams = {}
-        ) => {
-            const req = this.http.request<GetJettonsData, Error>({
-                path: `/v2/jettons`,
-                method: 'GET',
-                query: query,
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetJettonsData>(req, { $ref: '#/components/schemas/Jettons' });
-        },
-
-        /**
-         * @description Get jetton metadata by jetton master address
-         *
-         * @tags Jettons
-         * @name GetJettonInfo
-         * @request GET:/v2/jettons/{account_id}
-         */
-        getJettonInfo: (accountId_Address: Address, params: RequestParams = {}) => {
-            const accountId = accountId_Address.toRawString();
-            const req = this.http.request<GetJettonInfoData, Error>({
-                path: `/v2/jettons/${accountId}`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetJettonInfoData>(req, {
-                $ref: '#/components/schemas/JettonInfo'
-            });
-        },
-
-        /**
-         * @description Get jetton metadata items by jetton master addresses
-         *
-         * @tags Jettons
-         * @name GetJettonInfosByAddresses
-         * @request POST:/v2/jettons/_bulk
-         */
-        getJettonInfosByAddresses: (
-            data: {
-                accountIds: Address[];
-            },
-            params: RequestParams = {}
-        ) => {
-            const req = this.http.request<GetJettonInfosByAddressesData, Error>({
-                path: `/v2/jettons/_bulk`,
-                method: 'POST',
-                body: prepareRequestData(data, {
-                    type: 'object',
-                    required: ['accountIds'],
-                    properties: {
-                        accountIds: { type: 'array', items: { type: 'string', format: 'address' } }
-                    }
-                }),
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetJettonInfosByAddressesData>(req, {
-                $ref: '#/components/schemas/Jettons'
-            });
-        },
-
-        /**
-         * @description Get jetton's holders
-         *
-         * @tags Jettons
-         * @name GetJettonHolders
-         * @request GET:/v2/jettons/{account_id}/holders
-         */
-        getJettonHolders: (
-            accountId_Address: Address,
-            query?: {
-                /**
-                 * @min 1
-                 * @max 1000
-                 * @default 1000
-                 */
-                limit?: number;
-                /**
-                 * @min 0
-                 * @default 0
-                 */
-                offset?: number;
-            },
-            params: RequestParams = {}
-        ) => {
-            const accountId = accountId_Address.toRawString();
-            const req = this.http.request<GetJettonHoldersData, Error>({
-                path: `/v2/jettons/${accountId}/holders`,
-                method: 'GET',
-                query: query,
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetJettonHoldersData>(req, {
-                $ref: '#/components/schemas/JettonHolders'
-            });
-        },
-
-        /**
-         * @description Get jetton's custom payload and state init required for transfer
-         *
-         * @tags Jettons
-         * @name GetJettonTransferPayload
-         * @request GET:/v2/jettons/{jetton_id}/transfer/{account_id}/payload
-         */
-        getJettonTransferPayload: (
-            accountId_Address: Address,
-            jettonId_Address: Address,
-            params: RequestParams = {}
-        ) => {
-            const accountId = accountId_Address.toRawString();
-            const jettonId = jettonId_Address.toRawString();
-            const req = this.http.request<GetJettonTransferPayloadData, Error>({
-                path: `/v2/jettons/${jettonId}/transfer/${accountId}/payload`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetJettonTransferPayloadData>(req, {
-                $ref: '#/components/schemas/JettonTransferPayload'
-            });
-        },
-
-        /**
-         * @description Get only jetton transfers in the event
-         *
-         * @tags Jettons
-         * @name GetJettonsEvents
-         * @request GET:/v2/events/{event_id}/jettons
-         */
-        getJettonsEvents: (eventId: string, params: RequestParams = {}) => {
-            const req = this.http.request<GetJettonsEventsData, Error>({
-                path: `/v2/events/${eventId}/jettons`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetJettonsEventsData>(req, {
-                $ref: '#/components/schemas/Event'
-            });
-        }
-    };
-    extraCurrency = {
-        /**
-         * @description Get extra currency info by id
-         *
-         * @tags ExtraCurrency
-         * @name GetExtraCurrencyInfo
-         * @request GET:/v2/extra-currency/{id}
-         */
-        getExtraCurrencyInfo: (id: number, params: RequestParams = {}) => {
-            const req = this.http.request<GetExtraCurrencyInfoData, Error>({
-                path: `/v2/extra-currency/${id}`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetExtraCurrencyInfoData>(req, {
-                $ref: '#/components/schemas/EcPreview'
-            });
-        }
-    };
-    staking = {
-        /**
-         * @description All pools where account participates
-         *
-         * @tags Staking
-         * @name GetAccountNominatorsPools
-         * @request GET:/v2/staking/nominator/{account_id}/pools
-         */
-        getAccountNominatorsPools: (accountId_Address: Address, params: RequestParams = {}) => {
-            const accountId = accountId_Address.toRawString();
-            const req = this.http.request<GetAccountNominatorsPoolsData, Error>({
-                path: `/v2/staking/nominator/${accountId}/pools`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetAccountNominatorsPoolsData>(req, {
-                $ref: '#/components/schemas/AccountStaking'
-            });
-        },
-
-        /**
-         * @description Stacking pool info
-         *
-         * @tags Staking
-         * @name GetStakingPoolInfo
-         * @request GET:/v2/staking/pool/{account_id}
-         */
-        getStakingPoolInfo: (accountId_Address: Address, params: RequestParams = {}) => {
-            const accountId = accountId_Address.toRawString();
-            const req = this.http.request<GetStakingPoolInfoData, Error>({
-                path: `/v2/staking/pool/${accountId}`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetStakingPoolInfoData>(req, {
-                type: 'object',
-                required: ['implementation', 'pool'],
-                properties: {
-                    implementation: { $ref: '#/components/schemas/PoolImplementation' },
-                    pool: { $ref: '#/components/schemas/PoolInfo' }
-                }
-            });
-        },
-
-        /**
-         * @description Pool history
-         *
-         * @tags Staking
-         * @name GetStakingPoolHistory
-         * @request GET:/v2/staking/pool/{account_id}/history
-         */
-        getStakingPoolHistory: (accountId_Address: Address, params: RequestParams = {}) => {
-            const accountId = accountId_Address.toRawString();
-            const req = this.http.request<GetStakingPoolHistoryData, Error>({
-                path: `/v2/staking/pool/${accountId}/history`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetStakingPoolHistoryData>(req, {
-                type: 'object',
-                required: ['apy'],
-                properties: {
-                    apy: { type: 'array', items: { $ref: '#/components/schemas/ApyHistory' } }
-                }
-            });
-        },
-
-        /**
-         * @description All pools available in network
-         *
-         * @tags Staking
-         * @name GetStakingPools
-         * @request GET:/v2/staking/pools
-         */
-        getStakingPools: (
-            query?: {
-                /**
-                 * account ID
-                 * @format address
-                 * @example "0:97264395BD65A255A429B11326C84128B7D70FFED7949ABAE3036D506BA38621"
-                 */
-                available_for?: Address;
-                /**
-                 * return also pools not from white list - just compatible by interfaces (maybe dangerous!)
-                 * @example false
-                 */
-                include_unverified?: boolean;
-            },
-            params: RequestParams = {}
-        ) => {
-            const req = this.http.request<GetStakingPoolsData, Error>({
-                path: `/v2/staking/pools`,
-                method: 'GET',
-                query: query && {
-                    ...query,
-                    available_for: query.available_for?.toRawString()
+                    properties: { b64: { type: 'string' }, b64url: { type: 'string' } }
                 },
-                format: 'json',
-                ...params
-            });
+                given_type: { type: 'string' },
+                test_only: { type: 'boolean' }
+            }
+        });
+    }
 
-            return prepareResponse<GetStakingPoolsData>(req, {
-                type: 'object',
-                required: ['pools', 'implementations'],
-                properties: {
-                    pools: { type: 'array', items: { $ref: '#/components/schemas/PoolInfo' } },
-                    implementations: {
-                        type: 'object',
-                        additionalProperties: { $ref: '#/components/schemas/PoolImplementation' }
-                    }
-                }
-            });
-        }
-    };
-    storage = {
-        /**
-         * @description Get TON storage providers deployed to the blockchain.
-         *
-         * @tags Storage
-         * @name GetStorageProviders
-         * @request GET:/v2/storage/providers
-         */
-        getStorageProviders: (params: RequestParams = {}) => {
-            const req = this.http.request<GetStorageProvidersData, Error>({
-                path: `/v2/storage/providers`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
+    /**
+     * @description Get reduced blockchain blocks data
+     *
+     * @tags Blockchain
+     * @name GetReducedBlockchainBlocks
+     * @request GET:/v2/blockchain/reduced/blocks
+     */
+    /**
+     * @description Get reduced blockchain blocks data
+     *
+     * @tags Blockchain
+     * @name GetReducedBlockchainBlocks
+     * @request GET:/v2/blockchain/reduced/blocks
+     */
+    getReducedBlockchainBlocks(
+        query: {
+            /** @format int64 */
+            from: number;
+            /** @format int64 */
+            to: number;
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<GetReducedBlockchainBlocksData, TonApiError> {
+        const req = this.http.request<GetReducedBlockchainBlocksData, TonApiError>({
+            path: `/v2/blockchain/reduced/blocks`,
+            method: 'GET',
+            query: query,
+            format: 'json',
+            ...params
+        });
 
-            return prepareResponse<GetStorageProvidersData>(req, {
+        return prepareResponse<GetReducedBlockchainBlocksData, TonApiError>(req, {
+            $ref: '#/components/schemas/ReducedBlocks'
+        });
+    }
+
+    /**
+     * @description Get blockchain block data
+     *
+     * @tags Blockchain
+     * @name GetBlockchainBlock
+     * @request GET:/v2/blockchain/blocks/{block_id}
+     */
+    /**
+     * @description Get blockchain block data
+     *
+     * @tags Blockchain
+     * @name GetBlockchainBlock
+     * @request GET:/v2/blockchain/blocks/{block_id}
+     */
+    getBlockchainBlock(
+        blockId: string,
+        params: RequestParams = {}
+    ): TonApiPromise<GetBlockchainBlockData, TonApiError> {
+        const req = this.http.request<GetBlockchainBlockData, TonApiError>({
+            path: `/v2/blockchain/blocks/${blockId}`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetBlockchainBlockData, TonApiError>(req, {
+            $ref: '#/components/schemas/BlockchainBlock'
+        });
+    }
+
+    /**
+     * @description Download blockchain block BOC
+     *
+     * @tags Blockchain
+     * @name DownloadBlockchainBlockBoc
+     * @request GET:/v2/blockchain/blocks/{block_id}/boc
+     */
+    /**
+     * @description Download blockchain block BOC
+     *
+     * @tags Blockchain
+     * @name DownloadBlockchainBlockBoc
+     * @request GET:/v2/blockchain/blocks/{block_id}/boc
+     */
+    downloadBlockchainBlockBoc(
+        blockId: string,
+        params: RequestParams = {}
+    ): TonApiPromise<DownloadBlockchainBlockBocData, TonApiError> {
+        const req = this.http.request<DownloadBlockchainBlockBocData, TonApiError>({
+            path: `/v2/blockchain/blocks/${blockId}/boc`,
+            method: 'GET',
+            ...params
+        });
+
+        return prepareResponse<DownloadBlockchainBlockBocData, TonApiError>(req);
+    }
+
+    /**
+     * @description Get blockchain block shards
+     *
+     * @tags Blockchain
+     * @name GetBlockchainMasterchainShards
+     * @request GET:/v2/blockchain/masterchain/{masterchain_seqno}/shards
+     */
+    /**
+     * @description Get blockchain block shards
+     *
+     * @tags Blockchain
+     * @name GetBlockchainMasterchainShards
+     * @request GET:/v2/blockchain/masterchain/{masterchain_seqno}/shards
+     */
+    getBlockchainMasterchainShards(
+        masterchainSeqno: number,
+        params: RequestParams = {}
+    ): TonApiPromise<GetBlockchainMasterchainShardsData, TonApiError> {
+        const req = this.http.request<GetBlockchainMasterchainShardsData, TonApiError>({
+            path: `/v2/blockchain/masterchain/${masterchainSeqno}/shards`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetBlockchainMasterchainShardsData, TonApiError>(req, {
+            $ref: '#/components/schemas/BlockchainBlockShards'
+        });
+    }
+
+    /**
+     * @description Get all blocks in all shards and workchains between target and previous masterchain block according to shards last blocks snapshot in masterchain.  We don't recommend to build your app around this method because it has problem with scalability and will work very slow in the future.
+     *
+     * @tags Blockchain
+     * @name GetBlockchainMasterchainBlocks
+     * @request GET:/v2/blockchain/masterchain/{masterchain_seqno}/blocks
+     */
+    /**
+     * @description Get all blocks in all shards and workchains between target and previous masterchain block according to shards last blocks snapshot in masterchain.  We don't recommend to build your app around this method because it has problem with scalability and will work very slow in the future.
+     *
+     * @tags Blockchain
+     * @name GetBlockchainMasterchainBlocks
+     * @request GET:/v2/blockchain/masterchain/{masterchain_seqno}/blocks
+     */
+    getBlockchainMasterchainBlocks(
+        masterchainSeqno: number,
+        params: RequestParams = {}
+    ): TonApiPromise<GetBlockchainMasterchainBlocksData, TonApiError> {
+        const req = this.http.request<GetBlockchainMasterchainBlocksData, TonApiError>({
+            path: `/v2/blockchain/masterchain/${masterchainSeqno}/blocks`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetBlockchainMasterchainBlocksData, TonApiError>(req, {
+            $ref: '#/components/schemas/BlockchainBlocks'
+        });
+    }
+
+    /**
+     * @description Get all transactions in all shards and workchains between target and previous masterchain block according to shards last blocks snapshot in masterchain. We don't recommend to build your app around this method because it has problem with scalability and will work very slow in the future.
+     *
+     * @tags Blockchain
+     * @name GetBlockchainMasterchainTransactions
+     * @request GET:/v2/blockchain/masterchain/{masterchain_seqno}/transactions
+     */
+    /**
+     * @description Get all transactions in all shards and workchains between target and previous masterchain block according to shards last blocks snapshot in masterchain. We don't recommend to build your app around this method because it has problem with scalability and will work very slow in the future.
+     *
+     * @tags Blockchain
+     * @name GetBlockchainMasterchainTransactions
+     * @request GET:/v2/blockchain/masterchain/{masterchain_seqno}/transactions
+     */
+    getBlockchainMasterchainTransactions(
+        masterchainSeqno: number,
+        params: RequestParams = {}
+    ): TonApiPromise<GetBlockchainMasterchainTransactionsData, TonApiError> {
+        const req = this.http.request<GetBlockchainMasterchainTransactionsData, TonApiError>({
+            path: `/v2/blockchain/masterchain/${masterchainSeqno}/transactions`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetBlockchainMasterchainTransactionsData, TonApiError>(req, {
+            $ref: '#/components/schemas/Transactions'
+        });
+    }
+
+    /**
+     * @description Get blockchain config from a specific block, if present.
+     *
+     * @tags Blockchain
+     * @name GetBlockchainConfigFromBlock
+     * @request GET:/v2/blockchain/masterchain/{masterchain_seqno}/config
+     */
+    /**
+     * @description Get blockchain config from a specific block, if present.
+     *
+     * @tags Blockchain
+     * @name GetBlockchainConfigFromBlock
+     * @request GET:/v2/blockchain/masterchain/{masterchain_seqno}/config
+     */
+    getBlockchainConfigFromBlock(
+        masterchainSeqno: number,
+        params: RequestParams = {}
+    ): TonApiPromise<GetBlockchainConfigFromBlockData, TonApiError> {
+        const req = this.http.request<GetBlockchainConfigFromBlockData, TonApiError>({
+            path: `/v2/blockchain/masterchain/${masterchainSeqno}/config`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetBlockchainConfigFromBlockData, TonApiError>(req, {
+            $ref: '#/components/schemas/BlockchainConfig'
+        });
+    }
+
+    /**
+     * @description Get raw blockchain config from a specific block, if present.
+     *
+     * @tags Blockchain
+     * @name GetRawBlockchainConfigFromBlock
+     * @request GET:/v2/blockchain/masterchain/{masterchain_seqno}/config/raw
+     */
+    /**
+     * @description Get raw blockchain config from a specific block, if present.
+     *
+     * @tags Blockchain
+     * @name GetRawBlockchainConfigFromBlock
+     * @request GET:/v2/blockchain/masterchain/{masterchain_seqno}/config/raw
+     */
+    getRawBlockchainConfigFromBlock(
+        masterchainSeqno: number,
+        params: RequestParams = {}
+    ): TonApiPromise<GetRawBlockchainConfigFromBlockData, TonApiError> {
+        const req = this.http.request<GetRawBlockchainConfigFromBlockData, TonApiError>({
+            path: `/v2/blockchain/masterchain/${masterchainSeqno}/config/raw`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetRawBlockchainConfigFromBlockData, TonApiError>(req, {
+            $ref: '#/components/schemas/RawBlockchainConfig'
+        });
+    }
+
+    /**
+     * @description Get transactions from block
+     *
+     * @tags Blockchain
+     * @name GetBlockchainBlockTransactions
+     * @request GET:/v2/blockchain/blocks/{block_id}/transactions
+     */
+    /**
+     * @description Get transactions from block
+     *
+     * @tags Blockchain
+     * @name GetBlockchainBlockTransactions
+     * @request GET:/v2/blockchain/blocks/{block_id}/transactions
+     */
+    getBlockchainBlockTransactions(
+        blockId: string,
+        params: RequestParams = {}
+    ): TonApiPromise<GetBlockchainBlockTransactionsData, TonApiError> {
+        const req = this.http.request<GetBlockchainBlockTransactionsData, TonApiError>({
+            path: `/v2/blockchain/blocks/${blockId}/transactions`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetBlockchainBlockTransactionsData, TonApiError>(req, {
+            $ref: '#/components/schemas/Transactions'
+        });
+    }
+
+    /**
+     * @description Get transaction data
+     *
+     * @tags Blockchain
+     * @name GetBlockchainTransaction
+     * @request GET:/v2/blockchain/transactions/{transaction_id}
+     */
+    /**
+     * @description Get transaction data
+     *
+     * @tags Blockchain
+     * @name GetBlockchainTransaction
+     * @request GET:/v2/blockchain/transactions/{transaction_id}
+     */
+    getBlockchainTransaction(
+        transactionId: string,
+        params: RequestParams = {}
+    ): TonApiPromise<GetBlockchainTransactionData, TonApiError> {
+        const req = this.http.request<GetBlockchainTransactionData, TonApiError>({
+            path: `/v2/blockchain/transactions/${transactionId}`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetBlockchainTransactionData, TonApiError>(req, {
+            $ref: '#/components/schemas/Transaction'
+        });
+    }
+
+    /**
+     * @description Get transaction data by message hash
+     *
+     * @tags Blockchain
+     * @name GetBlockchainTransactionByMessageHash
+     * @request GET:/v2/blockchain/messages/{msg_id}/transaction
+     */
+    /**
+     * @description Get transaction data by message hash
+     *
+     * @tags Blockchain
+     * @name GetBlockchainTransactionByMessageHash
+     * @request GET:/v2/blockchain/messages/{msg_id}/transaction
+     */
+    getBlockchainTransactionByMessageHash(
+        msgId: string,
+        params: RequestParams = {}
+    ): TonApiPromise<GetBlockchainTransactionByMessageHashData, TonApiError> {
+        const req = this.http.request<GetBlockchainTransactionByMessageHashData, TonApiError>({
+            path: `/v2/blockchain/messages/${msgId}/transaction`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetBlockchainTransactionByMessageHashData, TonApiError>(req, {
+            $ref: '#/components/schemas/Transaction'
+        });
+    }
+
+    /**
+     * @description Get blockchain validators
+     *
+     * @tags Blockchain
+     * @name GetBlockchainValidators
+     * @request GET:/v2/blockchain/validators
+     */
+    /**
+     * @description Get blockchain validators
+     *
+     * @tags Blockchain
+     * @name GetBlockchainValidators
+     * @request GET:/v2/blockchain/validators
+     */
+    getBlockchainValidators(
+        params: RequestParams = {}
+    ): TonApiPromise<GetBlockchainValidatorsData, TonApiError> {
+        const req = this.http.request<GetBlockchainValidatorsData, TonApiError>({
+            path: `/v2/blockchain/validators`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetBlockchainValidatorsData, TonApiError>(req, {
+            $ref: '#/components/schemas/Validators'
+        });
+    }
+
+    /**
+     * @description Get last known masterchain block
+     *
+     * @tags Blockchain
+     * @name GetBlockchainMasterchainHead
+     * @request GET:/v2/blockchain/masterchain-head
+     */
+    /**
+     * @description Get last known masterchain block
+     *
+     * @tags Blockchain
+     * @name GetBlockchainMasterchainHead
+     * @request GET:/v2/blockchain/masterchain-head
+     */
+    getBlockchainMasterchainHead(
+        params: RequestParams = {}
+    ): TonApiPromise<GetBlockchainMasterchainHeadData, TonApiError> {
+        const req = this.http.request<GetBlockchainMasterchainHeadData, TonApiError>({
+            path: `/v2/blockchain/masterchain-head`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetBlockchainMasterchainHeadData, TonApiError>(req, {
+            $ref: '#/components/schemas/BlockchainBlock'
+        });
+    }
+
+    /**
+     * @description Get low-level information about an account taken directly from the blockchain.
+     *
+     * @tags Blockchain
+     * @name GetBlockchainRawAccount
+     * @request GET:/v2/blockchain/accounts/{account_id}
+     */
+    /**
+     * @description Get low-level information about an account taken directly from the blockchain.
+     *
+     * @tags Blockchain
+     * @name GetBlockchainRawAccount
+     * @request GET:/v2/blockchain/accounts/{account_id}
+     */
+    getBlockchainRawAccount(
+        accountId_Address: Address | string,
+        params: RequestParams = {}
+    ): TonApiPromise<GetBlockchainRawAccountData, TonApiError> {
+        const accountId = addressToString(accountId_Address);
+        const req = this.http.request<GetBlockchainRawAccountData, TonApiError>({
+            path: `/v2/blockchain/accounts/${accountId}`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetBlockchainRawAccountData, TonApiError>(req, {
+            $ref: '#/components/schemas/BlockchainRawAccount'
+        });
+    }
+
+    /**
+     * @description Get account transactions
+     *
+     * @tags Blockchain
+     * @name GetBlockchainAccountTransactions
+     * @request GET:/v2/blockchain/accounts/{account_id}/transactions
+     */
+    /**
+     * @description Get account transactions
+     *
+     * @tags Blockchain
+     * @name GetBlockchainAccountTransactions
+     * @request GET:/v2/blockchain/accounts/{account_id}/transactions
+     */
+    getBlockchainAccountTransactions(
+        accountId_Address: Address | string,
+        query?: {
+            /**
+             * omit this parameter to get last transactions
+             * @format bigint
+             * @example 39787624000003
+             */
+            after_lt?: bigint;
+            /**
+             * omit this parameter to get last transactions
+             * @format bigint
+             * @example 39787624000003
+             */
+            before_lt?: bigint;
+            /**
+             * @format int32
+             * @min 1
+             * @max 1000
+             * @default 100
+             * @example 100
+             */
+            limit?: number;
+            /**
+             * used to sort the result-set in ascending or descending order by lt.
+             * @default "desc"
+             */
+            sort_order?: 'desc' | 'asc';
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<GetBlockchainAccountTransactionsData, TonApiError> {
+        const accountId = addressToString(accountId_Address);
+        const req = this.http.request<GetBlockchainAccountTransactionsData, TonApiError>({
+            path: `/v2/blockchain/accounts/${accountId}/transactions`,
+            method: 'GET',
+            query: query,
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetBlockchainAccountTransactionsData, TonApiError>(req, {
+            $ref: '#/components/schemas/Transactions'
+        });
+    }
+
+    /**
+     * @description Execute get method for account
+     *
+     * @tags Blockchain
+     * @name ExecGetMethodForBlockchainAccount
+     * @request GET:/v2/blockchain/accounts/{account_id}/methods/{method_name}
+     */
+    /**
+     * @description Execute get method for account
+     *
+     * @tags Blockchain
+     * @name ExecGetMethodForBlockchainAccount
+     * @request GET:/v2/blockchain/accounts/{account_id}/methods/{method_name}
+     */
+    execGetMethodForBlockchainAccount(
+        accountId_Address: Address | string,
+        methodName: string,
+        query?: {
+            /**
+             * Array of method arguments in string format. Supported value formats:
+             * - "NaN" for Not-a-Number type
+             * - "Null" for Null type
+             * - Decimal integers for tinyint type (e.g., "100500")
+             * - 0x-prefixed hex strings for int257 type (e.g., "0xfa01d78381ae32")
+             * - TON blockchain addresses for slice type (e.g., "0:6e731f2e28b73539a7f85ac47ca104d5840b229351189977bb6151d36b5e3f5e")
+             * - Base64-encoded BOC for cell type (e.g., "te6ccgEBAQEAAgAAAA==")
+             * - Hex-encoded BOC for slice type (e.g., "b5ee9c72010101010002000000")
+             * @example ["0:9a33970f617bcd71acf2cd28357c067aa31859c02820d8f01d74c88063a8f4d8"]
+             */
+            args?: string[];
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<ExecGetMethodForBlockchainAccountData, TonApiError> {
+        const accountId = addressToString(accountId_Address);
+        const req = this.http.request<ExecGetMethodForBlockchainAccountData, TonApiError>({
+            path: `/v2/blockchain/accounts/${accountId}/methods/${methodName}`,
+            method: 'GET',
+            query: query,
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<ExecGetMethodForBlockchainAccountData, TonApiError>(req, {
+            $ref: '#/components/schemas/MethodExecutionResult'
+        });
+    }
+
+    /**
+     * @description Execute get method for account
+     *
+     * @tags Blockchain
+     * @name ExecGetMethodWithBodyForBlockchainAccount
+     * @request POST:/v2/blockchain/accounts/{account_id}/methods/{method_name}
+     */
+    /**
+     * @description Execute get method for account
+     *
+     * @tags Blockchain
+     * @name ExecGetMethodWithBodyForBlockchainAccount
+     * @request POST:/v2/blockchain/accounts/{account_id}/methods/{method_name}
+     */
+    execGetMethodWithBodyForBlockchainAccount(
+        accountId_Address: Address | string,
+        methodName: string,
+        data: {
+            args: ExecGetMethodArg[];
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<ExecGetMethodWithBodyForBlockchainAccountData, TonApiError> {
+        const accountId = addressToString(accountId_Address);
+        const req = this.http.request<ExecGetMethodWithBodyForBlockchainAccountData, TonApiError>({
+            path: `/v2/blockchain/accounts/${accountId}/methods/${methodName}`,
+            method: 'POST',
+            body: prepareRequestData(data, {
                 type: 'object',
-                required: ['providers'],
+                required: ['args'],
                 properties: {
-                    providers: {
+                    args: {
                         type: 'array',
-                        items: { $ref: '#/components/schemas/StorageProvider' }
+                        items: { $ref: '#/components/schemas/ExecGetMethodArg' }
                     }
                 }
-            });
-        }
-    };
-    rates = {
-        /**
-         * @description Get the token price in the chosen currency for display only. Don’t use this for financial transactions.
-         *
-         * @tags Rates
-         * @name GetRates
-         * @request GET:/v2/rates
-         */
-        getRates: (
-            query: {
-                /**
-                 * accept ton and jetton master addresses, separated by commas
-                 * @maxItems 100
-                 * @example ["ton"]
-                 */
-                tokens: string[];
-                /**
-                 * accept ton and all possible fiat currencies, separated by commas
-                 * @maxItems 50
-                 * @example ["ton","usd","rub"]
-                 */
-                currencies: string[];
-            },
-            params: RequestParams = {}
-        ) => {
-            const req = this.http.request<GetRatesData, Error>({
-                path: `/v2/rates`,
-                method: 'GET',
-                query: query,
-                queryImplode: ['tokens', 'currencies'],
-                format: 'json',
-                ...params
-            });
+            }),
+            format: 'json',
+            ...params
+        });
 
-            return prepareResponse<GetRatesData>(req, {
-                type: 'object',
-                required: ['rates'],
-                properties: {
-                    rates: {
-                        type: 'object',
-                        additionalProperties: { $ref: '#/components/schemas/TokenRates' }
-                    }
-                }
-            });
+        return prepareResponse<ExecGetMethodWithBodyForBlockchainAccountData, TonApiError>(req, {
+            $ref: '#/components/schemas/MethodExecutionResult'
+        });
+    }
+
+    /**
+     * @description Send message to blockchain
+     *
+     * @tags Blockchain
+     * @name SendBlockchainMessage
+     * @request POST:/v2/blockchain/message
+     */
+    /**
+     * @description Send message to blockchain
+     *
+     * @tags Blockchain
+     * @name SendBlockchainMessage
+     * @request POST:/v2/blockchain/message
+     */
+    sendBlockchainMessage(
+        data: {
+            /** @format cell */
+            boc?: Cell | string;
+            /** @maxItems 5 */
+            batch?: (Cell | string)[];
+            meta?: Record<string, string>;
         },
-
-        /**
-         * @description Get chart by token
-         *
-         * @tags Rates
-         * @name GetChartRates
-         * @request GET:/v2/rates/chart
-         */
-        getChartRates: (
-            query: {
-                /**
-                 * accept jetton master address
-                 * @format address
-                 */
-                token: Address;
-                /** @example "usd" */
-                currency?: string;
-                /**
-                 * @format int64
-                 * @max 2114380800
-                 * @example 1668436763
-                 */
-                start_date?: number;
-                /**
-                 * @format int64
-                 * @max 2114380800
-                 * @example 1668436763
-                 */
-                end_date?: number;
-                /**
-                 * @format int
-                 * @min 0
-                 * @max 200
-                 * @default 200
-                 */
-                points_count?: number;
-            },
-            params: RequestParams = {}
-        ) => {
-            const req = this.http.request<GetChartRatesData, Error>({
-                path: `/v2/rates/chart`,
-                method: 'GET',
-                query: query && {
-                    ...query,
-                    token: query.token?.toRawString()
-                },
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetChartRatesData>(req, {
+        params: RequestParams = {}
+    ): TonApiPromise<SendBlockchainMessageData, TonApiError> {
+        const req = this.http.request<SendBlockchainMessageData, TonApiError>({
+            path: `/v2/blockchain/message`,
+            method: 'POST',
+            body: prepareRequestData(data, {
                 type: 'object',
-                required: ['points'],
                 properties: {
-                    points: { type: 'array', items: { $ref: '#/components/schemas/ChartPoints' } }
-                }
-            });
-        },
-
-        /**
-         * @description Get the TON price from markets
-         *
-         * @tags Rates
-         * @name GetMarketsRates
-         * @request GET:/v2/rates/markets
-         */
-        getMarketsRates: (params: RequestParams = {}) => {
-            const req = this.http.request<GetMarketsRatesData, Error>({
-                path: `/v2/rates/markets`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetMarketsRatesData>(req, {
-                type: 'object',
-                required: ['markets'],
-                properties: {
-                    markets: {
+                    boc: { type: 'string', format: 'cell' },
+                    batch: {
                         type: 'array',
-                        items: { $ref: '#/components/schemas/MarketTonRates' }
-                    }
+                        maxItems: 5,
+                        items: { type: 'string', format: 'cell' }
+                    },
+                    meta: { type: 'object', additionalProperties: { type: 'string' } }
                 }
-            });
-        }
-    };
-    connect = {
-        /**
-         * @description Get a payload for further token receipt
-         *
-         * @tags Connect
-         * @name GetTonConnectPayload
-         * @request GET:/v2/tonconnect/payload
-         */
-        getTonConnectPayload: (params: RequestParams = {}) => {
-            const req = this.http.request<GetTonConnectPayloadData, Error>({
-                path: `/v2/tonconnect/payload`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
+            }),
+            ...params
+        });
 
-            return prepareResponse<GetTonConnectPayloadData>(req, {
-                type: 'object',
-                required: ['payload'],
-                properties: { payload: { type: 'string' } }
-            });
+        return prepareResponse<SendBlockchainMessageData, TonApiError>(req);
+    }
+
+    /**
+     * @description Get blockchain config
+     *
+     * @tags Blockchain
+     * @name GetBlockchainConfig
+     * @request GET:/v2/blockchain/config
+     */
+    /**
+     * @description Get blockchain config
+     *
+     * @tags Blockchain
+     * @name GetBlockchainConfig
+     * @request GET:/v2/blockchain/config
+     */
+    getBlockchainConfig(
+        params: RequestParams = {}
+    ): TonApiPromise<GetBlockchainConfigData, TonApiError> {
+        const req = this.http.request<GetBlockchainConfigData, TonApiError>({
+            path: `/v2/blockchain/config`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetBlockchainConfigData, TonApiError>(req, {
+            $ref: '#/components/schemas/BlockchainConfig'
+        });
+    }
+
+    /**
+     * @description Get raw blockchain config
+     *
+     * @tags Blockchain
+     * @name GetRawBlockchainConfig
+     * @request GET:/v2/blockchain/config/raw
+     */
+    /**
+     * @description Get raw blockchain config
+     *
+     * @tags Blockchain
+     * @name GetRawBlockchainConfig
+     * @request GET:/v2/blockchain/config/raw
+     */
+    getRawBlockchainConfig(
+        params: RequestParams = {}
+    ): TonApiPromise<GetRawBlockchainConfigData, TonApiError> {
+        const req = this.http.request<GetRawBlockchainConfigData, TonApiError>({
+            path: `/v2/blockchain/config/raw`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetRawBlockchainConfigData, TonApiError>(req, {
+            $ref: '#/components/schemas/RawBlockchainConfig'
+        });
+    }
+
+    /**
+     * @description Blockchain account inspect
+     *
+     * @tags Blockchain
+     * @name BlockchainAccountInspect
+     * @request GET:/v2/blockchain/accounts/{account_id}/inspect
+     */
+    /**
+     * @description Blockchain account inspect
+     *
+     * @tags Blockchain
+     * @name BlockchainAccountInspect
+     * @request GET:/v2/blockchain/accounts/{account_id}/inspect
+     */
+    blockchainAccountInspect(
+        accountId_Address: Address | string,
+        params: RequestParams = {}
+    ): TonApiPromise<BlockchainAccountInspectData, TonApiError> {
+        const accountId = addressToString(accountId_Address);
+        const req = this.http.request<BlockchainAccountInspectData, TonApiError>({
+            path: `/v2/blockchain/accounts/${accountId}/inspect`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<BlockchainAccountInspectData, TonApiError>(req, {
+            $ref: '#/components/schemas/BlockchainAccountInspect'
+        });
+    }
+
+    /**
+     * @description Get library cell
+     *
+     * @tags Blockchain
+     * @name GetLibraryByHash
+     * @request GET:/v2/blockchain/libraries/{hash}
+     */
+    /**
+     * @description Get library cell
+     *
+     * @tags Blockchain
+     * @name GetLibraryByHash
+     * @request GET:/v2/blockchain/libraries/{hash}
+     */
+    getLibraryByHash(
+        hash: string,
+        params: RequestParams = {}
+    ): TonApiPromise<GetLibraryByHashData, TonApiError> {
+        const req = this.http.request<GetLibraryByHashData, TonApiError>({
+            path: `/v2/blockchain/libraries/${hash}`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetLibraryByHashData, TonApiError>(req, {
+            $ref: '#/components/schemas/BlockchainLibrary'
+        });
+    }
+
+    /**
+     * @description Get human-friendly information about several accounts without low-level details.
+     *
+     * @tags Accounts
+     * @name GetAccounts
+     * @request POST:/v2/accounts/_bulk
+     */
+    /**
+     * @description Get human-friendly information about several accounts without low-level details.
+     *
+     * @tags Accounts
+     * @name GetAccounts
+     * @request POST:/v2/accounts/_bulk
+     */
+    getAccounts(
+        data: {
+            accountIds: (Address | string)[];
         },
+        query?: {
+            /** @example "usd" */
+            currency?: string;
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<GetAccountsData, TonApiError> {
+        const req = this.http.request<GetAccountsData, TonApiError>({
+            path: `/v2/accounts/_bulk`,
+            method: 'POST',
+            query: query,
+            body: prepareRequestData(data, {
+                type: 'object',
+                required: ['accountIds'],
+                properties: {
+                    accountIds: { type: 'array', items: { type: 'string', format: 'address' } }
+                }
+            }),
+            format: 'json',
+            ...params
+        });
 
-        /**
-         * @description Get account info by state init
-         *
-         * @tags Connect
-         * @name GetAccountInfoByStateInit
-         * @request POST:/v2/tonconnect/stateinit
-         */
-        getAccountInfoByStateInit: (
-            data: {
-                /** @format cell-base64 */
-                stateInit: Cell;
+        return prepareResponse<GetAccountsData, TonApiError>(req, {
+            $ref: '#/components/schemas/Accounts'
+        });
+    }
+
+    /**
+     * @description Get human-friendly information about an account without low-level details.
+     *
+     * @tags Accounts
+     * @name GetAccount
+     * @request GET:/v2/accounts/{account_id}
+     */
+    /**
+     * @description Get human-friendly information about an account without low-level details.
+     *
+     * @tags Accounts
+     * @name GetAccount
+     * @request GET:/v2/accounts/{account_id}
+     */
+    getAccount(
+        accountId_Address: Address | string,
+        params: RequestParams = {}
+    ): TonApiPromise<GetAccountData, TonApiError> {
+        const accountId = addressToString(accountId_Address);
+        const req = this.http.request<GetAccountData, TonApiError>({
+            path: `/v2/accounts/${accountId}`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetAccountData, TonApiError>(req, {
+            $ref: '#/components/schemas/Account'
+        });
+    }
+
+    /**
+     * @description Get account's domains
+     *
+     * @tags Accounts
+     * @name AccountDnsBackResolve
+     * @request GET:/v2/accounts/{account_id}/dns/backresolve
+     */
+    /**
+     * @description Get account's domains
+     *
+     * @tags Accounts
+     * @name AccountDnsBackResolve
+     * @request GET:/v2/accounts/{account_id}/dns/backresolve
+     */
+    accountDnsBackResolve(
+        accountId_Address: Address | string,
+        params: RequestParams = {}
+    ): TonApiPromise<AccountDnsBackResolveData, TonApiError> {
+        const accountId = addressToString(accountId_Address);
+        const req = this.http.request<AccountDnsBackResolveData, TonApiError>({
+            path: `/v2/accounts/${accountId}/dns/backresolve`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<AccountDnsBackResolveData, TonApiError>(req, {
+            $ref: '#/components/schemas/DomainNames'
+        });
+    }
+
+    /**
+     * @description Get all Jettons balances by owner address
+     *
+     * @tags Accounts
+     * @name GetAccountJettonsBalances
+     * @request GET:/v2/accounts/{account_id}/jettons
+     */
+    /**
+     * @description Get all Jettons balances by owner address
+     *
+     * @tags Accounts
+     * @name GetAccountJettonsBalances
+     * @request GET:/v2/accounts/{account_id}/jettons
+     */
+    getAccountJettonsBalances(
+        accountId_Address: Address | string,
+        query?: {
+            /**
+             * accept ton and all possible fiat currencies, separated by commas
+             * @example ["ton","usd","rub"]
+             */
+            currencies?: string[];
+            /**
+             * comma separated list supported extensions
+             * @example ["custom_payload"]
+             */
+            supported_extensions?: string[];
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<GetAccountJettonsBalancesData, TonApiError> {
+        const accountId = addressToString(accountId_Address);
+        const req = this.http.request<GetAccountJettonsBalancesData, TonApiError>({
+            path: `/v2/accounts/${accountId}/jettons`,
+            method: 'GET',
+            query: query,
+            queryImplode: ['currencies', 'supported_extensions'],
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetAccountJettonsBalancesData, TonApiError>(req, {
+            $ref: '#/components/schemas/JettonsBalances'
+        });
+    }
+
+    /**
+     * @description Get Jetton balance by owner address
+     *
+     * @tags Accounts
+     * @name GetAccountJettonBalance
+     * @request GET:/v2/accounts/{account_id}/jettons/{jetton_id}
+     */
+    /**
+     * @description Get Jetton balance by owner address
+     *
+     * @tags Accounts
+     * @name GetAccountJettonBalance
+     * @request GET:/v2/accounts/{account_id}/jettons/{jetton_id}
+     */
+    getAccountJettonBalance(
+        accountId_Address: Address | string,
+        jettonId_Address: Address | string,
+        query?: {
+            /**
+             * accept ton and all possible fiat currencies, separated by commas
+             * @example ["ton","usd","rub"]
+             */
+            currencies?: string[];
+            /**
+             * comma separated list supported extensions
+             * @example ["custom_payload"]
+             */
+            supported_extensions?: string[];
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<GetAccountJettonBalanceData, TonApiError> {
+        const accountId = addressToString(accountId_Address);
+        const jettonId = addressToString(jettonId_Address);
+        const req = this.http.request<GetAccountJettonBalanceData, TonApiError>({
+            path: `/v2/accounts/${accountId}/jettons/${jettonId}`,
+            method: 'GET',
+            query: query,
+            queryImplode: ['currencies', 'supported_extensions'],
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetAccountJettonBalanceData, TonApiError>(req, {
+            $ref: '#/components/schemas/JettonBalance'
+        });
+    }
+
+    /**
+     * @description Get the transfer jettons history for account
+     *
+     * @tags Accounts
+     * @name GetAccountJettonsHistory
+     * @request GET:/v2/accounts/{account_id}/jettons/history
+     */
+    /**
+     * @description Get the transfer jettons history for account
+     *
+     * @tags Accounts
+     * @name GetAccountJettonsHistory
+     * @request GET:/v2/accounts/{account_id}/jettons/history
+     */
+    getAccountJettonsHistory(
+        accountId_Address: Address | string,
+        query: {
+            /**
+             * omit this parameter to get last events
+             * @format bigint
+             * @example 25758317000002
+             */
+            before_lt?: bigint;
+            /**
+             * @min 1
+             * @max 1000
+             * @example 100
+             */
+            limit: number;
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<GetAccountJettonsHistoryData, TonApiError> {
+        const accountId = addressToString(accountId_Address);
+        const req = this.http.request<GetAccountJettonsHistoryData, TonApiError>({
+            path: `/v2/accounts/${accountId}/jettons/history`,
+            method: 'GET',
+            query: query,
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetAccountJettonsHistoryData, TonApiError>(req, {
+            $ref: '#/components/schemas/JettonOperations'
+        });
+    }
+
+    /**
+     * @description Please use `getJettonAccountHistoryByID`` instead
+     *
+     * @tags Accounts
+     * @name GetAccountJettonHistoryById
+     * @request GET:/v2/accounts/{account_id}/jettons/{jetton_id}/history
+     * @deprecated
+     */
+    /**
+     * @description Please use `getJettonAccountHistoryByID`` instead
+     *
+     * @tags Accounts
+     * @name GetAccountJettonHistoryById
+     * @request GET:/v2/accounts/{account_id}/jettons/{jetton_id}/history
+     * @deprecated
+     */
+    getAccountJettonHistoryById(
+        accountId_Address: Address | string,
+        jettonId_Address: Address | string,
+        query: {
+            /**
+             * omit this parameter to get last events
+             * @format bigint
+             * @example 25758317000002
+             */
+            before_lt?: bigint;
+            /**
+             * @min 1
+             * @max 1000
+             * @example 100
+             */
+            limit: number;
+            /**
+             * @format int64
+             * @max 2114380800
+             * @example 1668436763
+             */
+            start_date?: number;
+            /**
+             * @format int64
+             * @max 2114380800
+             * @example 1668436763
+             */
+            end_date?: number;
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<GetAccountJettonHistoryByIdData, TonApiError> {
+        const accountId = addressToString(accountId_Address);
+        const jettonId = addressToString(jettonId_Address);
+        const req = this.http.request<GetAccountJettonHistoryByIdData, TonApiError>({
+            path: `/v2/accounts/${accountId}/jettons/${jettonId}/history`,
+            method: 'GET',
+            query: query,
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetAccountJettonHistoryByIdData, TonApiError>(req, {
+            $ref: '#/components/schemas/AccountEvents'
+        });
+    }
+
+    /**
+     * @description Get all NFT items by owner address
+     *
+     * @tags Accounts
+     * @name GetAccountNftItems
+     * @request GET:/v2/accounts/{account_id}/nfts
+     */
+    /**
+     * @description Get all NFT items by owner address
+     *
+     * @tags Accounts
+     * @name GetAccountNftItems
+     * @request GET:/v2/accounts/{account_id}/nfts
+     */
+    getAccountNftItems(
+        accountId_Address: Address | string,
+        query?: {
+            /**
+             * nft collection
+             * @format address
+             * @example "0:06d811f426598591b32b2c49f29f66c821368e4acb1de16762b04e0174532465"
+             */
+            collection?: Address | string;
+            /**
+             * @min 1
+             * @max 1000
+             * @default 1000
+             */
+            limit?: number;
+            /**
+             * @min 0
+             * @default 0
+             */
+            offset?: number;
+            /**
+             * Selling nft items in ton implemented usually via transfer items to special selling account. This option enables including items which owned not directly.
+             * @default false
+             */
+            indirect_ownership?: boolean;
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<GetAccountNftItemsData, TonApiError> {
+        const accountId = addressToString(accountId_Address);
+        const req = this.http.request<GetAccountNftItemsData, TonApiError>({
+            path: `/v2/accounts/${accountId}/nfts`,
+            method: 'GET',
+            query: query && {
+                ...query,
+                collection: addressToString(query.collection)
             },
-            params: RequestParams = {}
-        ) => {
-            const req = this.http.request<GetAccountInfoByStateInitData, Error>({
-                path: `/v2/tonconnect/stateinit`,
-                method: 'POST',
-                body: prepareRequestData(data, {
-                    type: 'object',
-                    required: ['stateInit'],
-                    properties: { stateInit: { type: 'string', format: 'cell-base64' } }
-                }),
-                format: 'json',
-                ...params
-            });
+            format: 'json',
+            ...params
+        });
 
-            return prepareResponse<GetAccountInfoByStateInitData>(req, {
-                $ref: '#/components/schemas/AccountInfoByStateInit'
-            });
-        }
-    };
-    wallet = {
-        /**
-         * @description Account verification and token issuance
-         *
-         * @tags Wallet
-         * @name TonConnectProof
-         * @request POST:/v2/wallet/auth/proof
-         */
-        tonConnectProof: (
-            data: {
+        return prepareResponse<GetAccountNftItemsData, TonApiError>(req, {
+            $ref: '#/components/schemas/NftItems'
+        });
+    }
+
+    /**
+     * @description Get events for an account. Each event is built on top of a trace which is a series of transactions caused by one inbound message. TonAPI looks for known patterns inside the trace and splits the trace into actions, where a single action represents a meaningful high-level operation like a Jetton Transfer or an NFT Purchase. Actions are expected to be shown to users. It is advised not to build any logic on top of actions because actions can be changed at any time.
+     *
+     * @tags Accounts
+     * @name GetAccountEvents
+     * @request GET:/v2/accounts/{account_id}/events
+     */
+    /**
+     * @description Get events for an account. Each event is built on top of a trace which is a series of transactions caused by one inbound message. TonAPI looks for known patterns inside the trace and splits the trace into actions, where a single action represents a meaningful high-level operation like a Jetton Transfer or an NFT Purchase. Actions are expected to be shown to users. It is advised not to build any logic on top of actions because actions can be changed at any time.
+     *
+     * @tags Accounts
+     * @name GetAccountEvents
+     * @request GET:/v2/accounts/{account_id}/events
+     */
+    getAccountEvents(
+        accountId_Address: Address | string,
+        query: {
+            /**
+             * Show only events that are initiated by this account
+             * @default false
+             */
+            initiator?: boolean;
+            /**
+             * filter actions where requested account is not real subject (for example sender or receiver jettons)
+             * @default false
+             */
+            subject_only?: boolean;
+            /**
+             * omit this parameter to get last events
+             * @format bigint
+             * @example 25758317000002
+             */
+            before_lt?: bigint;
+            /**
+             * @min 1
+             * @max 100
+             * @example 20
+             */
+            limit: number;
+            /**
+             * @format int64
+             * @max 2114380800
+             * @example 1668436763
+             */
+            start_date?: number;
+            /**
+             * @format int64
+             * @max 2114380800
+             * @example 1668436763
+             */
+            end_date?: number;
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<GetAccountEventsData, TonApiError> {
+        const accountId = addressToString(accountId_Address);
+        const req = this.http.request<GetAccountEventsData, TonApiError>({
+            path: `/v2/accounts/${accountId}/events`,
+            method: 'GET',
+            query: query,
+            queryImplode: ['initiator'],
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetAccountEventsData, TonApiError>(req, {
+            $ref: '#/components/schemas/AccountEvents'
+        });
+    }
+
+    /**
+     * @description Get event for an account by event_id
+     *
+     * @tags Accounts
+     * @name GetAccountEvent
+     * @request GET:/v2/accounts/{account_id}/events/{event_id}
+     */
+    /**
+     * @description Get event for an account by event_id
+     *
+     * @tags Accounts
+     * @name GetAccountEvent
+     * @request GET:/v2/accounts/{account_id}/events/{event_id}
+     */
+    getAccountEvent(
+        accountId_Address: Address | string,
+        eventId: string,
+        query?: {
+            /**
+             * filter actions where requested account is not real subject (for example sender or receiver jettons)
+             * @default false
+             */
+            subject_only?: boolean;
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<GetAccountEventData, TonApiError> {
+        const accountId = addressToString(accountId_Address);
+        const req = this.http.request<GetAccountEventData, TonApiError>({
+            path: `/v2/accounts/${accountId}/events/${eventId}`,
+            method: 'GET',
+            query: query,
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetAccountEventData, TonApiError>(req, {
+            $ref: '#/components/schemas/AccountEvent'
+        });
+    }
+
+    /**
+     * @description Get traces for account
+     *
+     * @tags Accounts
+     * @name GetAccountTraces
+     * @request GET:/v2/accounts/{account_id}/traces
+     */
+    /**
+     * @description Get traces for account
+     *
+     * @tags Accounts
+     * @name GetAccountTraces
+     * @request GET:/v2/accounts/{account_id}/traces
+     */
+    getAccountTraces(
+        accountId_Address: Address | string,
+        query?: {
+            /**
+             * omit this parameter to get last events
+             * @format bigint
+             * @example 25758317000002
+             */
+            before_lt?: bigint;
+            /**
+             * @min 1
+             * @max 1000
+             * @default 100
+             * @example 100
+             */
+            limit?: number;
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<GetAccountTracesData, TonApiError> {
+        const accountId = addressToString(accountId_Address);
+        const req = this.http.request<GetAccountTracesData, TonApiError>({
+            path: `/v2/accounts/${accountId}/traces`,
+            method: 'GET',
+            query: query,
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetAccountTracesData, TonApiError>(req, {
+            $ref: '#/components/schemas/TraceIDs'
+        });
+    }
+
+    /**
+     * @description Get all subscriptions by wallet address
+     *
+     * @tags Accounts
+     * @name GetAccountSubscriptions
+     * @request GET:/v2/accounts/{account_id}/subscriptions
+     */
+    /**
+     * @description Get all subscriptions by wallet address
+     *
+     * @tags Accounts
+     * @name GetAccountSubscriptions
+     * @request GET:/v2/accounts/{account_id}/subscriptions
+     */
+    getAccountSubscriptions(
+        accountId_Address: Address | string,
+        params: RequestParams = {}
+    ): TonApiPromise<GetAccountSubscriptionsData, TonApiError> {
+        const accountId = addressToString(accountId_Address);
+        const req = this.http.request<GetAccountSubscriptionsData, TonApiError>({
+            path: `/v2/accounts/${accountId}/subscriptions`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetAccountSubscriptionsData, TonApiError>(req, {
+            $ref: '#/components/schemas/Subscriptions'
+        });
+    }
+
+    /**
+     * @description Update internal cache for a particular account
+     *
+     * @tags Accounts
+     * @name ReindexAccount
+     * @request POST:/v2/accounts/{account_id}/reindex
+     */
+    /**
+     * @description Update internal cache for a particular account
+     *
+     * @tags Accounts
+     * @name ReindexAccount
+     * @request POST:/v2/accounts/{account_id}/reindex
+     */
+    reindexAccount(
+        accountId_Address: Address | string,
+        params: RequestParams = {}
+    ): TonApiPromise<ReindexAccountData, TonApiError> {
+        const accountId = addressToString(accountId_Address);
+        const req = this.http.request<ReindexAccountData, TonApiError>({
+            path: `/v2/accounts/${accountId}/reindex`,
+            method: 'POST',
+            ...params
+        });
+
+        return prepareResponse<ReindexAccountData, TonApiError>(req);
+    }
+
+    /**
+     * @description Search by account domain name
+     *
+     * @tags Accounts
+     * @name SearchAccounts
+     * @request GET:/v2/accounts/search
+     */
+    /**
+     * @description Search by account domain name
+     *
+     * @tags Accounts
+     * @name SearchAccounts
+     * @request GET:/v2/accounts/search
+     */
+    searchAccounts(
+        query: {
+            /**
+             * @minLength 3
+             * @maxLength 15
+             */
+            name: string;
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<SearchAccountsData, TonApiError> {
+        const req = this.http.request<SearchAccountsData, TonApiError>({
+            path: `/v2/accounts/search`,
+            method: 'GET',
+            query: query,
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<SearchAccountsData, TonApiError>(req, {
+            $ref: '#/components/schemas/FoundAccounts'
+        });
+    }
+
+    /**
+     * @description Get expiring account .ton dns
+     *
+     * @tags Accounts
+     * @name GetAccountDnsExpiring
+     * @request GET:/v2/accounts/{account_id}/dns/expiring
+     */
+    /**
+     * @description Get expiring account .ton dns
+     *
+     * @tags Accounts
+     * @name GetAccountDnsExpiring
+     * @request GET:/v2/accounts/{account_id}/dns/expiring
+     */
+    getAccountDnsExpiring(
+        accountId_Address: Address | string,
+        query?: {
+            /**
+             * number of days before expiration
+             * @min 1
+             * @max 3660
+             */
+            period?: number;
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<GetAccountDnsExpiringData, TonApiError> {
+        const accountId = addressToString(accountId_Address);
+        const req = this.http.request<GetAccountDnsExpiringData, TonApiError>({
+            path: `/v2/accounts/${accountId}/dns/expiring`,
+            method: 'GET',
+            query: query,
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetAccountDnsExpiringData, TonApiError>(req, {
+            $ref: '#/components/schemas/DnsExpiring'
+        });
+    }
+
+    /**
+     * @description Get public key by account id
+     *
+     * @tags Accounts
+     * @name GetAccountPublicKey
+     * @request GET:/v2/accounts/{account_id}/publickey
+     */
+    /**
+     * @description Get public key by account id
+     *
+     * @tags Accounts
+     * @name GetAccountPublicKey
+     * @request GET:/v2/accounts/{account_id}/publickey
+     */
+    getAccountPublicKey(
+        accountId_Address: Address | string,
+        params: RequestParams = {}
+    ): TonApiPromise<GetAccountPublicKeyData, TonApiError> {
+        const accountId = addressToString(accountId_Address);
+        const req = this.http.request<GetAccountPublicKeyData, TonApiError>({
+            path: `/v2/accounts/${accountId}/publickey`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetAccountPublicKeyData, TonApiError>(req, {
+            type: 'object',
+            required: ['public_key'],
+            properties: { public_key: { type: 'string' } }
+        });
+    }
+
+    /**
+     * @description Get account's multisigs
+     *
+     * @tags Accounts
+     * @name GetAccountMultisigs
+     * @request GET:/v2/accounts/{account_id}/multisigs
+     */
+    /**
+     * @description Get account's multisigs
+     *
+     * @tags Accounts
+     * @name GetAccountMultisigs
+     * @request GET:/v2/accounts/{account_id}/multisigs
+     */
+    getAccountMultisigs(
+        accountId_Address: Address | string,
+        params: RequestParams = {}
+    ): TonApiPromise<GetAccountMultisigsData, TonApiError> {
+        const accountId = addressToString(accountId_Address);
+        const req = this.http.request<GetAccountMultisigsData, TonApiError>({
+            path: `/v2/accounts/${accountId}/multisigs`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetAccountMultisigsData, TonApiError>(req, {
+            $ref: '#/components/schemas/Multisigs'
+        });
+    }
+
+    /**
+     * @description Get account's balance change
+     *
+     * @tags Accounts
+     * @name GetAccountDiff
+     * @request GET:/v2/accounts/{account_id}/diff
+     */
+    /**
+     * @description Get account's balance change
+     *
+     * @tags Accounts
+     * @name GetAccountDiff
+     * @request GET:/v2/accounts/{account_id}/diff
+     */
+    getAccountDiff(
+        accountId_Address: Address | string,
+        query: {
+            /**
+             * @format int64
+             * @max 2114380800
+             * @example 1668436763
+             */
+            start_date: number;
+            /**
+             * @format int64
+             * @max 2114380800
+             * @example 1668436763
+             */
+            end_date: number;
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<GetAccountDiffData, TonApiError> {
+        const accountId = addressToString(accountId_Address);
+        const req = this.http.request<GetAccountDiffData, TonApiError>({
+            path: `/v2/accounts/${accountId}/diff`,
+            method: 'GET',
+            query: query,
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetAccountDiffData, TonApiError>(req, {
+            type: 'object',
+            required: ['balance_change'],
+            properties: { balance_change: { type: 'integer', format: 'int64' } }
+        });
+    }
+
+    /**
+     * @description Get the transfer history of extra currencies for an account.
+     *
+     * @tags Accounts
+     * @name GetAccountExtraCurrencyHistoryById
+     * @request GET:/v2/accounts/{account_id}/extra-currency/{id}/history
+     */
+    /**
+     * @description Get the transfer history of extra currencies for an account.
+     *
+     * @tags Accounts
+     * @name GetAccountExtraCurrencyHistoryById
+     * @request GET:/v2/accounts/{account_id}/extra-currency/{id}/history
+     */
+    getAccountExtraCurrencyHistoryById(
+        accountId_Address: Address | string,
+        id: number,
+        query: {
+            /**
+             * omit this parameter to get last events
+             * @format bigint
+             * @example 25758317000002
+             */
+            before_lt?: bigint;
+            /**
+             * @min 1
+             * @max 1000
+             * @example 100
+             */
+            limit: number;
+            /**
+             * @format int64
+             * @max 2114380800
+             * @example 1668436763
+             */
+            start_date?: number;
+            /**
+             * @format int64
+             * @max 2114380800
+             * @example 1668436763
+             */
+            end_date?: number;
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<GetAccountExtraCurrencyHistoryByIdData, TonApiError> {
+        const accountId = addressToString(accountId_Address);
+        const req = this.http.request<GetAccountExtraCurrencyHistoryByIdData, TonApiError>({
+            path: `/v2/accounts/${accountId}/extra-currency/${id}/history`,
+            method: 'GET',
+            query: query,
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetAccountExtraCurrencyHistoryByIdData, TonApiError>(req, {
+            $ref: '#/components/schemas/AccountEvents'
+        });
+    }
+
+    /**
+     * @description Get the transfer jetton history for account and jetton
+     *
+     * @tags Accounts
+     * @name GetJettonAccountHistoryById
+     * @request GET:/v2/jettons/{jetton_id}/accounts/{account_id}/history
+     */
+    /**
+     * @description Get the transfer jetton history for account and jetton
+     *
+     * @tags Accounts
+     * @name GetJettonAccountHistoryById
+     * @request GET:/v2/jettons/{jetton_id}/accounts/{account_id}/history
+     */
+    getJettonAccountHistoryById(
+        accountId_Address: Address | string,
+        jettonId_Address: Address | string,
+        query: {
+            /**
+             * omit this parameter to get last events
+             * @format bigint
+             * @example 25758317000002
+             */
+            before_lt?: bigint;
+            /**
+             * @min 1
+             * @max 1000
+             * @example 100
+             */
+            limit: number;
+            /**
+             * @format int64
+             * @max 2114380800
+             * @example 1668436763
+             */
+            start_date?: number;
+            /**
+             * @format int64
+             * @max 2114380800
+             * @example 1668436763
+             */
+            end_date?: number;
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<GetJettonAccountHistoryByIdData, TonApiError> {
+        const accountId = addressToString(accountId_Address);
+        const jettonId = addressToString(jettonId_Address);
+        const req = this.http.request<GetJettonAccountHistoryByIdData, TonApiError>({
+            path: `/v2/jettons/${jettonId}/accounts/${accountId}/history`,
+            method: 'GET',
+            query: query,
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetJettonAccountHistoryByIdData, TonApiError>(req, {
+            $ref: '#/components/schemas/JettonOperations'
+        });
+    }
+
+    /**
+     * @description Get the transfer nft history
+     *
+     * @tags NFT
+     * @name GetAccountNftHistory
+     * @request GET:/v2/accounts/{account_id}/nfts/history
+     */
+    /**
+     * @description Get the transfer nft history
+     *
+     * @tags NFT
+     * @name GetAccountNftHistory
+     * @request GET:/v2/accounts/{account_id}/nfts/history
+     */
+    getAccountNftHistory(
+        accountId_Address: Address | string,
+        query: {
+            /**
+             * omit this parameter to get last events
+             * @format bigint
+             * @example 25758317000002
+             */
+            before_lt?: bigint;
+            /**
+             * @min 1
+             * @max 1000
+             * @example 100
+             */
+            limit: number;
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<GetAccountNftHistoryData, TonApiError> {
+        const accountId = addressToString(accountId_Address);
+        const req = this.http.request<GetAccountNftHistoryData, TonApiError>({
+            path: `/v2/accounts/${accountId}/nfts/history`,
+            method: 'GET',
+            query: query,
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetAccountNftHistoryData, TonApiError>(req, {
+            $ref: '#/components/schemas/NftOperations'
+        });
+    }
+
+    /**
+     * @description Get NFT collections
+     *
+     * @tags NFT
+     * @name GetNftCollections
+     * @request GET:/v2/nfts/collections
+     */
+    /**
+     * @description Get NFT collections
+     *
+     * @tags NFT
+     * @name GetNftCollections
+     * @request GET:/v2/nfts/collections
+     */
+    getNftCollections(
+        query?: {
+            /**
+             * @format int32
+             * @min 1
+             * @max 1000
+             * @default 100
+             * @example 15
+             */
+            limit?: number;
+            /**
+             * @format int32
+             * @min 0
+             * @default 0
+             * @example 10
+             */
+            offset?: number;
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<GetNftCollectionsData, TonApiError> {
+        const req = this.http.request<GetNftCollectionsData, TonApiError>({
+            path: `/v2/nfts/collections`,
+            method: 'GET',
+            query: query,
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetNftCollectionsData, TonApiError>(req, {
+            $ref: '#/components/schemas/NftCollections'
+        });
+    }
+
+    /**
+     * @description Get NFT collection by collection address
+     *
+     * @tags NFT
+     * @name GetNftCollection
+     * @request GET:/v2/nfts/collections/{account_id}
+     */
+    /**
+     * @description Get NFT collection by collection address
+     *
+     * @tags NFT
+     * @name GetNftCollection
+     * @request GET:/v2/nfts/collections/{account_id}
+     */
+    getNftCollection(
+        accountId_Address: Address | string,
+        params: RequestParams = {}
+    ): TonApiPromise<GetNftCollectionData, TonApiError> {
+        const accountId = addressToString(accountId_Address);
+        const req = this.http.request<GetNftCollectionData, TonApiError>({
+            path: `/v2/nfts/collections/${accountId}`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetNftCollectionData, TonApiError>(req, {
+            $ref: '#/components/schemas/NftCollection'
+        });
+    }
+
+    /**
+     * @description Get NFT collection items by their addresses
+     *
+     * @tags NFT
+     * @name GetNftCollectionItemsByAddresses
+     * @request POST:/v2/nfts/collections/_bulk
+     */
+    /**
+     * @description Get NFT collection items by their addresses
+     *
+     * @tags NFT
+     * @name GetNftCollectionItemsByAddresses
+     * @request POST:/v2/nfts/collections/_bulk
+     */
+    getNftCollectionItemsByAddresses(
+        data: {
+            accountIds: (Address | string)[];
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<GetNftCollectionItemsByAddressesData, TonApiError> {
+        const req = this.http.request<GetNftCollectionItemsByAddressesData, TonApiError>({
+            path: `/v2/nfts/collections/_bulk`,
+            method: 'POST',
+            body: prepareRequestData(data, {
+                type: 'object',
+                required: ['accountIds'],
+                properties: {
+                    accountIds: { type: 'array', items: { type: 'string', format: 'address' } }
+                }
+            }),
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetNftCollectionItemsByAddressesData, TonApiError>(req, {
+            $ref: '#/components/schemas/NftCollections'
+        });
+    }
+
+    /**
+     * @description Get NFT items from collection by collection address
+     *
+     * @tags NFT
+     * @name GetItemsFromCollection
+     * @request GET:/v2/nfts/collections/{account_id}/items
+     */
+    /**
+     * @description Get NFT items from collection by collection address
+     *
+     * @tags NFT
+     * @name GetItemsFromCollection
+     * @request GET:/v2/nfts/collections/{account_id}/items
+     */
+    getItemsFromCollection(
+        accountId_Address: Address | string,
+        query?: {
+            /**
+             * @min 1
+             * @max 1000
+             * @default 1000
+             */
+            limit?: number;
+            /**
+             * @min 0
+             * @default 0
+             */
+            offset?: number;
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<GetItemsFromCollectionData, TonApiError> {
+        const accountId = addressToString(accountId_Address);
+        const req = this.http.request<GetItemsFromCollectionData, TonApiError>({
+            path: `/v2/nfts/collections/${accountId}/items`,
+            method: 'GET',
+            query: query,
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetItemsFromCollectionData, TonApiError>(req, {
+            $ref: '#/components/schemas/NftItems'
+        });
+    }
+
+    /**
+     * @description Get NFT items by their addresses
+     *
+     * @tags NFT
+     * @name GetNftItemsByAddresses
+     * @request POST:/v2/nfts/_bulk
+     */
+    /**
+     * @description Get NFT items by their addresses
+     *
+     * @tags NFT
+     * @name GetNftItemsByAddresses
+     * @request POST:/v2/nfts/_bulk
+     */
+    getNftItemsByAddresses(
+        data: {
+            accountIds: (Address | string)[];
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<GetNftItemsByAddressesData, TonApiError> {
+        const req = this.http.request<GetNftItemsByAddressesData, TonApiError>({
+            path: `/v2/nfts/_bulk`,
+            method: 'POST',
+            body: prepareRequestData(data, {
+                type: 'object',
+                required: ['accountIds'],
+                properties: {
+                    accountIds: { type: 'array', items: { type: 'string', format: 'address' } }
+                }
+            }),
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetNftItemsByAddressesData, TonApiError>(req, {
+            $ref: '#/components/schemas/NftItems'
+        });
+    }
+
+    /**
+     * @description Get NFT item by its address
+     *
+     * @tags NFT
+     * @name GetNftItemByAddress
+     * @request GET:/v2/nfts/{account_id}
+     */
+    /**
+     * @description Get NFT item by its address
+     *
+     * @tags NFT
+     * @name GetNftItemByAddress
+     * @request GET:/v2/nfts/{account_id}
+     */
+    getNftItemByAddress(
+        accountId_Address: Address | string,
+        params: RequestParams = {}
+    ): TonApiPromise<GetNftItemByAddressData, TonApiError> {
+        const accountId = addressToString(accountId_Address);
+        const req = this.http.request<GetNftItemByAddressData, TonApiError>({
+            path: `/v2/nfts/${accountId}`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetNftItemByAddressData, TonApiError>(req, {
+            $ref: '#/components/schemas/NftItem'
+        });
+    }
+
+    /**
+     * @description Please use `getAccountNftHistory`` instead
+     *
+     * @tags NFT
+     * @name GetNftHistoryById
+     * @request GET:/v2/nfts/{account_id}/history
+     * @deprecated
+     */
+    /**
+     * @description Please use `getAccountNftHistory`` instead
+     *
+     * @tags NFT
+     * @name GetNftHistoryById
+     * @request GET:/v2/nfts/{account_id}/history
+     * @deprecated
+     */
+    getNftHistoryById(
+        accountId_Address: Address | string,
+        query: {
+            /**
+             * omit this parameter to get last events
+             * @format bigint
+             * @example 25758317000002
+             */
+            before_lt?: bigint;
+            /**
+             * @min 1
+             * @max 1000
+             * @example 100
+             */
+            limit: number;
+            /**
+             * @format int64
+             * @max 2114380800
+             * @example 1668436763
+             */
+            start_date?: number;
+            /**
+             * @format int64
+             * @max 2114380800
+             * @example 1668436763
+             */
+            end_date?: number;
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<GetNftHistoryByIdData, TonApiError> {
+        const accountId = addressToString(accountId_Address);
+        const req = this.http.request<GetNftHistoryByIdData, TonApiError>({
+            path: `/v2/nfts/${accountId}/history`,
+            method: 'GET',
+            query: query,
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetNftHistoryByIdData, TonApiError>(req, {
+            $ref: '#/components/schemas/AccountEvents'
+        });
+    }
+
+    /**
+     * @description Get full information about domain name
+     *
+     * @tags DNS
+     * @name GetDnsInfo
+     * @request GET:/v2/dns/{domain_name}
+     */
+    /**
+     * @description Get full information about domain name
+     *
+     * @tags DNS
+     * @name GetDnsInfo
+     * @request GET:/v2/dns/{domain_name}
+     */
+    getDnsInfo(
+        domainName: string,
+        params: RequestParams = {}
+    ): TonApiPromise<GetDnsInfoData, TonApiError> {
+        const req = this.http.request<GetDnsInfoData, TonApiError>({
+            path: `/v2/dns/${domainName}`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetDnsInfoData, TonApiError>(req, {
+            $ref: '#/components/schemas/DomainInfo'
+        });
+    }
+
+    /**
+     * @description DNS resolve for domain name
+     *
+     * @tags DNS
+     * @name DnsResolve
+     * @request GET:/v2/dns/{domain_name}/resolve
+     */
+    /**
+     * @description DNS resolve for domain name
+     *
+     * @tags DNS
+     * @name DnsResolve
+     * @request GET:/v2/dns/{domain_name}/resolve
+     */
+    dnsResolve(
+        domainName: string,
+        query?: {
+            /** @default false */
+            filter?: boolean;
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<DnsResolveData, TonApiError> {
+        const req = this.http.request<DnsResolveData, TonApiError>({
+            path: `/v2/dns/${domainName}/resolve`,
+            method: 'GET',
+            query: query,
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<DnsResolveData, TonApiError>(req, {
+            $ref: '#/components/schemas/DnsRecord'
+        });
+    }
+
+    /**
+     * @description Get domain bids
+     *
+     * @tags DNS
+     * @name GetDomainBids
+     * @request GET:/v2/dns/{domain_name}/bids
+     */
+    /**
+     * @description Get domain bids
+     *
+     * @tags DNS
+     * @name GetDomainBids
+     * @request GET:/v2/dns/{domain_name}/bids
+     */
+    getDomainBids(
+        domainName: string,
+        params: RequestParams = {}
+    ): TonApiPromise<GetDomainBidsData, TonApiError> {
+        const req = this.http.request<GetDomainBidsData, TonApiError>({
+            path: `/v2/dns/${domainName}/bids`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetDomainBidsData, TonApiError>(req, {
+            $ref: '#/components/schemas/DomainBids'
+        });
+    }
+
+    /**
+     * @description Get all auctions
+     *
+     * @tags DNS
+     * @name GetAllAuctions
+     * @request GET:/v2/dns/auctions
+     */
+    /**
+     * @description Get all auctions
+     *
+     * @tags DNS
+     * @name GetAllAuctions
+     * @request GET:/v2/dns/auctions
+     */
+    getAllAuctions(
+        query?: {
+            /**
+             * domain filter for current auctions "ton" or "t.me"
+             * @example "ton"
+             */
+            tld?: string;
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<GetAllAuctionsData, TonApiError> {
+        const req = this.http.request<GetAllAuctionsData, TonApiError>({
+            path: `/v2/dns/auctions`,
+            method: 'GET',
+            query: query,
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetAllAuctionsData, TonApiError>(req, {
+            $ref: '#/components/schemas/Auctions'
+        });
+    }
+
+    /**
+     * @description Get the trace by trace ID or hash of any transaction in trace
+     *
+     * @tags Traces
+     * @name GetTrace
+     * @request GET:/v2/traces/{trace_id}
+     */
+    /**
+     * @description Get the trace by trace ID or hash of any transaction in trace
+     *
+     * @tags Traces
+     * @name GetTrace
+     * @request GET:/v2/traces/{trace_id}
+     */
+    getTrace(
+        traceId: string,
+        params: RequestParams = {}
+    ): TonApiPromise<GetTraceData, TonApiError> {
+        const req = this.http.request<GetTraceData, TonApiError>({
+            path: `/v2/traces/${traceId}`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetTraceData, TonApiError>(req, {
+            $ref: '#/components/schemas/Trace'
+        });
+    }
+
+    /**
+     * @description Get an event either by event ID or a hash of any transaction in a trace. An event is built on top of a trace which is a series of transactions caused by one inbound message. TonAPI looks for known patterns inside the trace and splits the trace into actions, where a single action represents a meaningful high-level operation like a Jetton Transfer or an NFT Purchase. Actions are expected to be shown to users. It is advised not to build any logic on top of actions because actions can be changed at any time.
+     *
+     * @tags Events
+     * @name GetEvent
+     * @request GET:/v2/events/{event_id}
+     */
+    /**
+     * @description Get an event either by event ID or a hash of any transaction in a trace. An event is built on top of a trace which is a series of transactions caused by one inbound message. TonAPI looks for known patterns inside the trace and splits the trace into actions, where a single action represents a meaningful high-level operation like a Jetton Transfer or an NFT Purchase. Actions are expected to be shown to users. It is advised not to build any logic on top of actions because actions can be changed at any time.
+     *
+     * @tags Events
+     * @name GetEvent
+     * @request GET:/v2/events/{event_id}
+     */
+    getEvent(
+        eventId: string,
+        params: RequestParams = {}
+    ): TonApiPromise<GetEventData, TonApiError> {
+        const req = this.http.request<GetEventData, TonApiError>({
+            path: `/v2/events/${eventId}`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetEventData, TonApiError>(req, {
+            $ref: '#/components/schemas/Event'
+        });
+    }
+
+    /**
+     * @description Get a list of all indexed jetton masters in the blockchain.
+     *
+     * @tags Jettons
+     * @name GetJettons
+     * @request GET:/v2/jettons
+     */
+    /**
+     * @description Get a list of all indexed jetton masters in the blockchain.
+     *
+     * @tags Jettons
+     * @name GetJettons
+     * @request GET:/v2/jettons
+     */
+    getJettons(
+        query?: {
+            /**
+             * @format int32
+             * @min 1
+             * @max 1000
+             * @default 100
+             * @example 15
+             */
+            limit?: number;
+            /**
+             * @format int32
+             * @min 0
+             * @default 0
+             * @example 10
+             */
+            offset?: number;
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<GetJettonsData, TonApiError> {
+        const req = this.http.request<GetJettonsData, TonApiError>({
+            path: `/v2/jettons`,
+            method: 'GET',
+            query: query,
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetJettonsData, TonApiError>(req, {
+            $ref: '#/components/schemas/Jettons'
+        });
+    }
+
+    /**
+     * @description Get jetton metadata by jetton master address
+     *
+     * @tags Jettons
+     * @name GetJettonInfo
+     * @request GET:/v2/jettons/{account_id}
+     */
+    /**
+     * @description Get jetton metadata by jetton master address
+     *
+     * @tags Jettons
+     * @name GetJettonInfo
+     * @request GET:/v2/jettons/{account_id}
+     */
+    getJettonInfo(
+        accountId_Address: Address | string,
+        params: RequestParams = {}
+    ): TonApiPromise<GetJettonInfoData, TonApiError> {
+        const accountId = addressToString(accountId_Address);
+        const req = this.http.request<GetJettonInfoData, TonApiError>({
+            path: `/v2/jettons/${accountId}`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetJettonInfoData, TonApiError>(req, {
+            $ref: '#/components/schemas/JettonInfo'
+        });
+    }
+
+    /**
+     * @description Get jetton metadata items by jetton master addresses
+     *
+     * @tags Jettons
+     * @name GetJettonInfosByAddresses
+     * @request POST:/v2/jettons/_bulk
+     */
+    /**
+     * @description Get jetton metadata items by jetton master addresses
+     *
+     * @tags Jettons
+     * @name GetJettonInfosByAddresses
+     * @request POST:/v2/jettons/_bulk
+     */
+    getJettonInfosByAddresses(
+        data: {
+            accountIds: (Address | string)[];
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<GetJettonInfosByAddressesData, TonApiError> {
+        const req = this.http.request<GetJettonInfosByAddressesData, TonApiError>({
+            path: `/v2/jettons/_bulk`,
+            method: 'POST',
+            body: prepareRequestData(data, {
+                type: 'object',
+                required: ['accountIds'],
+                properties: {
+                    accountIds: { type: 'array', items: { type: 'string', format: 'address' } }
+                }
+            }),
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetJettonInfosByAddressesData, TonApiError>(req, {
+            $ref: '#/components/schemas/Jettons'
+        });
+    }
+
+    /**
+     * @description Get jetton's holders
+     *
+     * @tags Jettons
+     * @name GetJettonHolders
+     * @request GET:/v2/jettons/{account_id}/holders
+     */
+    /**
+     * @description Get jetton's holders
+     *
+     * @tags Jettons
+     * @name GetJettonHolders
+     * @request GET:/v2/jettons/{account_id}/holders
+     */
+    getJettonHolders(
+        accountId_Address: Address | string,
+        query?: {
+            /**
+             * @min 1
+             * @max 1000
+             * @default 1000
+             */
+            limit?: number;
+            /**
+             * @min 0
+             * @max 9000
+             * @default 0
+             */
+            offset?: number;
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<GetJettonHoldersData, TonApiError> {
+        const accountId = addressToString(accountId_Address);
+        const req = this.http.request<GetJettonHoldersData, TonApiError>({
+            path: `/v2/jettons/${accountId}/holders`,
+            method: 'GET',
+            query: query,
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetJettonHoldersData, TonApiError>(req, {
+            $ref: '#/components/schemas/JettonHolders'
+        });
+    }
+
+    /**
+     * @description Get jetton's custom payload and state init required for transfer
+     *
+     * @tags Jettons
+     * @name GetJettonTransferPayload
+     * @request GET:/v2/jettons/{jetton_id}/transfer/{account_id}/payload
+     */
+    /**
+     * @description Get jetton's custom payload and state init required for transfer
+     *
+     * @tags Jettons
+     * @name GetJettonTransferPayload
+     * @request GET:/v2/jettons/{jetton_id}/transfer/{account_id}/payload
+     */
+    getJettonTransferPayload(
+        accountId_Address: Address | string,
+        jettonId_Address: Address | string,
+        params: RequestParams = {}
+    ): TonApiPromise<GetJettonTransferPayloadData, TonApiError> {
+        const accountId = addressToString(accountId_Address);
+        const jettonId = addressToString(jettonId_Address);
+        const req = this.http.request<GetJettonTransferPayloadData, TonApiError>({
+            path: `/v2/jettons/${jettonId}/transfer/${accountId}/payload`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetJettonTransferPayloadData, TonApiError>(req, {
+            $ref: '#/components/schemas/JettonTransferPayload'
+        });
+    }
+
+    /**
+     * @description Get only jetton transfers in the event
+     *
+     * @tags Jettons
+     * @name GetJettonsEvents
+     * @request GET:/v2/events/{event_id}/jettons
+     */
+    /**
+     * @description Get only jetton transfers in the event
+     *
+     * @tags Jettons
+     * @name GetJettonsEvents
+     * @request GET:/v2/events/{event_id}/jettons
+     */
+    getJettonsEvents(
+        eventId: string,
+        params: RequestParams = {}
+    ): TonApiPromise<GetJettonsEventsData, TonApiError> {
+        const req = this.http.request<GetJettonsEventsData, TonApiError>({
+            path: `/v2/events/${eventId}/jettons`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetJettonsEventsData, TonApiError>(req, {
+            $ref: '#/components/schemas/Event'
+        });
+    }
+
+    /**
+     * @description Get extra currency info by id
+     *
+     * @tags ExtraCurrency
+     * @name GetExtraCurrencyInfo
+     * @request GET:/v2/extra-currency/{id}
+     */
+    /**
+     * @description Get extra currency info by id
+     *
+     * @tags ExtraCurrency
+     * @name GetExtraCurrencyInfo
+     * @request GET:/v2/extra-currency/{id}
+     */
+    getExtraCurrencyInfo(
+        id: number,
+        params: RequestParams = {}
+    ): TonApiPromise<GetExtraCurrencyInfoData, TonApiError> {
+        const req = this.http.request<GetExtraCurrencyInfoData, TonApiError>({
+            path: `/v2/extra-currency/${id}`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetExtraCurrencyInfoData, TonApiError>(req, {
+            $ref: '#/components/schemas/EcPreview'
+        });
+    }
+
+    /**
+     * @description All pools where account participates
+     *
+     * @tags Staking
+     * @name GetAccountNominatorsPools
+     * @request GET:/v2/staking/nominator/{account_id}/pools
+     */
+    /**
+     * @description All pools where account participates
+     *
+     * @tags Staking
+     * @name GetAccountNominatorsPools
+     * @request GET:/v2/staking/nominator/{account_id}/pools
+     */
+    getAccountNominatorsPools(
+        accountId_Address: Address | string,
+        params: RequestParams = {}
+    ): TonApiPromise<GetAccountNominatorsPoolsData, TonApiError> {
+        const accountId = addressToString(accountId_Address);
+        const req = this.http.request<GetAccountNominatorsPoolsData, TonApiError>({
+            path: `/v2/staking/nominator/${accountId}/pools`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetAccountNominatorsPoolsData, TonApiError>(req, {
+            $ref: '#/components/schemas/AccountStaking'
+        });
+    }
+
+    /**
+     * @description Stacking pool info
+     *
+     * @tags Staking
+     * @name GetStakingPoolInfo
+     * @request GET:/v2/staking/pool/{account_id}
+     */
+    /**
+     * @description Stacking pool info
+     *
+     * @tags Staking
+     * @name GetStakingPoolInfo
+     * @request GET:/v2/staking/pool/{account_id}
+     */
+    getStakingPoolInfo(
+        accountId_Address: Address | string,
+        params: RequestParams = {}
+    ): TonApiPromise<GetStakingPoolInfoData, TonApiError> {
+        const accountId = addressToString(accountId_Address);
+        const req = this.http.request<GetStakingPoolInfoData, TonApiError>({
+            path: `/v2/staking/pool/${accountId}`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetStakingPoolInfoData, TonApiError>(req, {
+            type: 'object',
+            required: ['implementation', 'pool'],
+            properties: {
+                implementation: { $ref: '#/components/schemas/PoolImplementation' },
+                pool: { $ref: '#/components/schemas/PoolInfo' }
+            }
+        });
+    }
+
+    /**
+     * @description Pool history
+     *
+     * @tags Staking
+     * @name GetStakingPoolHistory
+     * @request GET:/v2/staking/pool/{account_id}/history
+     */
+    /**
+     * @description Pool history
+     *
+     * @tags Staking
+     * @name GetStakingPoolHistory
+     * @request GET:/v2/staking/pool/{account_id}/history
+     */
+    getStakingPoolHistory(
+        accountId_Address: Address | string,
+        params: RequestParams = {}
+    ): TonApiPromise<GetStakingPoolHistoryData, TonApiError> {
+        const accountId = addressToString(accountId_Address);
+        const req = this.http.request<GetStakingPoolHistoryData, TonApiError>({
+            path: `/v2/staking/pool/${accountId}/history`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetStakingPoolHistoryData, TonApiError>(req, {
+            type: 'object',
+            required: ['apy'],
+            properties: {
+                apy: { type: 'array', items: { $ref: '#/components/schemas/ApyHistory' } }
+            }
+        });
+    }
+
+    /**
+     * @description All pools available in network
+     *
+     * @tags Staking
+     * @name GetStakingPools
+     * @request GET:/v2/staking/pools
+     */
+    /**
+     * @description All pools available in network
+     *
+     * @tags Staking
+     * @name GetStakingPools
+     * @request GET:/v2/staking/pools
+     */
+    getStakingPools(
+        query?: {
+            /**
+             * account ID
+             * @format address
+             * @example "0:97264395BD65A255A429B11326C84128B7D70FFED7949ABAE3036D506BA38621"
+             */
+            available_for?: Address | string;
+            /**
+             * return also pools not from white list - just compatible by interfaces (maybe dangerous!)
+             * @example false
+             */
+            include_unverified?: boolean;
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<GetStakingPoolsData, TonApiError> {
+        const req = this.http.request<GetStakingPoolsData, TonApiError>({
+            path: `/v2/staking/pools`,
+            method: 'GET',
+            query: query && {
+                ...query,
+                available_for: addressToString(query.available_for)
+            },
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetStakingPoolsData, TonApiError>(req, {
+            type: 'object',
+            required: ['pools', 'implementations'],
+            properties: {
+                pools: { type: 'array', items: { $ref: '#/components/schemas/PoolInfo' } },
+                implementations: {
+                    type: 'object',
+                    additionalProperties: { $ref: '#/components/schemas/PoolImplementation' }
+                }
+            }
+        });
+    }
+
+    /**
+     * @description Get TON storage providers deployed to the blockchain.
+     *
+     * @tags Storage
+     * @name GetStorageProviders
+     * @request GET:/v2/storage/providers
+     */
+    /**
+     * @description Get TON storage providers deployed to the blockchain.
+     *
+     * @tags Storage
+     * @name GetStorageProviders
+     * @request GET:/v2/storage/providers
+     */
+    getStorageProviders(
+        params: RequestParams = {}
+    ): TonApiPromise<GetStorageProvidersData, TonApiError> {
+        const req = this.http.request<GetStorageProvidersData, TonApiError>({
+            path: `/v2/storage/providers`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetStorageProvidersData, TonApiError>(req, {
+            type: 'object',
+            required: ['providers'],
+            properties: {
+                providers: {
+                    type: 'array',
+                    items: { $ref: '#/components/schemas/StorageProvider' }
+                }
+            }
+        });
+    }
+
+    /**
+     * @description Get the token price in the chosen currency for display only. Don’t use this for financial transactions.
+     *
+     * @tags Rates
+     * @name GetRates
+     * @request GET:/v2/rates
+     */
+    /**
+     * @description Get the token price in the chosen currency for display only. Don’t use this for financial transactions.
+     *
+     * @tags Rates
+     * @name GetRates
+     * @request GET:/v2/rates
+     */
+    getRates(
+        query: {
+            /**
+             * accept cryptocurrencies and jetton master addresses, separated by commas
+             * @maxItems 100
+             * @example ["ton","btc","EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs"]
+             */
+            tokens: (Address | string)[];
+            /**
+             * accept cryptocurrencies and all possible fiat currencies
+             * @maxItems 50
+             * @example ["ton","btc","usd","rub"]
+             */
+            currencies: string[];
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<GetRatesData, TonApiError> {
+        const req = this.http.request<GetRatesData, TonApiError>({
+            path: `/v2/rates`,
+            method: 'GET',
+            query: query && {
+                ...query,
+                tokens: query.tokens.map(item => tokenOrAddressToString(item))
+            },
+            queryImplode: ['tokens', 'currencies'],
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetRatesData, TonApiError>(req, {
+            type: 'object',
+            required: ['rates'],
+            properties: {
+                rates: {
+                    type: 'object',
+                    additionalProperties: { $ref: '#/components/schemas/TokenRates' }
+                }
+            }
+        });
+    }
+
+    /**
+     * @description Get chart by token
+     *
+     * @tags Rates
+     * @name GetChartRates
+     * @request GET:/v2/rates/chart
+     */
+    /**
+     * @description Get chart by token
+     *
+     * @tags Rates
+     * @name GetChartRates
+     * @request GET:/v2/rates/chart
+     */
+    getChartRates(
+        query: {
+            /**
+             * accept cryptocurrency or jetton master address
+             * @format token-or-address
+             * @example [{"value":"ton","description":"cryptocurrency code (ton, btc, etc.)"},{"value":"EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs","description":"jetton master address usdt for example"}]
+             */
+            token: Address | string;
+            /** @example "usd" */
+            currency?: string;
+            /**
+             * @format int64
+             * @max 2114380800
+             * @example 1668436763
+             */
+            start_date?: number;
+            /**
+             * @format int64
+             * @max 2114380800
+             * @example 1668436763
+             */
+            end_date?: number;
+            /**
+             * @format int
+             * @min 0
+             * @max 200
+             * @default 200
+             */
+            points_count?: number;
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<GetChartRatesData, TonApiError> {
+        const req = this.http.request<GetChartRatesData, TonApiError>({
+            path: `/v2/rates/chart`,
+            method: 'GET',
+            query: query && {
+                ...query,
+                token: tokenOrAddressToString(query.token)
+            },
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetChartRatesData, TonApiError>(req, {
+            type: 'object',
+            required: ['points'],
+            properties: {
+                points: { type: 'array', items: { $ref: '#/components/schemas/ChartPoints' } }
+            }
+        });
+    }
+
+    /**
+     * @description Get the TON price from markets
+     *
+     * @tags Rates
+     * @name GetMarketsRates
+     * @request GET:/v2/rates/markets
+     */
+    /**
+     * @description Get the TON price from markets
+     *
+     * @tags Rates
+     * @name GetMarketsRates
+     * @request GET:/v2/rates/markets
+     */
+    getMarketsRates(params: RequestParams = {}): TonApiPromise<GetMarketsRatesData, TonApiError> {
+        const req = this.http.request<GetMarketsRatesData, TonApiError>({
+            path: `/v2/rates/markets`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetMarketsRatesData, TonApiError>(req, {
+            type: 'object',
+            required: ['markets'],
+            properties: {
+                markets: { type: 'array', items: { $ref: '#/components/schemas/MarketTonRates' } }
+            }
+        });
+    }
+
+    /**
+     * @description Get a payload for further token receipt
+     *
+     * @tags Connect
+     * @name GetTonConnectPayload
+     * @request GET:/v2/tonconnect/payload
+     */
+    /**
+     * @description Get a payload for further token receipt
+     *
+     * @tags Connect
+     * @name GetTonConnectPayload
+     * @request GET:/v2/tonconnect/payload
+     */
+    getTonConnectPayload(
+        params: RequestParams = {}
+    ): TonApiPromise<GetTonConnectPayloadData, TonApiError> {
+        const req = this.http.request<GetTonConnectPayloadData, TonApiError>({
+            path: `/v2/tonconnect/payload`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetTonConnectPayloadData, TonApiError>(req, {
+            type: 'object',
+            required: ['payload'],
+            properties: { payload: { type: 'string' } }
+        });
+    }
+
+    /**
+     * @description Get account info by state init
+     *
+     * @tags Connect
+     * @name GetAccountInfoByStateInit
+     * @request POST:/v2/tonconnect/stateinit
+     */
+    /**
+     * @description Get account info by state init
+     *
+     * @tags Connect
+     * @name GetAccountInfoByStateInit
+     * @request POST:/v2/tonconnect/stateinit
+     */
+    getAccountInfoByStateInit(
+        data: {
+            /** @format cell-base64 */
+            stateInit: Cell | string;
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<GetAccountInfoByStateInitData, TonApiError> {
+        const req = this.http.request<GetAccountInfoByStateInitData, TonApiError>({
+            path: `/v2/tonconnect/stateinit`,
+            method: 'POST',
+            body: prepareRequestData(data, {
+                type: 'object',
+                required: ['stateInit'],
+                properties: { stateInit: { type: 'string', format: 'cell-base64' } }
+            }),
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetAccountInfoByStateInitData, TonApiError>(req, {
+            $ref: '#/components/schemas/AccountInfoByStateInit'
+        });
+    }
+
+    /**
+     * @description Account verification and token issuance
+     *
+     * @tags Wallet
+     * @name TonConnectProof
+     * @request POST:/v2/wallet/auth/proof
+     */
+    /**
+     * @description Account verification and token issuance
+     *
+     * @tags Wallet
+     * @name TonConnectProof
+     * @request POST:/v2/wallet/auth/proof
+     */
+    tonConnectProof(
+        data: {
+            /**
+             * @format address
+             * @example "0:97146a46acc2654y27947f14c4a4b14273e954f78bc017790b41208b0043200b"
+             */
+            address: Address | string;
+            proof: {
                 /**
-                 * @format address
-                 * @example "0:97146a46acc2654y27947f14c4a4b14273e954f78bc017790b41208b0043200b"
+                 * @format int64
+                 * @example "1678275313"
                  */
-                address: Address;
-                proof: {
-                    /**
-                     * @format int64
-                     * @example "1678275313"
-                     */
-                    timestamp: number;
-                    domain: {
-                        /** @format int32 */
-                        lengthBytes?: number;
-                        value: string;
-                    };
-                    signature: string;
-                    /** @example "84jHVNLQmZsAAAAAZB0Zryi2wqVJI-KaKNXOvCijEi46YyYzkaSHyJrMPBMOkVZa" */
-                    payload: string;
-                    /** @format cell-base64 */
-                    stateInit?: Cell;
+                timestamp: number;
+                domain: {
+                    /** @format int32 */
+                    lengthBytes?: number;
+                    value: string;
                 };
-            },
-            params: RequestParams = {}
-        ) => {
-            const req = this.http.request<TonConnectProofData, Error>({
-                path: `/v2/wallet/auth/proof`,
-                method: 'POST',
-                body: prepareRequestData(data, {
-                    type: 'object',
-                    required: ['address', 'proof'],
-                    properties: {
-                        address: { type: 'string', format: 'address' },
-                        proof: {
-                            type: 'object',
-                            required: ['timestamp', 'domain', 'signature', 'payload'],
-                            properties: {
-                                timestamp: { type: 'integer', format: 'int64' },
-                                domain: {
-                                    type: 'object',
-                                    required: ['value'],
-                                    properties: {
-                                        lengthBytes: { type: 'integer', format: 'int32' },
-                                        value: { type: 'string' }
-                                    }
-                                },
-                                signature: { type: 'string' },
-                                payload: { type: 'string' },
-                                stateInit: { type: 'string', format: 'cell-base64' }
-                            }
-                        }
-                    }
-                }),
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<TonConnectProofData>(req, {
-                type: 'object',
-                required: ['token'],
-                properties: { token: { type: 'string' } }
-            });
-        },
-
-        /**
-         * @description Get account seqno
-         *
-         * @tags Wallet
-         * @name GetAccountSeqno
-         * @request GET:/v2/wallet/{account_id}/seqno
-         */
-        getAccountSeqno: (accountId_Address: Address, params: RequestParams = {}) => {
-            const accountId = accountId_Address.toRawString();
-            const req = this.http.request<GetAccountSeqnoData, Error>({
-                path: `/v2/wallet/${accountId}/seqno`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetAccountSeqnoData>(req, {
-                $ref: '#/components/schemas/Seqno'
-            });
-        },
-
-        /**
-         * @description Get wallets by public key
-         *
-         * @tags Wallet
-         * @name GetWalletsByPublicKey
-         * @request GET:/v2/pubkeys/{public_key}/wallets
-         */
-        getWalletsByPublicKey: (publicKey: string, params: RequestParams = {}) => {
-            const req = this.http.request<GetWalletsByPublicKeyData, Error>({
-                path: `/v2/pubkeys/${publicKey}/wallets`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetWalletsByPublicKeyData>(req, {
-                $ref: '#/components/schemas/Accounts'
-            });
-        }
-    };
-    gasless = {
-        /**
-         * @description Returns configuration of gasless transfers
-         *
-         * @tags Gasless
-         * @name GaslessConfig
-         * @request GET:/v2/gasless/config
-         */
-        gaslessConfig: (params: RequestParams = {}) => {
-            const req = this.http.request<GaslessConfigData, Error>({
-                path: `/v2/gasless/config`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GaslessConfigData>(req, {
-                $ref: '#/components/schemas/GaslessConfig'
-            });
-        },
-
-        /**
-         * @description Estimates the cost of the given messages and returns a payload to sign
-         *
-         * @tags Gasless
-         * @name GaslessEstimate
-         * @request POST:/v2/gasless/estimate/{master_id}
-         */
-        gaslessEstimate: (
-            masterId_Address: Address,
-            data: {
-                /** @format address */
-                walletAddress: Address;
-                walletPublicKey: string;
-                messages: {
-                    /** @format cell */
-                    boc: Cell;
-                }[];
-            },
-            params: RequestParams = {}
-        ) => {
-            const masterId = masterId_Address.toRawString();
-            const req = this.http.request<GaslessEstimateData, Error>({
-                path: `/v2/gasless/estimate/${masterId}`,
-                method: 'POST',
-                body: prepareRequestData(data, {
-                    type: 'object',
-                    required: ['messages', 'walletAddress', 'walletPublicKey'],
-                    properties: {
-                        walletAddress: { type: 'string', format: 'address' },
-                        walletPublicKey: { type: 'string' },
-                        messages: {
-                            type: 'array',
-                            items: {
-                                type: 'object',
-                                required: ['boc'],
-                                properties: { boc: { type: 'string', format: 'cell' } }
-                            }
-                        }
-                    }
-                }),
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GaslessEstimateData>(req, {
-                $ref: '#/components/schemas/SignRawParams'
-            });
-        },
-
-        /**
-         * @description Submits the signed gasless transaction message to the network
-         *
-         * @tags Gasless
-         * @name GaslessSend
-         * @request POST:/v2/gasless/send
-         */
-        gaslessSend: (
-            data: {
-                /** hex encoded public key */
-                walletPublicKey: string;
-                /** @format cell */
-                boc: Cell;
-            },
-            params: RequestParams = {}
-        ) => {
-            const req = this.http.request<GaslessSendData, Error>({
-                path: `/v2/gasless/send`,
-                method: 'POST',
-                body: prepareRequestData(data, {
-                    type: 'object',
-                    required: ['boc', 'walletPublicKey'],
-                    properties: {
-                        walletPublicKey: { type: 'string' },
-                        boc: { type: 'string', format: 'cell' }
-                    }
-                }),
-                ...params
-            });
-
-            return prepareResponse<GaslessSendData>(req);
-        }
-    };
-    liteServer = {
-        /**
-         * @description Get raw masterchain info
-         *
-         * @tags Lite Server
-         * @name GetRawMasterchainInfo
-         * @request GET:/v2/liteserver/get_masterchain_info
-         */
-        getRawMasterchainInfo: (params: RequestParams = {}) => {
-            const req = this.http.request<GetRawMasterchainInfoData, Error>({
-                path: `/v2/liteserver/get_masterchain_info`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetRawMasterchainInfoData>(req, {
-                type: 'object',
-                required: ['last', 'state_root_hash', 'init'],
-                properties: {
-                    last: { $ref: '#/components/schemas/BlockRaw' },
-                    state_root_hash: { type: 'string' },
-                    init: { $ref: '#/components/schemas/InitStateRaw' }
-                }
-            });
-        },
-
-        /**
-         * @description Get raw masterchain info ext
-         *
-         * @tags Lite Server
-         * @name GetRawMasterchainInfoExt
-         * @request GET:/v2/liteserver/get_masterchain_info_ext
-         */
-        getRawMasterchainInfoExt: (
-            query: {
-                /**
-                 * mode
-                 * @format int32
-                 * @example 0
-                 */
-                mode: number;
-            },
-            params: RequestParams = {}
-        ) => {
-            const req = this.http.request<GetRawMasterchainInfoExtData, Error>({
-                path: `/v2/liteserver/get_masterchain_info_ext`,
-                method: 'GET',
-                query: query,
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetRawMasterchainInfoExtData>(req, {
-                type: 'object',
-                required: [
-                    'mode',
-                    'version',
-                    'capabilities',
-                    'last',
-                    'last_utime',
-                    'now',
-                    'state_root_hash',
-                    'init'
-                ],
-                properties: {
-                    mode: { type: 'integer', format: 'int32' },
-                    version: { type: 'integer', format: 'int32' },
-                    capabilities: { type: 'integer', format: 'int64' },
-                    last: { $ref: '#/components/schemas/BlockRaw' },
-                    last_utime: { type: 'integer', format: 'int32' },
-                    now: { type: 'integer', format: 'int32' },
-                    state_root_hash: { type: 'string' },
-                    init: { $ref: '#/components/schemas/InitStateRaw' }
-                }
-            });
-        },
-
-        /**
-         * @description Get raw time
-         *
-         * @tags Lite Server
-         * @name GetRawTime
-         * @request GET:/v2/liteserver/get_time
-         */
-        getRawTime: (params: RequestParams = {}) => {
-            const req = this.http.request<GetRawTimeData, Error>({
-                path: `/v2/liteserver/get_time`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetRawTimeData>(req, {
-                type: 'object',
-                required: ['time'],
-                properties: { time: { type: 'integer', format: 'int32' } }
-            });
-        },
-
-        /**
-         * @description Get raw blockchain block
-         *
-         * @tags Lite Server
-         * @name GetRawBlockchainBlock
-         * @request GET:/v2/liteserver/get_block/{block_id}
-         */
-        getRawBlockchainBlock: (blockId: string, params: RequestParams = {}) => {
-            const req = this.http.request<GetRawBlockchainBlockData, Error>({
-                path: `/v2/liteserver/get_block/${blockId}`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetRawBlockchainBlockData>(req, {
-                type: 'object',
-                required: ['id', 'data'],
-                properties: {
-                    id: { $ref: '#/components/schemas/BlockRaw' },
-                    data: { type: 'string' }
-                }
-            });
-        },
-
-        /**
-         * @description Get raw blockchain block state
-         *
-         * @tags Lite Server
-         * @name GetRawBlockchainBlockState
-         * @request GET:/v2/liteserver/get_state/{block_id}
-         */
-        getRawBlockchainBlockState: (blockId: string, params: RequestParams = {}) => {
-            const req = this.http.request<GetRawBlockchainBlockStateData, Error>({
-                path: `/v2/liteserver/get_state/${blockId}`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetRawBlockchainBlockStateData>(req, {
-                type: 'object',
-                required: ['id', 'root_hash', 'file_hash', 'data'],
-                properties: {
-                    id: { $ref: '#/components/schemas/BlockRaw' },
-                    root_hash: { type: 'string' },
-                    file_hash: { type: 'string' },
-                    data: { type: 'string' }
-                }
-            });
-        },
-
-        /**
-         * @description Get raw blockchain block header
-         *
-         * @tags Lite Server
-         * @name GetRawBlockchainBlockHeader
-         * @request GET:/v2/liteserver/get_block_header/{block_id}
-         */
-        getRawBlockchainBlockHeader: (
-            blockId: string,
-            query: {
-                /**
-                 * mode
-                 * @format int32
-                 * @example 0
-                 */
-                mode: number;
-            },
-            params: RequestParams = {}
-        ) => {
-            const req = this.http.request<GetRawBlockchainBlockHeaderData, Error>({
-                path: `/v2/liteserver/get_block_header/${blockId}`,
-                method: 'GET',
-                query: query,
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetRawBlockchainBlockHeaderData>(req, {
-                type: 'object',
-                required: ['id', 'mode', 'header_proof'],
-                properties: {
-                    id: { $ref: '#/components/schemas/BlockRaw' },
-                    mode: { type: 'integer', format: 'int32' },
-                    header_proof: { type: 'string' }
-                }
-            });
-        },
-
-        /**
-         * @description Send raw message to blockchain
-         *
-         * @tags Lite Server
-         * @name SendRawMessage
-         * @request POST:/v2/liteserver/send_message
-         */
-        sendRawMessage: (
-            data: {
+                signature: string;
+                /** @example "84jHVNLQmZsAAAAAZB0Zryi2wqVJI-KaKNXOvCijEi46YyYzkaSHyJrMPBMOkVZa" */
+                payload: string;
                 /** @format cell-base64 */
-                body: Cell;
-            },
-            params: RequestParams = {}
-        ) => {
-            const req = this.http.request<SendRawMessageData, Error>({
-                path: `/v2/liteserver/send_message`,
-                method: 'POST',
-                body: prepareRequestData(data, {
-                    type: 'object',
-                    required: ['body'],
-                    properties: { body: { type: 'string', format: 'cell-base64' } }
-                }),
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<SendRawMessageData>(req, {
-                type: 'object',
-                required: ['code'],
-                properties: { code: { type: 'integer', format: 'int32' } }
-            });
+                stateInit?: Cell | string;
+            };
         },
-
-        /**
-         * @description Get raw account state
-         *
-         * @tags Lite Server
-         * @name GetRawAccountState
-         * @request GET:/v2/liteserver/get_account_state/{account_id}
-         */
-        getRawAccountState: (
-            accountId_Address: Address,
-            query?: {
-                /**
-                 * target block: (workchain,shard,seqno,root_hash,file_hash)
-                 * @example "(-1,8000000000000000,4234234,3E575DAB1D25...90D8,47192E5C46C...BB29)"
-                 */
-                target_block?: string;
-            },
-            params: RequestParams = {}
-        ) => {
-            const accountId = accountId_Address.toRawString();
-            const req = this.http.request<GetRawAccountStateData, Error>({
-                path: `/v2/liteserver/get_account_state/${accountId}`,
-                method: 'GET',
-                query: query,
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetRawAccountStateData>(req, {
+        params: RequestParams = {}
+    ): TonApiPromise<TonConnectProofData, TonApiError> {
+        const req = this.http.request<TonConnectProofData, TonApiError>({
+            path: `/v2/wallet/auth/proof`,
+            method: 'POST',
+            body: prepareRequestData(data, {
                 type: 'object',
-                required: ['id', 'shardblk', 'shard_proof', 'proof', 'state'],
+                required: ['address', 'proof'],
                 properties: {
-                    id: { $ref: '#/components/schemas/BlockRaw' },
-                    shardblk: { $ref: '#/components/schemas/BlockRaw' },
-                    shard_proof: { type: 'string' },
-                    proof: { type: 'string' },
-                    state: { type: 'string' }
-                }
-            });
-        },
-
-        /**
-         * @description Get raw shard info
-         *
-         * @tags Lite Server
-         * @name GetRawShardInfo
-         * @request GET:/v2/liteserver/get_shard_info/{block_id}
-         */
-        getRawShardInfo: (
-            blockId: string,
-            query: {
-                /**
-                 * workchain
-                 * @format int32
-                 * @example 1
-                 */
-                workchain: number;
-                /**
-                 * shard
-                 * @format int64
-                 * @example 1
-                 */
-                shard: number;
-                /**
-                 * exact
-                 * @example false
-                 */
-                exact: boolean;
-            },
-            params: RequestParams = {}
-        ) => {
-            const req = this.http.request<GetRawShardInfoData, Error>({
-                path: `/v2/liteserver/get_shard_info/${blockId}`,
-                method: 'GET',
-                query: query,
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetRawShardInfoData>(req, {
-                type: 'object',
-                required: ['id', 'shardblk', 'shard_proof', 'shard_descr'],
-                properties: {
-                    id: { $ref: '#/components/schemas/BlockRaw' },
-                    shardblk: { $ref: '#/components/schemas/BlockRaw' },
-                    shard_proof: { type: 'string' },
-                    shard_descr: { type: 'string' }
-                }
-            });
-        },
-
-        /**
-         * @description Get all raw shards info
-         *
-         * @tags Lite Server
-         * @name GetAllRawShardsInfo
-         * @request GET:/v2/liteserver/get_all_shards_info/{block_id}
-         */
-        getAllRawShardsInfo: (blockId: string, params: RequestParams = {}) => {
-            const req = this.http.request<GetAllRawShardsInfoData, Error>({
-                path: `/v2/liteserver/get_all_shards_info/${blockId}`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetAllRawShardsInfoData>(req, {
-                type: 'object',
-                required: ['id', 'proof', 'data'],
-                properties: {
-                    id: { $ref: '#/components/schemas/BlockRaw' },
-                    proof: { type: 'string' },
-                    data: { type: 'string' }
-                }
-            });
-        },
-
-        /**
-         * @description Get raw transactions
-         *
-         * @tags Lite Server
-         * @name GetRawTransactions
-         * @request GET:/v2/liteserver/get_transactions/{account_id}
-         */
-        getRawTransactions: (
-            accountId_Address: Address,
-            query: {
-                /**
-                 * count
-                 * @format int32
-                 * @example 100
-                 */
-                count: number;
-                /**
-                 * lt
-                 * @format int64
-                 * @example 23814011000000
-                 */
-                lt: number;
-                /**
-                 * hash
-                 * @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85"
-                 */
-                hash: string;
-            },
-            params: RequestParams = {}
-        ) => {
-            const accountId = accountId_Address.toRawString();
-            const req = this.http.request<GetRawTransactionsData, Error>({
-                path: `/v2/liteserver/get_transactions/${accountId}`,
-                method: 'GET',
-                query: query,
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetRawTransactionsData>(req, {
-                type: 'object',
-                required: ['ids', 'transactions'],
-                properties: {
-                    ids: { type: 'array', items: { $ref: '#/components/schemas/BlockRaw' } },
-                    transactions: { type: 'string' }
-                }
-            });
-        },
-
-        /**
-         * @description Get raw list block transactions
-         *
-         * @tags Lite Server
-         * @name GetRawListBlockTransactions
-         * @request GET:/v2/liteserver/list_block_transactions/{block_id}
-         */
-        getRawListBlockTransactions: (
-            blockId: string,
-            query: {
-                /**
-                 * mode
-                 * @format int32
-                 * @example 0
-                 */
-                mode: number;
-                /**
-                 * count
-                 * @format int32
-                 * @example 100
-                 */
-                count: number;
-                /**
-                 * account ID
-                 * @format address
-                 * @example "0:97264395BD65A255A429B11326C84128B7D70FFED7949ABAE3036D506BA38621"
-                 */
-                account_id?: Address;
-                /**
-                 * lt
-                 * @format int64
-                 * @example 23814011000000
-                 */
-                lt?: number;
-            },
-            params: RequestParams = {}
-        ) => {
-            const req = this.http.request<GetRawListBlockTransactionsData, Error>({
-                path: `/v2/liteserver/list_block_transactions/${blockId}`,
-                method: 'GET',
-                query: query && {
-                    ...query,
-                    account_id: query.account_id?.toRawString()
-                },
-                queryImplode: ['account_id'],
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetRawListBlockTransactionsData>(req, {
-                type: 'object',
-                required: ['id', 'req_count', 'incomplete', 'ids', 'proof'],
-                properties: {
-                    id: { $ref: '#/components/schemas/BlockRaw' },
-                    req_count: { type: 'integer', format: 'int32' },
-                    incomplete: { type: 'boolean' },
-                    ids: {
-                        type: 'array',
-                        items: {
-                            type: 'object',
-                            required: ['mode'],
-                            properties: {
-                                mode: { type: 'integer', format: 'int32' },
-                                account: { type: 'string' },
-                                lt: { type: 'integer', format: 'bigint', 'x-js-format': 'bigint' },
-                                hash: { type: 'string' }
-                            }
+                    address: { type: 'string', format: 'address' },
+                    proof: {
+                        type: 'object',
+                        required: ['timestamp', 'domain', 'signature', 'payload'],
+                        properties: {
+                            timestamp: { type: 'integer', format: 'int64' },
+                            domain: {
+                                type: 'object',
+                                required: ['value'],
+                                properties: {
+                                    lengthBytes: { type: 'integer', format: 'int32' },
+                                    value: { type: 'string' }
+                                }
+                            },
+                            signature: { type: 'string' },
+                            payload: { type: 'string' },
+                            stateInit: { type: 'string', format: 'cell-base64' }
                         }
-                    },
-                    proof: { type: 'string' }
+                    }
                 }
-            });
+            }),
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<TonConnectProofData, TonApiError>(req, {
+            type: 'object',
+            required: ['token'],
+            properties: { token: { type: 'string' } }
+        });
+    }
+
+    /**
+     * @description Get account seqno
+     *
+     * @tags Wallet
+     * @name GetAccountSeqno
+     * @request GET:/v2/wallet/{account_id}/seqno
+     */
+    /**
+     * @description Get account seqno
+     *
+     * @tags Wallet
+     * @name GetAccountSeqno
+     * @request GET:/v2/wallet/{account_id}/seqno
+     */
+    getAccountSeqno(
+        accountId_Address: Address | string,
+        params: RequestParams = {}
+    ): TonApiPromise<GetAccountSeqnoData, TonApiError> {
+        const accountId = addressToString(accountId_Address);
+        const req = this.http.request<GetAccountSeqnoData, TonApiError>({
+            path: `/v2/wallet/${accountId}/seqno`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetAccountSeqnoData, TonApiError>(req, {
+            $ref: '#/components/schemas/Seqno'
+        });
+    }
+
+    /**
+     * @description Get human-friendly information about a wallet without low-level details.
+     *
+     * @tags Wallet
+     * @name GetWalletInfo
+     * @request GET:/v2/wallet/{account_id}
+     */
+    /**
+     * @description Get human-friendly information about a wallet without low-level details.
+     *
+     * @tags Wallet
+     * @name GetWalletInfo
+     * @request GET:/v2/wallet/{account_id}
+     */
+    getWalletInfo(
+        accountId_Address: Address | string,
+        params: RequestParams = {}
+    ): TonApiPromise<GetWalletInfoData, TonApiError> {
+        const accountId = addressToString(accountId_Address);
+        const req = this.http.request<GetWalletInfoData, TonApiError>({
+            path: `/v2/wallet/${accountId}`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetWalletInfoData, TonApiError>(req, {
+            $ref: '#/components/schemas/Wallet'
+        });
+    }
+
+    /**
+     * @description Get wallets by public key
+     *
+     * @tags Wallet
+     * @name GetWalletsByPublicKey
+     * @request GET:/v2/pubkeys/{public_key}/wallets
+     */
+    /**
+     * @description Get wallets by public key
+     *
+     * @tags Wallet
+     * @name GetWalletsByPublicKey
+     * @request GET:/v2/pubkeys/{public_key}/wallets
+     */
+    getWalletsByPublicKey(
+        publicKey: string,
+        params: RequestParams = {}
+    ): TonApiPromise<GetWalletsByPublicKeyData, TonApiError> {
+        const req = this.http.request<GetWalletsByPublicKeyData, TonApiError>({
+            path: `/v2/pubkeys/${publicKey}/wallets`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetWalletsByPublicKeyData, TonApiError>(req, {
+            $ref: '#/components/schemas/Wallets'
+        });
+    }
+
+    /**
+     * @description Returns configuration of gasless transfers
+     *
+     * @tags Gasless
+     * @name GaslessConfig
+     * @request GET:/v2/gasless/config
+     */
+    /**
+     * @description Returns configuration of gasless transfers
+     *
+     * @tags Gasless
+     * @name GaslessConfig
+     * @request GET:/v2/gasless/config
+     */
+    gaslessConfig(params: RequestParams = {}): TonApiPromise<GaslessConfigData, TonApiError> {
+        const req = this.http.request<GaslessConfigData, TonApiError>({
+            path: `/v2/gasless/config`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GaslessConfigData, TonApiError>(req, {
+            $ref: '#/components/schemas/GaslessConfig'
+        });
+    }
+
+    /**
+     * @description Estimates the cost of the given messages and returns a payload to sign
+     *
+     * @tags Gasless
+     * @name GaslessEstimate
+     * @request POST:/v2/gasless/estimate/{master_id}
+     */
+    /**
+     * @description Estimates the cost of the given messages and returns a payload to sign
+     *
+     * @tags Gasless
+     * @name GaslessEstimate
+     * @request POST:/v2/gasless/estimate/{master_id}
+     */
+    gaslessEstimate(
+        masterId_Address: Address | string,
+        data: {
+            /**
+             * TONAPI verifies that the account has enough jettons to pay the commission and make a transfer.
+             * @default false
+             */
+            throwErrorIfNotEnoughJettons?: boolean;
+            /** @default false */
+            returnEmulation?: boolean;
+            /** @format address */
+            walletAddress: Address | string;
+            walletPublicKey: string;
+            messages: {
+                /** @format cell */
+                boc: Cell | string;
+            }[];
         },
-
-        /**
-         * @description Get raw block proof
-         *
-         * @tags Lite Server
-         * @name GetRawBlockProof
-         * @request GET:/v2/liteserver/get_block_proof
-         */
-        getRawBlockProof: (
-            query: {
-                /**
-                 * known block: (workchain,shard,seqno,root_hash,file_hash)
-                 * @example "(-1,8000000000000000,4234234,3E575DAB1D25...90D8,47192E5C46C...BB29)"
-                 */
-                known_block: string;
-                /**
-                 * target block: (workchain,shard,seqno,root_hash,file_hash)
-                 * @example "(-1,8000000000000000,4234234,3E575DAB1D25...90D8,47192E5C46C...BB29)"
-                 */
-                target_block?: string;
-                /**
-                 * mode
-                 * @format int32
-                 * @example 0
-                 */
-                mode: number;
-            },
-            params: RequestParams = {}
-        ) => {
-            const req = this.http.request<GetRawBlockProofData, Error>({
-                path: `/v2/liteserver/get_block_proof`,
-                method: 'GET',
-                query: query,
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetRawBlockProofData>(req, {
+        params: RequestParams = {}
+    ): TonApiPromise<GaslessEstimateData, TonApiError> {
+        const masterId = addressToString(masterId_Address);
+        const req = this.http.request<GaslessEstimateData, TonApiError>({
+            path: `/v2/gasless/estimate/${masterId}`,
+            method: 'POST',
+            body: prepareRequestData(data, {
                 type: 'object',
-                required: ['complete', 'from', 'to', 'steps'],
+                required: ['messages', 'walletAddress', 'walletPublicKey'],
                 properties: {
-                    complete: { type: 'boolean' },
-                    from: { $ref: '#/components/schemas/BlockRaw' },
-                    to: { $ref: '#/components/schemas/BlockRaw' },
-                    steps: {
+                    throwErrorIfNotEnoughJettons: { type: 'boolean', default: false },
+                    returnEmulation: { type: 'boolean', default: false },
+                    walletAddress: { type: 'string', format: 'address' },
+                    walletPublicKey: { type: 'string' },
+                    messages: {
                         type: 'array',
                         items: {
                             type: 'object',
-                            required: [
-                                'lite_server_block_link_back',
-                                'lite_server_block_link_forward'
-                            ],
-                            properties: {
-                                lite_server_block_link_back: {
-                                    type: 'object',
-                                    required: [
-                                        'to_key_block',
-                                        'from',
-                                        'to',
-                                        'dest_proof',
-                                        'proof',
-                                        'state_proof'
-                                    ],
-                                    properties: {
-                                        to_key_block: { type: 'boolean' },
-                                        from: { $ref: '#/components/schemas/BlockRaw' },
-                                        to: { $ref: '#/components/schemas/BlockRaw' },
-                                        dest_proof: { type: 'string' },
-                                        proof: { type: 'string' },
-                                        state_proof: { type: 'string' }
-                                    }
-                                },
-                                lite_server_block_link_forward: {
-                                    type: 'object',
-                                    required: [
-                                        'to_key_block',
-                                        'from',
-                                        'to',
-                                        'dest_proof',
-                                        'config_proof',
-                                        'signatures'
-                                    ],
-                                    properties: {
-                                        to_key_block: { type: 'boolean' },
-                                        from: { $ref: '#/components/schemas/BlockRaw' },
-                                        to: { $ref: '#/components/schemas/BlockRaw' },
-                                        dest_proof: { type: 'string' },
-                                        config_proof: { type: 'string' },
-                                        signatures: {
-                                            type: 'object',
-                                            required: [
-                                                'validator_set_hash',
-                                                'catchain_seqno',
-                                                'signatures'
-                                            ],
-                                            properties: {
-                                                validator_set_hash: {
-                                                    type: 'integer',
-                                                    format: 'int64'
-                                                },
-                                                catchain_seqno: {
-                                                    type: 'integer',
-                                                    format: 'int32'
-                                                },
-                                                signatures: {
-                                                    type: 'array',
-                                                    items: {
-                                                        type: 'object',
-                                                        required: ['node_id_short', 'signature'],
-                                                        properties: {
-                                                            node_id_short: { type: 'string' },
-                                                            signature: { type: 'string' }
-                                                        }
+                            required: ['boc'],
+                            properties: { boc: { type: 'string', format: 'cell' } }
+                        }
+                    }
+                }
+            }),
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GaslessEstimateData, TonApiError>(req, {
+            $ref: '#/components/schemas/SignRawParams'
+        });
+    }
+
+    /**
+     * @description Submits the signed gasless transaction message to the network
+     *
+     * @tags Gasless
+     * @name GaslessSend
+     * @request POST:/v2/gasless/send
+     */
+    /**
+     * @description Submits the signed gasless transaction message to the network
+     *
+     * @tags Gasless
+     * @name GaslessSend
+     * @request POST:/v2/gasless/send
+     */
+    gaslessSend(
+        data: {
+            /** hex encoded public key */
+            walletPublicKey: string;
+            /** @format cell */
+            boc: Cell | string;
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<GaslessSendData, TonApiError> {
+        const req = this.http.request<GaslessSendData, TonApiError>({
+            path: `/v2/gasless/send`,
+            method: 'POST',
+            body: prepareRequestData(data, {
+                type: 'object',
+                required: ['boc', 'walletPublicKey'],
+                properties: {
+                    walletPublicKey: { type: 'string' },
+                    boc: { type: 'string', format: 'cell' }
+                }
+            }),
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GaslessSendData, TonApiError>(req, {
+            $ref: '#/components/schemas/GaslessTx'
+        });
+    }
+
+    /**
+     * @description Get raw masterchain info
+     *
+     * @tags Lite Server
+     * @name GetRawMasterchainInfo
+     * @request GET:/v2/liteserver/get_masterchain_info
+     */
+    /**
+     * @description Get raw masterchain info
+     *
+     * @tags Lite Server
+     * @name GetRawMasterchainInfo
+     * @request GET:/v2/liteserver/get_masterchain_info
+     */
+    getRawMasterchainInfo(
+        params: RequestParams = {}
+    ): TonApiPromise<GetRawMasterchainInfoData, TonApiError> {
+        const req = this.http.request<GetRawMasterchainInfoData, TonApiError>({
+            path: `/v2/liteserver/get_masterchain_info`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetRawMasterchainInfoData, TonApiError>(req, {
+            type: 'object',
+            required: ['last', 'state_root_hash', 'init'],
+            properties: {
+                last: { $ref: '#/components/schemas/BlockRaw' },
+                state_root_hash: { type: 'string' },
+                init: { $ref: '#/components/schemas/InitStateRaw' }
+            }
+        });
+    }
+
+    /**
+     * @description Get raw masterchain info ext
+     *
+     * @tags Lite Server
+     * @name GetRawMasterchainInfoExt
+     * @request GET:/v2/liteserver/get_masterchain_info_ext
+     */
+    /**
+     * @description Get raw masterchain info ext
+     *
+     * @tags Lite Server
+     * @name GetRawMasterchainInfoExt
+     * @request GET:/v2/liteserver/get_masterchain_info_ext
+     */
+    getRawMasterchainInfoExt(
+        query: {
+            /**
+             * mode
+             * @format int32
+             * @example 0
+             */
+            mode: number;
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<GetRawMasterchainInfoExtData, TonApiError> {
+        const req = this.http.request<GetRawMasterchainInfoExtData, TonApiError>({
+            path: `/v2/liteserver/get_masterchain_info_ext`,
+            method: 'GET',
+            query: query,
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetRawMasterchainInfoExtData, TonApiError>(req, {
+            type: 'object',
+            required: [
+                'mode',
+                'version',
+                'capabilities',
+                'last',
+                'last_utime',
+                'now',
+                'state_root_hash',
+                'init'
+            ],
+            properties: {
+                mode: { type: 'integer', format: 'int32' },
+                version: { type: 'integer', format: 'int32' },
+                capabilities: { type: 'integer', format: 'int64' },
+                last: { $ref: '#/components/schemas/BlockRaw' },
+                last_utime: { type: 'integer', format: 'int32' },
+                now: { type: 'integer', format: 'int32' },
+                state_root_hash: { type: 'string' },
+                init: { $ref: '#/components/schemas/InitStateRaw' }
+            }
+        });
+    }
+
+    /**
+     * @description Get raw time
+     *
+     * @tags Lite Server
+     * @name GetRawTime
+     * @request GET:/v2/liteserver/get_time
+     */
+    /**
+     * @description Get raw time
+     *
+     * @tags Lite Server
+     * @name GetRawTime
+     * @request GET:/v2/liteserver/get_time
+     */
+    getRawTime(params: RequestParams = {}): TonApiPromise<GetRawTimeData, TonApiError> {
+        const req = this.http.request<GetRawTimeData, TonApiError>({
+            path: `/v2/liteserver/get_time`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetRawTimeData, TonApiError>(req, {
+            type: 'object',
+            required: ['time'],
+            properties: { time: { type: 'integer', format: 'int32' } }
+        });
+    }
+
+    /**
+     * @description Get raw blockchain block
+     *
+     * @tags Lite Server
+     * @name GetRawBlockchainBlock
+     * @request GET:/v2/liteserver/get_block/{block_id}
+     */
+    /**
+     * @description Get raw blockchain block
+     *
+     * @tags Lite Server
+     * @name GetRawBlockchainBlock
+     * @request GET:/v2/liteserver/get_block/{block_id}
+     */
+    getRawBlockchainBlock(
+        blockId: string,
+        params: RequestParams = {}
+    ): TonApiPromise<GetRawBlockchainBlockData, TonApiError> {
+        const req = this.http.request<GetRawBlockchainBlockData, TonApiError>({
+            path: `/v2/liteserver/get_block/${blockId}`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetRawBlockchainBlockData, TonApiError>(req, {
+            type: 'object',
+            required: ['id', 'data'],
+            properties: { id: { $ref: '#/components/schemas/BlockRaw' }, data: { type: 'string' } }
+        });
+    }
+
+    /**
+     * @description Get raw blockchain block state
+     *
+     * @tags Lite Server
+     * @name GetRawBlockchainBlockState
+     * @request GET:/v2/liteserver/get_state/{block_id}
+     */
+    /**
+     * @description Get raw blockchain block state
+     *
+     * @tags Lite Server
+     * @name GetRawBlockchainBlockState
+     * @request GET:/v2/liteserver/get_state/{block_id}
+     */
+    getRawBlockchainBlockState(
+        blockId: string,
+        params: RequestParams = {}
+    ): TonApiPromise<GetRawBlockchainBlockStateData, TonApiError> {
+        const req = this.http.request<GetRawBlockchainBlockStateData, TonApiError>({
+            path: `/v2/liteserver/get_state/${blockId}`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetRawBlockchainBlockStateData, TonApiError>(req, {
+            type: 'object',
+            required: ['id', 'root_hash', 'file_hash', 'data'],
+            properties: {
+                id: { $ref: '#/components/schemas/BlockRaw' },
+                root_hash: { type: 'string' },
+                file_hash: { type: 'string' },
+                data: { type: 'string' }
+            }
+        });
+    }
+
+    /**
+     * @description Get raw blockchain block header
+     *
+     * @tags Lite Server
+     * @name GetRawBlockchainBlockHeader
+     * @request GET:/v2/liteserver/get_block_header/{block_id}
+     */
+    /**
+     * @description Get raw blockchain block header
+     *
+     * @tags Lite Server
+     * @name GetRawBlockchainBlockHeader
+     * @request GET:/v2/liteserver/get_block_header/{block_id}
+     */
+    getRawBlockchainBlockHeader(
+        blockId: string,
+        query: {
+            /**
+             * mode
+             * @format int32
+             * @example 0
+             */
+            mode: number;
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<GetRawBlockchainBlockHeaderData, TonApiError> {
+        const req = this.http.request<GetRawBlockchainBlockHeaderData, TonApiError>({
+            path: `/v2/liteserver/get_block_header/${blockId}`,
+            method: 'GET',
+            query: query,
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetRawBlockchainBlockHeaderData, TonApiError>(req, {
+            type: 'object',
+            required: ['id', 'mode', 'header_proof'],
+            properties: {
+                id: { $ref: '#/components/schemas/BlockRaw' },
+                mode: { type: 'integer', format: 'int32' },
+                header_proof: { type: 'string' }
+            }
+        });
+    }
+
+    /**
+     * @description Send raw message to blockchain
+     *
+     * @tags Lite Server
+     * @name SendRawMessage
+     * @request POST:/v2/liteserver/send_message
+     */
+    /**
+     * @description Send raw message to blockchain
+     *
+     * @tags Lite Server
+     * @name SendRawMessage
+     * @request POST:/v2/liteserver/send_message
+     */
+    sendRawMessage(
+        data: {
+            /** @format cell-base64 */
+            body: Cell | string;
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<SendRawMessageData, TonApiError> {
+        const req = this.http.request<SendRawMessageData, TonApiError>({
+            path: `/v2/liteserver/send_message`,
+            method: 'POST',
+            body: prepareRequestData(data, {
+                type: 'object',
+                required: ['body'],
+                properties: { body: { type: 'string', format: 'cell-base64' } }
+            }),
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<SendRawMessageData, TonApiError>(req, {
+            type: 'object',
+            required: ['code'],
+            properties: { code: { type: 'integer', format: 'int32' } }
+        });
+    }
+
+    /**
+     * @description Get raw account state
+     *
+     * @tags Lite Server
+     * @name GetRawAccountState
+     * @request GET:/v2/liteserver/get_account_state/{account_id}
+     */
+    /**
+     * @description Get raw account state
+     *
+     * @tags Lite Server
+     * @name GetRawAccountState
+     * @request GET:/v2/liteserver/get_account_state/{account_id}
+     */
+    getRawAccountState(
+        accountId_Address: Address | string,
+        query?: {
+            /**
+             * target block: (workchain,shard,seqno,root_hash,file_hash)
+             * @example "(-1,8000000000000000,4234234,3E575DAB1D25...90D8,47192E5C46C...BB29)"
+             */
+            target_block?: string;
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<GetRawAccountStateData, TonApiError> {
+        const accountId = addressToString(accountId_Address);
+        const req = this.http.request<GetRawAccountStateData, TonApiError>({
+            path: `/v2/liteserver/get_account_state/${accountId}`,
+            method: 'GET',
+            query: query,
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetRawAccountStateData, TonApiError>(req, {
+            type: 'object',
+            required: ['id', 'shardblk', 'shard_proof', 'proof', 'state'],
+            properties: {
+                id: { $ref: '#/components/schemas/BlockRaw' },
+                shardblk: { $ref: '#/components/schemas/BlockRaw' },
+                shard_proof: { type: 'string' },
+                proof: { type: 'string' },
+                state: { type: 'string' }
+            }
+        });
+    }
+
+    /**
+     * @description Get raw shard info
+     *
+     * @tags Lite Server
+     * @name GetRawShardInfo
+     * @request GET:/v2/liteserver/get_shard_info/{block_id}
+     */
+    /**
+     * @description Get raw shard info
+     *
+     * @tags Lite Server
+     * @name GetRawShardInfo
+     * @request GET:/v2/liteserver/get_shard_info/{block_id}
+     */
+    getRawShardInfo(
+        blockId: string,
+        query: {
+            /**
+             * workchain
+             * @format int32
+             * @example 1
+             */
+            workchain: number;
+            /**
+             * shard
+             * @format int64
+             * @example 1
+             */
+            shard: number;
+            /**
+             * exact
+             * @example false
+             */
+            exact: boolean;
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<GetRawShardInfoData, TonApiError> {
+        const req = this.http.request<GetRawShardInfoData, TonApiError>({
+            path: `/v2/liteserver/get_shard_info/${blockId}`,
+            method: 'GET',
+            query: query,
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetRawShardInfoData, TonApiError>(req, {
+            type: 'object',
+            required: ['id', 'shardblk', 'shard_proof', 'shard_descr'],
+            properties: {
+                id: { $ref: '#/components/schemas/BlockRaw' },
+                shardblk: { $ref: '#/components/schemas/BlockRaw' },
+                shard_proof: { type: 'string' },
+                shard_descr: { type: 'string' }
+            }
+        });
+    }
+
+    /**
+     * @description Get all raw shards info
+     *
+     * @tags Lite Server
+     * @name GetAllRawShardsInfo
+     * @request GET:/v2/liteserver/get_all_shards_info/{block_id}
+     */
+    /**
+     * @description Get all raw shards info
+     *
+     * @tags Lite Server
+     * @name GetAllRawShardsInfo
+     * @request GET:/v2/liteserver/get_all_shards_info/{block_id}
+     */
+    getAllRawShardsInfo(
+        blockId: string,
+        params: RequestParams = {}
+    ): TonApiPromise<GetAllRawShardsInfoData, TonApiError> {
+        const req = this.http.request<GetAllRawShardsInfoData, TonApiError>({
+            path: `/v2/liteserver/get_all_shards_info/${blockId}`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetAllRawShardsInfoData, TonApiError>(req, {
+            type: 'object',
+            required: ['id', 'proof', 'data'],
+            properties: {
+                id: { $ref: '#/components/schemas/BlockRaw' },
+                proof: { type: 'string' },
+                data: { type: 'string' }
+            }
+        });
+    }
+
+    /**
+     * @description Get raw transactions
+     *
+     * @tags Lite Server
+     * @name GetRawTransactions
+     * @request GET:/v2/liteserver/get_transactions/{account_id}
+     */
+    /**
+     * @description Get raw transactions
+     *
+     * @tags Lite Server
+     * @name GetRawTransactions
+     * @request GET:/v2/liteserver/get_transactions/{account_id}
+     */
+    getRawTransactions(
+        accountId_Address: Address | string,
+        query: {
+            /**
+             * count
+             * @format int32
+             * @example 100
+             */
+            count: number;
+            /**
+             * lt
+             * @format int64
+             * @example 23814011000000
+             */
+            lt: number;
+            /**
+             * hash
+             * @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85"
+             */
+            hash: string;
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<GetRawTransactionsData, TonApiError> {
+        const accountId = addressToString(accountId_Address);
+        const req = this.http.request<GetRawTransactionsData, TonApiError>({
+            path: `/v2/liteserver/get_transactions/${accountId}`,
+            method: 'GET',
+            query: query,
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetRawTransactionsData, TonApiError>(req, {
+            type: 'object',
+            required: ['ids', 'transactions'],
+            properties: {
+                ids: { type: 'array', items: { $ref: '#/components/schemas/BlockRaw' } },
+                transactions: { type: 'string' }
+            }
+        });
+    }
+
+    /**
+     * @description Get raw list block transactions
+     *
+     * @tags Lite Server
+     * @name GetRawListBlockTransactions
+     * @request GET:/v2/liteserver/list_block_transactions/{block_id}
+     */
+    /**
+     * @description Get raw list block transactions
+     *
+     * @tags Lite Server
+     * @name GetRawListBlockTransactions
+     * @request GET:/v2/liteserver/list_block_transactions/{block_id}
+     */
+    getRawListBlockTransactions(
+        blockId: string,
+        query: {
+            /**
+             * mode
+             * @format int32
+             * @example 0
+             */
+            mode: number;
+            /**
+             * count
+             * @format int32
+             * @example 100
+             */
+            count: number;
+            /**
+             * account ID
+             * @format address
+             * @example "0:97264395BD65A255A429B11326C84128B7D70FFED7949ABAE3036D506BA38621"
+             */
+            account_id?: Address | string;
+            /**
+             * lt
+             * @format int64
+             * @example 23814011000000
+             */
+            lt?: number;
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<GetRawListBlockTransactionsData, TonApiError> {
+        const req = this.http.request<GetRawListBlockTransactionsData, TonApiError>({
+            path: `/v2/liteserver/list_block_transactions/${blockId}`,
+            method: 'GET',
+            query: query && {
+                ...query,
+                account_id: addressToString(query.account_id)
+            },
+            queryImplode: ['account_id'],
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetRawListBlockTransactionsData, TonApiError>(req, {
+            type: 'object',
+            required: ['id', 'req_count', 'incomplete', 'ids', 'proof'],
+            properties: {
+                id: { $ref: '#/components/schemas/BlockRaw' },
+                req_count: { type: 'integer', format: 'int32' },
+                incomplete: { type: 'boolean' },
+                ids: {
+                    type: 'array',
+                    items: {
+                        type: 'object',
+                        required: ['mode'],
+                        properties: {
+                            mode: { type: 'integer', format: 'int32' },
+                            account: { type: 'string' },
+                            lt: { type: 'integer', format: 'bigint', 'x-js-format': 'bigint' },
+                            hash: { type: 'string' }
+                        }
+                    }
+                },
+                proof: { type: 'string' }
+            }
+        });
+    }
+
+    /**
+     * @description Get raw block proof
+     *
+     * @tags Lite Server
+     * @name GetRawBlockProof
+     * @request GET:/v2/liteserver/get_block_proof
+     */
+    /**
+     * @description Get raw block proof
+     *
+     * @tags Lite Server
+     * @name GetRawBlockProof
+     * @request GET:/v2/liteserver/get_block_proof
+     */
+    getRawBlockProof(
+        query: {
+            /**
+             * known block: (workchain,shard,seqno,root_hash,file_hash)
+             * @example "(-1,8000000000000000,4234234,3E575DAB1D25...90D8,47192E5C46C...BB29)"
+             */
+            known_block: string;
+            /**
+             * target block: (workchain,shard,seqno,root_hash,file_hash)
+             * @example "(-1,8000000000000000,4234234,3E575DAB1D25...90D8,47192E5C46C...BB29)"
+             */
+            target_block?: string;
+            /**
+             * mode
+             * @format int32
+             * @example 0
+             */
+            mode: number;
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<GetRawBlockProofData, TonApiError> {
+        const req = this.http.request<GetRawBlockProofData, TonApiError>({
+            path: `/v2/liteserver/get_block_proof`,
+            method: 'GET',
+            query: query,
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetRawBlockProofData, TonApiError>(req, {
+            type: 'object',
+            required: ['complete', 'from', 'to', 'steps'],
+            properties: {
+                complete: { type: 'boolean' },
+                from: { $ref: '#/components/schemas/BlockRaw' },
+                to: { $ref: '#/components/schemas/BlockRaw' },
+                steps: {
+                    type: 'array',
+                    items: {
+                        type: 'object',
+                        required: ['lite_server_block_link_back', 'lite_server_block_link_forward'],
+                        properties: {
+                            lite_server_block_link_back: {
+                                type: 'object',
+                                required: [
+                                    'to_key_block',
+                                    'from',
+                                    'to',
+                                    'dest_proof',
+                                    'proof',
+                                    'state_proof'
+                                ],
+                                properties: {
+                                    to_key_block: { type: 'boolean' },
+                                    from: { $ref: '#/components/schemas/BlockRaw' },
+                                    to: { $ref: '#/components/schemas/BlockRaw' },
+                                    dest_proof: { type: 'string' },
+                                    proof: { type: 'string' },
+                                    state_proof: { type: 'string' }
+                                }
+                            },
+                            lite_server_block_link_forward: {
+                                type: 'object',
+                                required: [
+                                    'to_key_block',
+                                    'from',
+                                    'to',
+                                    'dest_proof',
+                                    'config_proof',
+                                    'signatures'
+                                ],
+                                properties: {
+                                    to_key_block: { type: 'boolean' },
+                                    from: { $ref: '#/components/schemas/BlockRaw' },
+                                    to: { $ref: '#/components/schemas/BlockRaw' },
+                                    dest_proof: { type: 'string' },
+                                    config_proof: { type: 'string' },
+                                    signatures: {
+                                        type: 'object',
+                                        required: [
+                                            'validator_set_hash',
+                                            'catchain_seqno',
+                                            'signatures'
+                                        ],
+                                        properties: {
+                                            validator_set_hash: {
+                                                type: 'integer',
+                                                format: 'int64'
+                                            },
+                                            catchain_seqno: { type: 'integer', format: 'int32' },
+                                            signatures: {
+                                                type: 'array',
+                                                items: {
+                                                    type: 'object',
+                                                    required: ['node_id_short', 'signature'],
+                                                    properties: {
+                                                        node_id_short: { type: 'string' },
+                                                        signature: { type: 'string' }
                                                     }
                                                 }
                                             }
@@ -9208,338 +10953,5862 @@ export class TonApiClient {
                         }
                     }
                 }
-            });
-        },
+            }
+        });
+    }
 
-        /**
-         * @description Get raw config
-         *
-         * @tags Lite Server
-         * @name GetRawConfig
-         * @request GET:/v2/liteserver/get_config_all/{block_id}
-         */
-        getRawConfig: (
-            blockId: string,
-            query: {
+    /**
+     * @description Get raw config
+     *
+     * @tags Lite Server
+     * @name GetRawConfig
+     * @request GET:/v2/liteserver/get_config_all/{block_id}
+     */
+    /**
+     * @description Get raw config
+     *
+     * @tags Lite Server
+     * @name GetRawConfig
+     * @request GET:/v2/liteserver/get_config_all/{block_id}
+     */
+    getRawConfig(
+        blockId: string,
+        query: {
+            /**
+             * mode
+             * @format int32
+             * @example 0
+             */
+            mode: number;
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<GetRawConfigData, TonApiError> {
+        const req = this.http.request<GetRawConfigData, TonApiError>({
+            path: `/v2/liteserver/get_config_all/${blockId}`,
+            method: 'GET',
+            query: query,
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetRawConfigData, TonApiError>(req, {
+            type: 'object',
+            required: ['mode', 'id', 'state_proof', 'config_proof'],
+            properties: {
+                mode: { type: 'integer', format: 'int32' },
+                id: { $ref: '#/components/schemas/BlockRaw' },
+                state_proof: { type: 'string' },
+                config_proof: { type: 'string' }
+            }
+        });
+    }
+
+    /**
+     * @description Get raw shard block proof
+     *
+     * @tags Lite Server
+     * @name GetRawShardBlockProof
+     * @request GET:/v2/liteserver/get_shard_block_proof/{block_id}
+     */
+    /**
+     * @description Get raw shard block proof
+     *
+     * @tags Lite Server
+     * @name GetRawShardBlockProof
+     * @request GET:/v2/liteserver/get_shard_block_proof/{block_id}
+     */
+    getRawShardBlockProof(
+        blockId: string,
+        params: RequestParams = {}
+    ): TonApiPromise<GetRawShardBlockProofData, TonApiError> {
+        const req = this.http.request<GetRawShardBlockProofData, TonApiError>({
+            path: `/v2/liteserver/get_shard_block_proof/${blockId}`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetRawShardBlockProofData, TonApiError>(req, {
+            type: 'object',
+            required: ['masterchain_id', 'links'],
+            properties: {
+                masterchain_id: { $ref: '#/components/schemas/BlockRaw' },
+                links: {
+                    type: 'array',
+                    items: {
+                        type: 'object',
+                        required: ['id', 'proof'],
+                        properties: {
+                            id: { $ref: '#/components/schemas/BlockRaw' },
+                            proof: { type: 'string' }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    /**
+     * @description Get out msg queue sizes
+     *
+     * @tags Lite Server
+     * @name GetOutMsgQueueSizes
+     * @request GET:/v2/liteserver/get_out_msg_queue_sizes
+     */
+    /**
+     * @description Get out msg queue sizes
+     *
+     * @tags Lite Server
+     * @name GetOutMsgQueueSizes
+     * @request GET:/v2/liteserver/get_out_msg_queue_sizes
+     */
+    getOutMsgQueueSizes(
+        params: RequestParams = {}
+    ): TonApiPromise<GetOutMsgQueueSizesData, TonApiError> {
+        const req = this.http.request<GetOutMsgQueueSizesData, TonApiError>({
+            path: `/v2/liteserver/get_out_msg_queue_sizes`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetOutMsgQueueSizesData, TonApiError>(req, {
+            type: 'object',
+            required: ['ext_msg_queue_size_limit', 'shards'],
+            properties: {
+                ext_msg_queue_size_limit: { type: 'integer', format: 'uint32' },
+                shards: {
+                    type: 'array',
+                    items: {
+                        type: 'object',
+                        required: ['id', 'size'],
+                        properties: {
+                            id: { $ref: '#/components/schemas/BlockRaw' },
+                            size: { type: 'integer', format: 'uint32' }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    /**
+     * @description Get multisig account info
+     *
+     * @tags Multisig
+     * @name GetMultisigAccount
+     * @request GET:/v2/multisig/{account_id}
+     */
+    /**
+     * @description Get multisig account info
+     *
+     * @tags Multisig
+     * @name GetMultisigAccount
+     * @request GET:/v2/multisig/{account_id}
+     */
+    getMultisigAccount(
+        accountId_Address: Address | string,
+        params: RequestParams = {}
+    ): TonApiPromise<GetMultisigAccountData, TonApiError> {
+        const accountId = addressToString(accountId_Address);
+        const req = this.http.request<GetMultisigAccountData, TonApiError>({
+            path: `/v2/multisig/${accountId}`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetMultisigAccountData, TonApiError>(req, {
+            $ref: '#/components/schemas/Multisig'
+        });
+    }
+
+    /**
+     * @description Get multisig order
+     *
+     * @tags Multisig
+     * @name GetMultisigOrder
+     * @request GET:/v2/multisig/order/{account_id}
+     */
+    /**
+     * @description Get multisig order
+     *
+     * @tags Multisig
+     * @name GetMultisigOrder
+     * @request GET:/v2/multisig/order/{account_id}
+     */
+    getMultisigOrder(
+        accountId_Address: Address | string,
+        params: RequestParams = {}
+    ): TonApiPromise<GetMultisigOrderData, TonApiError> {
+        const accountId = addressToString(accountId_Address);
+        const req = this.http.request<GetMultisigOrderData, TonApiError>({
+            path: `/v2/multisig/order/${accountId}`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetMultisigOrderData, TonApiError>(req, {
+            $ref: '#/components/schemas/MultisigOrder'
+        });
+    }
+
+    /**
+     * @description Decode a given message. Only external incoming messages can be decoded currently.
+     *
+     * @tags Emulation
+     * @name DecodeMessage
+     * @request POST:/v2/message/decode
+     */
+    /**
+     * @description Decode a given message. Only external incoming messages can be decoded currently.
+     *
+     * @tags Emulation
+     * @name DecodeMessage
+     * @request POST:/v2/message/decode
+     */
+    decodeMessage(
+        data: {
+            /** @format cell */
+            boc: Cell | string;
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<DecodeMessageData, TonApiError> {
+        const req = this.http.request<DecodeMessageData, TonApiError>({
+            path: `/v2/message/decode`,
+            method: 'POST',
+            body: prepareRequestData(data, {
+                type: 'object',
+                required: ['boc'],
+                properties: { boc: { type: 'string', format: 'cell' } }
+            }),
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<DecodeMessageData, TonApiError>(req, {
+            $ref: '#/components/schemas/DecodedMessage'
+        });
+    }
+
+    /**
+     * @description Emulate sending message to retrieve general blockchain events
+     *
+     * @tags Emulation, Events
+     * @name EmulateMessageToEvent
+     * @request POST:/v2/events/emulate
+     */
+    /**
+     * @description Emulate sending message to retrieve general blockchain events
+     *
+     * @tags Emulation, Events
+     * @name EmulateMessageToEvent
+     * @request POST:/v2/events/emulate
+     */
+    emulateMessageToEvent(
+        data: {
+            /** @format cell */
+            boc: Cell | string;
+        },
+        query?: {
+            ignore_signature_check?: boolean;
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<EmulateMessageToEventData, TonApiError> {
+        const req = this.http.request<EmulateMessageToEventData, TonApiError>({
+            path: `/v2/events/emulate`,
+            method: 'POST',
+            query: query,
+            body: prepareRequestData(data, {
+                type: 'object',
+                required: ['boc'],
+                properties: { boc: { type: 'string', format: 'cell' } }
+            }),
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<EmulateMessageToEventData, TonApiError>(req, {
+            $ref: '#/components/schemas/Event'
+        });
+    }
+
+    /**
+     * @description Emulate sending message to retrieve with a detailed execution trace
+     *
+     * @tags Emulation, Traces
+     * @name EmulateMessageToTrace
+     * @request POST:/v2/traces/emulate
+     */
+    /**
+     * @description Emulate sending message to retrieve with a detailed execution trace
+     *
+     * @tags Emulation, Traces
+     * @name EmulateMessageToTrace
+     * @request POST:/v2/traces/emulate
+     */
+    emulateMessageToTrace(
+        data: {
+            /** @format cell */
+            boc: Cell | string;
+        },
+        query?: {
+            ignore_signature_check?: boolean;
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<EmulateMessageToTraceData, TonApiError> {
+        const req = this.http.request<EmulateMessageToTraceData, TonApiError>({
+            path: `/v2/traces/emulate`,
+            method: 'POST',
+            query: query,
+            body: prepareRequestData(data, {
+                type: 'object',
+                required: ['boc'],
+                properties: { boc: { type: 'string', format: 'cell' } }
+            }),
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<EmulateMessageToTraceData, TonApiError>(req, {
+            $ref: '#/components/schemas/Trace'
+        });
+    }
+
+    /**
+     * @description Emulate sending message to retrieve the resulting wallet state
+     *
+     * @tags Emulation, Wallet
+     * @name EmulateMessageToWallet
+     * @request POST:/v2/wallet/emulate
+     */
+    /**
+     * @description Emulate sending message to retrieve the resulting wallet state
+     *
+     * @tags Emulation, Wallet
+     * @name EmulateMessageToWallet
+     * @request POST:/v2/wallet/emulate
+     */
+    emulateMessageToWallet(
+        data: {
+            /** @format cell */
+            boc: Cell | string;
+            /** additional per account configuration */
+            params?: {
                 /**
-                 * mode
-                 * @format int32
-                 * @example 0
+                 * @format address
+                 * @example "0:97146a46acc2654y27947f14c4a4b14273e954f78bc017790b41208b0043200b"
                  */
-                mode: number;
-            },
-            params: RequestParams = {}
-        ) => {
-            const req = this.http.request<GetRawConfigData, Error>({
-                path: `/v2/liteserver/get_config_all/${blockId}`,
-                method: 'GET',
-                query: query,
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetRawConfigData>(req, {
-                type: 'object',
-                required: ['mode', 'id', 'state_proof', 'config_proof'],
-                properties: {
-                    mode: { type: 'integer', format: 'int32' },
-                    id: { $ref: '#/components/schemas/BlockRaw' },
-                    state_proof: { type: 'string' },
-                    config_proof: { type: 'string' }
-                }
-            });
+                address: Address | string;
+                /**
+                 * @format bigint
+                 * @example 10000000000
+                 */
+                balance?: bigint;
+            }[];
         },
-
-        /**
-         * @description Get raw shard block proof
-         *
-         * @tags Lite Server
-         * @name GetRawShardBlockProof
-         * @request GET:/v2/liteserver/get_shard_block_proof/{block_id}
-         */
-        getRawShardBlockProof: (blockId: string, params: RequestParams = {}) => {
-            const req = this.http.request<GetRawShardBlockProofData, Error>({
-                path: `/v2/liteserver/get_shard_block_proof/${blockId}`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetRawShardBlockProofData>(req, {
+        query?: {
+            /** @example "usd" */
+            currency?: string;
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<EmulateMessageToWalletData, TonApiError> {
+        const req = this.http.request<EmulateMessageToWalletData, TonApiError>({
+            path: `/v2/wallet/emulate`,
+            method: 'POST',
+            query: query,
+            body: prepareRequestData(data, {
                 type: 'object',
-                required: ['masterchain_id', 'links'],
+                required: ['boc'],
                 properties: {
-                    masterchain_id: { $ref: '#/components/schemas/BlockRaw' },
-                    links: {
+                    boc: { type: 'string', format: 'cell' },
+                    params: {
                         type: 'array',
                         items: {
                             type: 'object',
-                            required: ['id', 'proof'],
+                            required: ['address'],
                             properties: {
-                                id: { $ref: '#/components/schemas/BlockRaw' },
-                                proof: { type: 'string' }
-                            }
-                        }
-                    }
-                }
-            });
-        },
-
-        /**
-         * @description Get out msg queue sizes
-         *
-         * @tags Lite Server
-         * @name GetOutMsgQueueSizes
-         * @request GET:/v2/liteserver/get_out_msg_queue_sizes
-         */
-        getOutMsgQueueSizes: (params: RequestParams = {}) => {
-            const req = this.http.request<GetOutMsgQueueSizesData, Error>({
-                path: `/v2/liteserver/get_out_msg_queue_sizes`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetOutMsgQueueSizesData>(req, {
-                type: 'object',
-                required: ['ext_msg_queue_size_limit', 'shards'],
-                properties: {
-                    ext_msg_queue_size_limit: { type: 'integer', format: 'uint32' },
-                    shards: {
-                        type: 'array',
-                        items: {
-                            type: 'object',
-                            required: ['id', 'size'],
-                            properties: {
-                                id: { $ref: '#/components/schemas/BlockRaw' },
-                                size: { type: 'integer', format: 'uint32' }
-                            }
-                        }
-                    }
-                }
-            });
-        }
-    };
-    multisig = {
-        /**
-         * @description Get multisig account info
-         *
-         * @tags Multisig
-         * @name GetMultisigAccount
-         * @request GET:/v2/multisig/{account_id}
-         */
-        getMultisigAccount: (accountId_Address: Address, params: RequestParams = {}) => {
-            const accountId = accountId_Address.toRawString();
-            const req = this.http.request<GetMultisigAccountData, Error>({
-                path: `/v2/multisig/${accountId}`,
-                method: 'GET',
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<GetMultisigAccountData>(req, {
-                $ref: '#/components/schemas/Multisig'
-            });
-        }
-    };
-    emulation = {
-        /**
-         * @description Decode a given message. Only external incoming messages can be decoded currently.
-         *
-         * @tags Emulation
-         * @name DecodeMessage
-         * @request POST:/v2/message/decode
-         */
-        decodeMessage: (
-            data: {
-                /** @format cell */
-                boc: Cell;
-            },
-            params: RequestParams = {}
-        ) => {
-            const req = this.http.request<DecodeMessageData, Error>({
-                path: `/v2/message/decode`,
-                method: 'POST',
-                body: prepareRequestData(data, {
-                    type: 'object',
-                    required: ['boc'],
-                    properties: { boc: { type: 'string', format: 'cell' } }
-                }),
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<DecodeMessageData>(req, {
-                $ref: '#/components/schemas/DecodedMessage'
-            });
-        },
-
-        /**
-         * @description Emulate sending message to blockchain
-         *
-         * @tags Emulation, Events
-         * @name EmulateMessageToEvent
-         * @request POST:/v2/events/emulate
-         */
-        emulateMessageToEvent: (
-            data: {
-                /** @format cell */
-                boc: Cell;
-            },
-            query?: {
-                ignore_signature_check?: boolean;
-            },
-            params: RequestParams = {}
-        ) => {
-            const req = this.http.request<EmulateMessageToEventData, Error>({
-                path: `/v2/events/emulate`,
-                method: 'POST',
-                query: query,
-                body: prepareRequestData(data, {
-                    type: 'object',
-                    required: ['boc'],
-                    properties: { boc: { type: 'string', format: 'cell' } }
-                }),
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<EmulateMessageToEventData>(req, {
-                $ref: '#/components/schemas/Event'
-            });
-        },
-
-        /**
-         * @description Emulate sending message to blockchain
-         *
-         * @tags Emulation, Traces
-         * @name EmulateMessageToTrace
-         * @request POST:/v2/traces/emulate
-         */
-        emulateMessageToTrace: (
-            data: {
-                /** @format cell */
-                boc: Cell;
-            },
-            query?: {
-                ignore_signature_check?: boolean;
-            },
-            params: RequestParams = {}
-        ) => {
-            const req = this.http.request<EmulateMessageToTraceData, Error>({
-                path: `/v2/traces/emulate`,
-                method: 'POST',
-                query: query,
-                body: prepareRequestData(data, {
-                    type: 'object',
-                    required: ['boc'],
-                    properties: { boc: { type: 'string', format: 'cell' } }
-                }),
-                format: 'json',
-                ...params
-            });
-
-            return prepareResponse<EmulateMessageToTraceData>(req, {
-                $ref: '#/components/schemas/Trace'
-            });
-        },
-
-        /**
-         * @description Emulate sending message to blockchain
-         *
-         * @tags Emulation, Wallet
-         * @name EmulateMessageToWallet
-         * @request POST:/v2/wallet/emulate
-         */
-        emulateMessageToWallet: (
-            data: {
-                /** @format cell */
-                boc: Cell;
-                /** additional per account configuration */
-                params?: {
-                    /**
-                     * @format address
-                     * @example "0:97146a46acc2654y27947f14c4a4b14273e954f78bc017790b41208b0043200b"
-                     */
-                    address: Address;
-                    /**
-                     * @format bigint
-                     * @example 10000000000
-                     */
-                    balance?: bigint;
-                }[];
-            },
-            params: RequestParams = {}
-        ) => {
-            const req = this.http.request<EmulateMessageToWalletData, Error>({
-                path: `/v2/wallet/emulate`,
-                method: 'POST',
-                body: prepareRequestData(data, {
-                    type: 'object',
-                    required: ['boc'],
-                    properties: {
-                        boc: { type: 'string', format: 'cell' },
-                        params: {
-                            type: 'array',
-                            items: {
-                                type: 'object',
-                                required: ['address'],
-                                properties: {
-                                    address: { type: 'string', format: 'address' },
-                                    balance: {
-                                        type: 'integer',
-                                        format: 'bigint',
-                                        'x-js-format': 'bigint'
-                                    }
+                                address: { type: 'string', format: 'address' },
+                                balance: {
+                                    type: 'integer',
+                                    format: 'bigint',
+                                    'x-js-format': 'bigint'
                                 }
                             }
                         }
                     }
-                }),
-                format: 'json',
-                ...params
-            });
+                }
+            }),
+            format: 'json',
+            ...params
+        });
 
-            return prepareResponse<EmulateMessageToWalletData>(req, {
-                $ref: '#/components/schemas/MessageConsequences'
-            });
+        return prepareResponse<EmulateMessageToWalletData, TonApiError>(req, {
+            $ref: '#/components/schemas/MessageConsequences'
+        });
+    }
+
+    /**
+     * @description Emulate sending message to retrieve account-specific events
+     *
+     * @tags Emulation, Accounts
+     * @name EmulateMessageToAccountEvent
+     * @request POST:/v2/accounts/{account_id}/events/emulate
+     */
+    /**
+     * @description Emulate sending message to retrieve account-specific events
+     *
+     * @tags Emulation, Accounts
+     * @name EmulateMessageToAccountEvent
+     * @request POST:/v2/accounts/{account_id}/events/emulate
+     */
+    emulateMessageToAccountEvent(
+        accountId_Address: Address | string,
+        data: {
+            /** @format cell */
+            boc: Cell | string;
         },
+        query?: {
+            ignore_signature_check?: boolean;
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<EmulateMessageToAccountEventData, TonApiError> {
+        const accountId = addressToString(accountId_Address);
+        const req = this.http.request<EmulateMessageToAccountEventData, TonApiError>({
+            path: `/v2/accounts/${accountId}/events/emulate`,
+            method: 'POST',
+            query: query,
+            body: prepareRequestData(data, {
+                type: 'object',
+                required: ['boc'],
+                properties: { boc: { type: 'string', format: 'cell' } }
+            }),
+            format: 'json',
+            ...params
+        });
 
-        /**
-         * @description Emulate sending message to blockchain
-         *
-         * @tags Emulation, Accounts
-         * @name EmulateMessageToAccountEvent
-         * @request POST:/v2/accounts/{account_id}/events/emulate
-         */
-        emulateMessageToAccountEvent: (
-            accountId_Address: Address,
-            data: {
-                /** @format cell */
-                boc: Cell;
-            },
-            query?: {
-                ignore_signature_check?: boolean;
-            },
-            params: RequestParams = {}
-        ) => {
-            const accountId = accountId_Address.toRawString();
-            const req = this.http.request<EmulateMessageToAccountEventData, Error>({
-                path: `/v2/accounts/${accountId}/events/emulate`,
-                method: 'POST',
-                query: query,
-                body: prepareRequestData(data, {
-                    type: 'object',
-                    required: ['boc'],
-                    properties: { boc: { type: 'string', format: 'cell' } }
-                }),
-                format: 'json',
-                ...params
-            });
+        return prepareResponse<EmulateMessageToAccountEventData, TonApiError>(req, {
+            $ref: '#/components/schemas/AccountEvent'
+        });
+    }
 
-            return prepareResponse<EmulateMessageToAccountEventData>(req, {
-                $ref: '#/components/schemas/AccountEvent'
-            });
-        }
-    };
+    /**
+     * @description Get history of purchases
+     *
+     * @tags Purchases
+     * @name GetPurchaseHistory
+     * @request GET:/v2/purchases/{account_id}/history
+     */
+    /**
+     * @description Get history of purchases
+     *
+     * @tags Purchases
+     * @name GetPurchaseHistory
+     * @request GET:/v2/purchases/{account_id}/history
+     */
+    getPurchaseHistory(
+        accountId_Address: Address | string,
+        query?: {
+            /**
+             * omit this parameter to get last invoices
+             * @format bigint
+             * @example 25758317000002
+             */
+            before_lt?: bigint;
+            /**
+             * @min 1
+             * @max 1000
+             * @default 100
+             * @example 100
+             */
+            limit?: number;
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<GetPurchaseHistoryData, TonApiError> {
+        const accountId = addressToString(accountId_Address);
+        const req = this.http.request<GetPurchaseHistoryData, TonApiError>({
+            path: `/v2/purchases/${accountId}/history`,
+            method: 'GET',
+            query: query,
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetPurchaseHistoryData, TonApiError>(req, {
+            $ref: '#/components/schemas/AccountPurchases'
+        });
+    }
 }
+
+// Default client instance for global methods
+let defaultClient: TonApiClient | null = null;
+
+/**
+ * Initialize the global API client with configuration.
+ * For advanced use cases with global methods.
+ *
+ * @param apiConfig - Configuration for the API client
+ * @param apiConfig.baseUrl - API base URL
+ * @param apiConfig.apiKey - API authentication key
+ * @param apiConfig.baseApiParams - Additional request parameters
+ *
+ * @example
+ * ```typescript
+ * initClient({
+ *   baseUrl: 'https://tonapi.io',
+ *   apiKey: process.env.TON_API_KEY
+ * });
+ *
+ * const { data, error } = await getAccount(address);
+ * if (error) {
+ *   console.error('Error:', error.message);
+ * } else {
+ *   console.log(data);
+ * }
+ * ```
+ */
+export function initClient(apiConfig: ApiConfig = {}): void {
+    defaultClient = new TonApiClient(apiConfig);
+}
+
+/**
+ * Get the current default client instance
+ * @internal
+ */
+function getDefaultClient(): TonApiClient {
+    if (!defaultClient) {
+        throw new Error(
+            'TonApiClient is not initialized. Call initClient() before using global methods, ' +
+                'or use new TonApiClient() for instance-based approach.'
+        );
+    }
+    return defaultClient;
+}
+
+/**
+ * @description Get the openapi.json file
+ *
+ * @tags Utilities
+ * @name GetOpenapiJson
+ * @request GET:/v2/openapi.json
+ */
+type GetOpenapiJsonOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getOpenapiJson = async <ThrowOnError extends boolean = false>(
+    options?: GetOpenapiJsonOptions<ThrowOnError>
+): Promise<MethodResultSync<GetOpenapiJsonData, ThrowOnError>> => {
+    try {
+        const client = options?.client || getDefaultClient();
+        const result = await client.getOpenapiJson(options?.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetOpenapiJsonData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<GetOpenapiJsonData, ThrowOnError>;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetOpenapiJsonData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get the openapi.yml file
+ *
+ * @tags Utilities
+ * @name GetOpenapiYml
+ * @request GET:/v2/openapi.yml
+ */
+type GetOpenapiYmlOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getOpenapiYml = async <ThrowOnError extends boolean = false>(
+    options?: GetOpenapiYmlOptions<ThrowOnError>
+): Promise<MethodResultSync<GetOpenapiYmlData, ThrowOnError>> => {
+    try {
+        const client = options?.client || getDefaultClient();
+        const result = await client.getOpenapiYml(options?.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetOpenapiYmlData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<GetOpenapiYmlData, ThrowOnError>;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetOpenapiYmlData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Status
+ *
+ * @tags Utilities
+ * @name Status
+ * @request GET:/v2/status
+ */
+type StatusOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const status = async <ThrowOnError extends boolean = false>(
+    options?: StatusOptions<ThrowOnError>
+): Promise<MethodResultSync<StatusData, ThrowOnError>> => {
+    try {
+        const client = options?.client || getDefaultClient();
+        const result = await client.status(options?.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<StatusData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<StatusData, ThrowOnError>;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            StatusData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description parse address and display in all formats
+ *
+ * @tags Utilities
+ * @name AddressParse
+ * @request GET:/v2/address/{account_id}/parse
+ */
+type AddressParseOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        accountId: Address | string;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const addressParse = async <ThrowOnError extends boolean = false>(
+    options: AddressParseOptions<ThrowOnError>
+): Promise<MethodResultSync<AddressParseData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.addressParse(options.path.accountId, options.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<AddressParseData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<AddressParseData, ThrowOnError>;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            AddressParseData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get reduced blockchain blocks data
+ *
+ * @tags Blockchain
+ * @name GetReducedBlockchainBlocks
+ * @request GET:/v2/blockchain/reduced/blocks
+ */
+type GetReducedBlockchainBlocksOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    query: {
+        /** @format int64 */
+        from: number;
+        /** @format int64 */
+        to: number;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getReducedBlockchainBlocks = async <ThrowOnError extends boolean = false>(
+    options: GetReducedBlockchainBlocksOptions<ThrowOnError>
+): Promise<MethodResultSync<GetReducedBlockchainBlocksData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getReducedBlockchainBlocks(options.query, options.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetReducedBlockchainBlocksData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetReducedBlockchainBlocksData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetReducedBlockchainBlocksData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get blockchain block data
+ *
+ * @tags Blockchain
+ * @name GetBlockchainBlock
+ * @request GET:/v2/blockchain/blocks/{block_id}
+ */
+type GetBlockchainBlockOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        blockId: string;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getBlockchainBlock = async <ThrowOnError extends boolean = false>(
+    options: GetBlockchainBlockOptions<ThrowOnError>
+): Promise<MethodResultSync<GetBlockchainBlockData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getBlockchainBlock(options.path.blockId, options.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetBlockchainBlockData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetBlockchainBlockData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetBlockchainBlockData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Download blockchain block BOC
+ *
+ * @tags Blockchain
+ * @name DownloadBlockchainBlockBoc
+ * @request GET:/v2/blockchain/blocks/{block_id}/boc
+ */
+type DownloadBlockchainBlockBocOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        blockId: string;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const downloadBlockchainBlockBoc = async <ThrowOnError extends boolean = false>(
+    options: DownloadBlockchainBlockBocOptions<ThrowOnError>
+): Promise<MethodResultSync<DownloadBlockchainBlockBocData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.downloadBlockchainBlockBoc(
+            options.path.blockId,
+            options.params
+        );
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<DownloadBlockchainBlockBocData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            DownloadBlockchainBlockBocData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            DownloadBlockchainBlockBocData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get blockchain block shards
+ *
+ * @tags Blockchain
+ * @name GetBlockchainMasterchainShards
+ * @request GET:/v2/blockchain/masterchain/{masterchain_seqno}/shards
+ */
+type GetBlockchainMasterchainShardsOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        masterchainSeqno: number;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getBlockchainMasterchainShards = async <ThrowOnError extends boolean = false>(
+    options: GetBlockchainMasterchainShardsOptions<ThrowOnError>
+): Promise<MethodResultSync<GetBlockchainMasterchainShardsData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getBlockchainMasterchainShards(
+            options.path.masterchainSeqno,
+            options.params
+        );
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetBlockchainMasterchainShardsData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetBlockchainMasterchainShardsData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetBlockchainMasterchainShardsData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get all blocks in all shards and workchains between target and previous masterchain block according to shards last blocks snapshot in masterchain.  We don't recommend to build your app around this method because it has problem with scalability and will work very slow in the future.
+ *
+ * @tags Blockchain
+ * @name GetBlockchainMasterchainBlocks
+ * @request GET:/v2/blockchain/masterchain/{masterchain_seqno}/blocks
+ */
+type GetBlockchainMasterchainBlocksOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        masterchainSeqno: number;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getBlockchainMasterchainBlocks = async <ThrowOnError extends boolean = false>(
+    options: GetBlockchainMasterchainBlocksOptions<ThrowOnError>
+): Promise<MethodResultSync<GetBlockchainMasterchainBlocksData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getBlockchainMasterchainBlocks(
+            options.path.masterchainSeqno,
+            options.params
+        );
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetBlockchainMasterchainBlocksData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetBlockchainMasterchainBlocksData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetBlockchainMasterchainBlocksData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get all transactions in all shards and workchains between target and previous masterchain block according to shards last blocks snapshot in masterchain. We don't recommend to build your app around this method because it has problem with scalability and will work very slow in the future.
+ *
+ * @tags Blockchain
+ * @name GetBlockchainMasterchainTransactions
+ * @request GET:/v2/blockchain/masterchain/{masterchain_seqno}/transactions
+ */
+type GetBlockchainMasterchainTransactionsOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        masterchainSeqno: number;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getBlockchainMasterchainTransactions = async <ThrowOnError extends boolean = false>(
+    options: GetBlockchainMasterchainTransactionsOptions<ThrowOnError>
+): Promise<MethodResultSync<GetBlockchainMasterchainTransactionsData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getBlockchainMasterchainTransactions(
+            options.path.masterchainSeqno,
+            options.params
+        );
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<
+                GetBlockchainMasterchainTransactionsData,
+                ThrowOnError
+            >;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetBlockchainMasterchainTransactionsData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetBlockchainMasterchainTransactionsData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get blockchain config from a specific block, if present.
+ *
+ * @tags Blockchain
+ * @name GetBlockchainConfigFromBlock
+ * @request GET:/v2/blockchain/masterchain/{masterchain_seqno}/config
+ */
+type GetBlockchainConfigFromBlockOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        masterchainSeqno: number;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getBlockchainConfigFromBlock = async <ThrowOnError extends boolean = false>(
+    options: GetBlockchainConfigFromBlockOptions<ThrowOnError>
+): Promise<MethodResultSync<GetBlockchainConfigFromBlockData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getBlockchainConfigFromBlock(
+            options.path.masterchainSeqno,
+            options.params
+        );
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetBlockchainConfigFromBlockData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetBlockchainConfigFromBlockData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetBlockchainConfigFromBlockData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get raw blockchain config from a specific block, if present.
+ *
+ * @tags Blockchain
+ * @name GetRawBlockchainConfigFromBlock
+ * @request GET:/v2/blockchain/masterchain/{masterchain_seqno}/config/raw
+ */
+type GetRawBlockchainConfigFromBlockOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        masterchainSeqno: number;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getRawBlockchainConfigFromBlock = async <ThrowOnError extends boolean = false>(
+    options: GetRawBlockchainConfigFromBlockOptions<ThrowOnError>
+): Promise<MethodResultSync<GetRawBlockchainConfigFromBlockData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getRawBlockchainConfigFromBlock(
+            options.path.masterchainSeqno,
+            options.params
+        );
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetRawBlockchainConfigFromBlockData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetRawBlockchainConfigFromBlockData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetRawBlockchainConfigFromBlockData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get transactions from block
+ *
+ * @tags Blockchain
+ * @name GetBlockchainBlockTransactions
+ * @request GET:/v2/blockchain/blocks/{block_id}/transactions
+ */
+type GetBlockchainBlockTransactionsOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        blockId: string;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getBlockchainBlockTransactions = async <ThrowOnError extends boolean = false>(
+    options: GetBlockchainBlockTransactionsOptions<ThrowOnError>
+): Promise<MethodResultSync<GetBlockchainBlockTransactionsData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getBlockchainBlockTransactions(
+            options.path.blockId,
+            options.params
+        );
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetBlockchainBlockTransactionsData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetBlockchainBlockTransactionsData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetBlockchainBlockTransactionsData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get transaction data
+ *
+ * @tags Blockchain
+ * @name GetBlockchainTransaction
+ * @request GET:/v2/blockchain/transactions/{transaction_id}
+ */
+type GetBlockchainTransactionOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        transactionId: string;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getBlockchainTransaction = async <ThrowOnError extends boolean = false>(
+    options: GetBlockchainTransactionOptions<ThrowOnError>
+): Promise<MethodResultSync<GetBlockchainTransactionData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getBlockchainTransaction(
+            options.path.transactionId,
+            options.params
+        );
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetBlockchainTransactionData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetBlockchainTransactionData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetBlockchainTransactionData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get transaction data by message hash
+ *
+ * @tags Blockchain
+ * @name GetBlockchainTransactionByMessageHash
+ * @request GET:/v2/blockchain/messages/{msg_id}/transaction
+ */
+type GetBlockchainTransactionByMessageHashOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        msgId: string;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getBlockchainTransactionByMessageHash = async <ThrowOnError extends boolean = false>(
+    options: GetBlockchainTransactionByMessageHashOptions<ThrowOnError>
+): Promise<MethodResultSync<GetBlockchainTransactionByMessageHashData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getBlockchainTransactionByMessageHash(
+            options.path.msgId,
+            options.params
+        );
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<
+                GetBlockchainTransactionByMessageHashData,
+                ThrowOnError
+            >;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetBlockchainTransactionByMessageHashData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetBlockchainTransactionByMessageHashData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get blockchain validators
+ *
+ * @tags Blockchain
+ * @name GetBlockchainValidators
+ * @request GET:/v2/blockchain/validators
+ */
+type GetBlockchainValidatorsOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getBlockchainValidators = async <ThrowOnError extends boolean = false>(
+    options?: GetBlockchainValidatorsOptions<ThrowOnError>
+): Promise<MethodResultSync<GetBlockchainValidatorsData, ThrowOnError>> => {
+    try {
+        const client = options?.client || getDefaultClient();
+        const result = await client.getBlockchainValidators(options?.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetBlockchainValidatorsData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetBlockchainValidatorsData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetBlockchainValidatorsData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get last known masterchain block
+ *
+ * @tags Blockchain
+ * @name GetBlockchainMasterchainHead
+ * @request GET:/v2/blockchain/masterchain-head
+ */
+type GetBlockchainMasterchainHeadOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getBlockchainMasterchainHead = async <ThrowOnError extends boolean = false>(
+    options?: GetBlockchainMasterchainHeadOptions<ThrowOnError>
+): Promise<MethodResultSync<GetBlockchainMasterchainHeadData, ThrowOnError>> => {
+    try {
+        const client = options?.client || getDefaultClient();
+        const result = await client.getBlockchainMasterchainHead(options?.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetBlockchainMasterchainHeadData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetBlockchainMasterchainHeadData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetBlockchainMasterchainHeadData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get low-level information about an account taken directly from the blockchain.
+ *
+ * @tags Blockchain
+ * @name GetBlockchainRawAccount
+ * @request GET:/v2/blockchain/accounts/{account_id}
+ */
+type GetBlockchainRawAccountOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        accountId: Address | string;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getBlockchainRawAccount = async <ThrowOnError extends boolean = false>(
+    options: GetBlockchainRawAccountOptions<ThrowOnError>
+): Promise<MethodResultSync<GetBlockchainRawAccountData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getBlockchainRawAccount(options.path.accountId, options.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetBlockchainRawAccountData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetBlockchainRawAccountData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetBlockchainRawAccountData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get account transactions
+ *
+ * @tags Blockchain
+ * @name GetBlockchainAccountTransactions
+ * @request GET:/v2/blockchain/accounts/{account_id}/transactions
+ */
+type GetBlockchainAccountTransactionsOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        accountId: Address | string;
+    };
+    query?: {
+        /**
+         * omit this parameter to get last transactions
+         * @format bigint
+         * @example 39787624000003
+         */
+        after_lt?: bigint;
+        /**
+         * omit this parameter to get last transactions
+         * @format bigint
+         * @example 39787624000003
+         */
+        before_lt?: bigint;
+        /**
+         * @format int32
+         * @min 1
+         * @max 1000
+         * @default 100
+         * @example 100
+         */
+        limit?: number;
+        /**
+         * used to sort the result-set in ascending or descending order by lt.
+         * @default "desc"
+         */
+        sort_order?: 'desc' | 'asc';
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getBlockchainAccountTransactions = async <ThrowOnError extends boolean = false>(
+    options: GetBlockchainAccountTransactionsOptions<ThrowOnError>
+): Promise<MethodResultSync<GetBlockchainAccountTransactionsData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getBlockchainAccountTransactions(
+            options.path.accountId,
+            options?.query,
+            options.params
+        );
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetBlockchainAccountTransactionsData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetBlockchainAccountTransactionsData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetBlockchainAccountTransactionsData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Execute get method for account
+ *
+ * @tags Blockchain
+ * @name ExecGetMethodForBlockchainAccount
+ * @request GET:/v2/blockchain/accounts/{account_id}/methods/{method_name}
+ */
+type ExecGetMethodForBlockchainAccountOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        accountId: Address | string;
+        methodName: string;
+    };
+    query?: {
+        /**
+         * Array of method arguments in string format. Supported value formats:
+         * - "NaN" for Not-a-Number type
+         * - "Null" for Null type
+         * - Decimal integers for tinyint type (e.g., "100500")
+         * - 0x-prefixed hex strings for int257 type (e.g., "0xfa01d78381ae32")
+         * - TON blockchain addresses for slice type (e.g., "0:6e731f2e28b73539a7f85ac47ca104d5840b229351189977bb6151d36b5e3f5e")
+         * - Base64-encoded BOC for cell type (e.g., "te6ccgEBAQEAAgAAAA==")
+         * - Hex-encoded BOC for slice type (e.g., "b5ee9c72010101010002000000")
+         * @example ["0:9a33970f617bcd71acf2cd28357c067aa31859c02820d8f01d74c88063a8f4d8"]
+         */
+        args?: string[];
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const execGetMethodForBlockchainAccount = async <ThrowOnError extends boolean = false>(
+    options: ExecGetMethodForBlockchainAccountOptions<ThrowOnError>
+): Promise<MethodResultSync<ExecGetMethodForBlockchainAccountData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.execGetMethodForBlockchainAccount(
+            options.path.accountId,
+            options.path.methodName,
+            options?.query,
+            options.params
+        );
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<ExecGetMethodForBlockchainAccountData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            ExecGetMethodForBlockchainAccountData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            ExecGetMethodForBlockchainAccountData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Execute get method for account
+ *
+ * @tags Blockchain
+ * @name ExecGetMethodWithBodyForBlockchainAccount
+ * @request POST:/v2/blockchain/accounts/{account_id}/methods/{method_name}
+ */
+type ExecGetMethodWithBodyForBlockchainAccountOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        accountId: Address | string;
+        methodName: string;
+    };
+    body: {
+        args: ExecGetMethodArg[];
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const execGetMethodWithBodyForBlockchainAccount = async <
+    ThrowOnError extends boolean = false
+>(
+    options: ExecGetMethodWithBodyForBlockchainAccountOptions<ThrowOnError>
+): Promise<MethodResultSync<ExecGetMethodWithBodyForBlockchainAccountData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.execGetMethodWithBodyForBlockchainAccount(
+            options.path.accountId,
+            options.path.methodName,
+            options.body,
+            options.params
+        );
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<
+                ExecGetMethodWithBodyForBlockchainAccountData,
+                ThrowOnError
+            >;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            ExecGetMethodWithBodyForBlockchainAccountData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            ExecGetMethodWithBodyForBlockchainAccountData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Send message to blockchain
+ *
+ * @tags Blockchain
+ * @name SendBlockchainMessage
+ * @request POST:/v2/blockchain/message
+ */
+type SendBlockchainMessageOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    body: {
+        /** @format cell */
+        boc?: Cell | string;
+        /** @maxItems 5 */
+        batch?: (Cell | string)[];
+        meta?: Record<string, string>;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const sendBlockchainMessage = async <ThrowOnError extends boolean = false>(
+    options: SendBlockchainMessageOptions<ThrowOnError>
+): Promise<MethodResultSync<SendBlockchainMessageData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.sendBlockchainMessage(options.body, options.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<SendBlockchainMessageData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            SendBlockchainMessageData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            SendBlockchainMessageData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get blockchain config
+ *
+ * @tags Blockchain
+ * @name GetBlockchainConfig
+ * @request GET:/v2/blockchain/config
+ */
+type GetBlockchainConfigOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getBlockchainConfig = async <ThrowOnError extends boolean = false>(
+    options?: GetBlockchainConfigOptions<ThrowOnError>
+): Promise<MethodResultSync<GetBlockchainConfigData, ThrowOnError>> => {
+    try {
+        const client = options?.client || getDefaultClient();
+        const result = await client.getBlockchainConfig(options?.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetBlockchainConfigData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetBlockchainConfigData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetBlockchainConfigData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get raw blockchain config
+ *
+ * @tags Blockchain
+ * @name GetRawBlockchainConfig
+ * @request GET:/v2/blockchain/config/raw
+ */
+type GetRawBlockchainConfigOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getRawBlockchainConfig = async <ThrowOnError extends boolean = false>(
+    options?: GetRawBlockchainConfigOptions<ThrowOnError>
+): Promise<MethodResultSync<GetRawBlockchainConfigData, ThrowOnError>> => {
+    try {
+        const client = options?.client || getDefaultClient();
+        const result = await client.getRawBlockchainConfig(options?.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetRawBlockchainConfigData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetRawBlockchainConfigData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetRawBlockchainConfigData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Blockchain account inspect
+ *
+ * @tags Blockchain
+ * @name BlockchainAccountInspect
+ * @request GET:/v2/blockchain/accounts/{account_id}/inspect
+ */
+type BlockchainAccountInspectOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        accountId: Address | string;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const blockchainAccountInspect = async <ThrowOnError extends boolean = false>(
+    options: BlockchainAccountInspectOptions<ThrowOnError>
+): Promise<MethodResultSync<BlockchainAccountInspectData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.blockchainAccountInspect(
+            options.path.accountId,
+            options.params
+        );
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<BlockchainAccountInspectData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            BlockchainAccountInspectData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            BlockchainAccountInspectData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get library cell
+ *
+ * @tags Blockchain
+ * @name GetLibraryByHash
+ * @request GET:/v2/blockchain/libraries/{hash}
+ */
+type GetLibraryByHashOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        hash: string;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getLibraryByHash = async <ThrowOnError extends boolean = false>(
+    options: GetLibraryByHashOptions<ThrowOnError>
+): Promise<MethodResultSync<GetLibraryByHashData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getLibraryByHash(options.path.hash, options.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetLibraryByHashData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetLibraryByHashData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetLibraryByHashData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get human-friendly information about several accounts without low-level details.
+ *
+ * @tags Accounts
+ * @name GetAccounts
+ * @request POST:/v2/accounts/_bulk
+ */
+type GetAccountsOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    body: {
+        accountIds: (Address | string)[];
+    };
+    query?: {
+        /** @example "usd" */
+        currency?: string;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getAccounts = async <ThrowOnError extends boolean = false>(
+    options: GetAccountsOptions<ThrowOnError>
+): Promise<MethodResultSync<GetAccountsData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getAccounts(options.body, options?.query, options.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetAccountsData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<GetAccountsData, ThrowOnError>;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetAccountsData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get human-friendly information about an account without low-level details.
+ *
+ * @tags Accounts
+ * @name GetAccount
+ * @request GET:/v2/accounts/{account_id}
+ */
+type GetAccountOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        accountId: Address | string;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getAccount = async <ThrowOnError extends boolean = false>(
+    options: GetAccountOptions<ThrowOnError>
+): Promise<MethodResultSync<GetAccountData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getAccount(options.path.accountId, options.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetAccountData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<GetAccountData, ThrowOnError>;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetAccountData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get account's domains
+ *
+ * @tags Accounts
+ * @name AccountDnsBackResolve
+ * @request GET:/v2/accounts/{account_id}/dns/backresolve
+ */
+type AccountDnsBackResolveOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        accountId: Address | string;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const accountDnsBackResolve = async <ThrowOnError extends boolean = false>(
+    options: AccountDnsBackResolveOptions<ThrowOnError>
+): Promise<MethodResultSync<AccountDnsBackResolveData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.accountDnsBackResolve(options.path.accountId, options.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<AccountDnsBackResolveData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            AccountDnsBackResolveData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            AccountDnsBackResolveData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get all Jettons balances by owner address
+ *
+ * @tags Accounts
+ * @name GetAccountJettonsBalances
+ * @request GET:/v2/accounts/{account_id}/jettons
+ */
+type GetAccountJettonsBalancesOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        accountId: Address | string;
+    };
+    query?: {
+        /**
+         * accept ton and all possible fiat currencies, separated by commas
+         * @example ["ton","usd","rub"]
+         */
+        currencies?: string[];
+        /**
+         * comma separated list supported extensions
+         * @example ["custom_payload"]
+         */
+        supported_extensions?: string[];
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getAccountJettonsBalances = async <ThrowOnError extends boolean = false>(
+    options: GetAccountJettonsBalancesOptions<ThrowOnError>
+): Promise<MethodResultSync<GetAccountJettonsBalancesData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getAccountJettonsBalances(
+            options.path.accountId,
+            options?.query,
+            options.params
+        );
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetAccountJettonsBalancesData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetAccountJettonsBalancesData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetAccountJettonsBalancesData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get Jetton balance by owner address
+ *
+ * @tags Accounts
+ * @name GetAccountJettonBalance
+ * @request GET:/v2/accounts/{account_id}/jettons/{jetton_id}
+ */
+type GetAccountJettonBalanceOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        accountId: Address | string;
+        jettonId: Address | string;
+    };
+    query?: {
+        /**
+         * accept ton and all possible fiat currencies, separated by commas
+         * @example ["ton","usd","rub"]
+         */
+        currencies?: string[];
+        /**
+         * comma separated list supported extensions
+         * @example ["custom_payload"]
+         */
+        supported_extensions?: string[];
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getAccountJettonBalance = async <ThrowOnError extends boolean = false>(
+    options: GetAccountJettonBalanceOptions<ThrowOnError>
+): Promise<MethodResultSync<GetAccountJettonBalanceData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getAccountJettonBalance(
+            options.path.accountId,
+            options.path.jettonId,
+            options?.query,
+            options.params
+        );
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetAccountJettonBalanceData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetAccountJettonBalanceData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetAccountJettonBalanceData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get the transfer jettons history for account
+ *
+ * @tags Accounts
+ * @name GetAccountJettonsHistory
+ * @request GET:/v2/accounts/{account_id}/jettons/history
+ */
+type GetAccountJettonsHistoryOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        accountId: Address | string;
+    };
+    query: {
+        /**
+         * omit this parameter to get last events
+         * @format bigint
+         * @example 25758317000002
+         */
+        before_lt?: bigint;
+        /**
+         * @min 1
+         * @max 1000
+         * @example 100
+         */
+        limit: number;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getAccountJettonsHistory = async <ThrowOnError extends boolean = false>(
+    options: GetAccountJettonsHistoryOptions<ThrowOnError>
+): Promise<MethodResultSync<GetAccountJettonsHistoryData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getAccountJettonsHistory(
+            options.path.accountId,
+            options.query,
+            options.params
+        );
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetAccountJettonsHistoryData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetAccountJettonsHistoryData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetAccountJettonsHistoryData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Please use `getJettonAccountHistoryByID`` instead
+ *
+ * @tags Accounts
+ * @name GetAccountJettonHistoryById
+ * @request GET:/v2/accounts/{account_id}/jettons/{jetton_id}/history
+ * @deprecated
+ */
+type GetAccountJettonHistoryByIdOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        accountId: Address | string;
+        jettonId: Address | string;
+    };
+    query: {
+        /**
+         * omit this parameter to get last events
+         * @format bigint
+         * @example 25758317000002
+         */
+        before_lt?: bigint;
+        /**
+         * @min 1
+         * @max 1000
+         * @example 100
+         */
+        limit: number;
+        /**
+         * @format int64
+         * @max 2114380800
+         * @example 1668436763
+         */
+        start_date?: number;
+        /**
+         * @format int64
+         * @max 2114380800
+         * @example 1668436763
+         */
+        end_date?: number;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getAccountJettonHistoryById = async <ThrowOnError extends boolean = false>(
+    options: GetAccountJettonHistoryByIdOptions<ThrowOnError>
+): Promise<MethodResultSync<GetAccountJettonHistoryByIdData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getAccountJettonHistoryById(
+            options.path.accountId,
+            options.path.jettonId,
+            options.query,
+            options.params
+        );
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetAccountJettonHistoryByIdData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetAccountJettonHistoryByIdData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetAccountJettonHistoryByIdData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get all NFT items by owner address
+ *
+ * @tags Accounts
+ * @name GetAccountNftItems
+ * @request GET:/v2/accounts/{account_id}/nfts
+ */
+type GetAccountNftItemsOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        accountId: Address | string;
+    };
+    query?: {
+        /**
+         * nft collection
+         * @format address
+         * @example "0:06d811f426598591b32b2c49f29f66c821368e4acb1de16762b04e0174532465"
+         */
+        collection?: Address | string;
+        /**
+         * @min 1
+         * @max 1000
+         * @default 1000
+         */
+        limit?: number;
+        /**
+         * @min 0
+         * @default 0
+         */
+        offset?: number;
+        /**
+         * Selling nft items in ton implemented usually via transfer items to special selling account. This option enables including items which owned not directly.
+         * @default false
+         */
+        indirect_ownership?: boolean;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getAccountNftItems = async <ThrowOnError extends boolean = false>(
+    options: GetAccountNftItemsOptions<ThrowOnError>
+): Promise<MethodResultSync<GetAccountNftItemsData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getAccountNftItems(
+            options.path.accountId,
+            options?.query,
+            options.params
+        );
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetAccountNftItemsData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetAccountNftItemsData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetAccountNftItemsData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get events for an account. Each event is built on top of a trace which is a series of transactions caused by one inbound message. TonAPI looks for known patterns inside the trace and splits the trace into actions, where a single action represents a meaningful high-level operation like a Jetton Transfer or an NFT Purchase. Actions are expected to be shown to users. It is advised not to build any logic on top of actions because actions can be changed at any time.
+ *
+ * @tags Accounts
+ * @name GetAccountEvents
+ * @request GET:/v2/accounts/{account_id}/events
+ */
+type GetAccountEventsOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        accountId: Address | string;
+    };
+    query: {
+        /**
+         * Show only events that are initiated by this account
+         * @default false
+         */
+        initiator?: boolean;
+        /**
+         * filter actions where requested account is not real subject (for example sender or receiver jettons)
+         * @default false
+         */
+        subject_only?: boolean;
+        /**
+         * omit this parameter to get last events
+         * @format bigint
+         * @example 25758317000002
+         */
+        before_lt?: bigint;
+        /**
+         * @min 1
+         * @max 100
+         * @example 20
+         */
+        limit: number;
+        /**
+         * @format int64
+         * @max 2114380800
+         * @example 1668436763
+         */
+        start_date?: number;
+        /**
+         * @format int64
+         * @max 2114380800
+         * @example 1668436763
+         */
+        end_date?: number;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getAccountEvents = async <ThrowOnError extends boolean = false>(
+    options: GetAccountEventsOptions<ThrowOnError>
+): Promise<MethodResultSync<GetAccountEventsData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getAccountEvents(
+            options.path.accountId,
+            options.query,
+            options.params
+        );
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetAccountEventsData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetAccountEventsData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetAccountEventsData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get event for an account by event_id
+ *
+ * @tags Accounts
+ * @name GetAccountEvent
+ * @request GET:/v2/accounts/{account_id}/events/{event_id}
+ */
+type GetAccountEventOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        accountId: Address | string;
+        eventId: string;
+    };
+    query?: {
+        /**
+         * filter actions where requested account is not real subject (for example sender or receiver jettons)
+         * @default false
+         */
+        subject_only?: boolean;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getAccountEvent = async <ThrowOnError extends boolean = false>(
+    options: GetAccountEventOptions<ThrowOnError>
+): Promise<MethodResultSync<GetAccountEventData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getAccountEvent(
+            options.path.accountId,
+            options.path.eventId,
+            options?.query,
+            options.params
+        );
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetAccountEventData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<GetAccountEventData, ThrowOnError>;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetAccountEventData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get traces for account
+ *
+ * @tags Accounts
+ * @name GetAccountTraces
+ * @request GET:/v2/accounts/{account_id}/traces
+ */
+type GetAccountTracesOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        accountId: Address | string;
+    };
+    query?: {
+        /**
+         * omit this parameter to get last events
+         * @format bigint
+         * @example 25758317000002
+         */
+        before_lt?: bigint;
+        /**
+         * @min 1
+         * @max 1000
+         * @default 100
+         * @example 100
+         */
+        limit?: number;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getAccountTraces = async <ThrowOnError extends boolean = false>(
+    options: GetAccountTracesOptions<ThrowOnError>
+): Promise<MethodResultSync<GetAccountTracesData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getAccountTraces(
+            options.path.accountId,
+            options?.query,
+            options.params
+        );
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetAccountTracesData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetAccountTracesData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetAccountTracesData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get all subscriptions by wallet address
+ *
+ * @tags Accounts
+ * @name GetAccountSubscriptions
+ * @request GET:/v2/accounts/{account_id}/subscriptions
+ */
+type GetAccountSubscriptionsOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        accountId: Address | string;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getAccountSubscriptions = async <ThrowOnError extends boolean = false>(
+    options: GetAccountSubscriptionsOptions<ThrowOnError>
+): Promise<MethodResultSync<GetAccountSubscriptionsData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getAccountSubscriptions(options.path.accountId, options.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetAccountSubscriptionsData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetAccountSubscriptionsData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetAccountSubscriptionsData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Update internal cache for a particular account
+ *
+ * @tags Accounts
+ * @name ReindexAccount
+ * @request POST:/v2/accounts/{account_id}/reindex
+ */
+type ReindexAccountOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        accountId: Address | string;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const reindexAccount = async <ThrowOnError extends boolean = false>(
+    options: ReindexAccountOptions<ThrowOnError>
+): Promise<MethodResultSync<ReindexAccountData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.reindexAccount(options.path.accountId, options.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<ReindexAccountData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<ReindexAccountData, ThrowOnError>;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            ReindexAccountData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Search by account domain name
+ *
+ * @tags Accounts
+ * @name SearchAccounts
+ * @request GET:/v2/accounts/search
+ */
+type SearchAccountsOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    query: {
+        /**
+         * @minLength 3
+         * @maxLength 15
+         */
+        name: string;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const searchAccounts = async <ThrowOnError extends boolean = false>(
+    options: SearchAccountsOptions<ThrowOnError>
+): Promise<MethodResultSync<SearchAccountsData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.searchAccounts(options.query, options.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<SearchAccountsData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<SearchAccountsData, ThrowOnError>;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            SearchAccountsData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get expiring account .ton dns
+ *
+ * @tags Accounts
+ * @name GetAccountDnsExpiring
+ * @request GET:/v2/accounts/{account_id}/dns/expiring
+ */
+type GetAccountDnsExpiringOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        accountId: Address | string;
+    };
+    query?: {
+        /**
+         * number of days before expiration
+         * @min 1
+         * @max 3660
+         */
+        period?: number;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getAccountDnsExpiring = async <ThrowOnError extends boolean = false>(
+    options: GetAccountDnsExpiringOptions<ThrowOnError>
+): Promise<MethodResultSync<GetAccountDnsExpiringData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getAccountDnsExpiring(
+            options.path.accountId,
+            options?.query,
+            options.params
+        );
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetAccountDnsExpiringData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetAccountDnsExpiringData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetAccountDnsExpiringData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get public key by account id
+ *
+ * @tags Accounts
+ * @name GetAccountPublicKey
+ * @request GET:/v2/accounts/{account_id}/publickey
+ */
+type GetAccountPublicKeyOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        accountId: Address | string;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getAccountPublicKey = async <ThrowOnError extends boolean = false>(
+    options: GetAccountPublicKeyOptions<ThrowOnError>
+): Promise<MethodResultSync<GetAccountPublicKeyData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getAccountPublicKey(options.path.accountId, options.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetAccountPublicKeyData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetAccountPublicKeyData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetAccountPublicKeyData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get account's multisigs
+ *
+ * @tags Accounts
+ * @name GetAccountMultisigs
+ * @request GET:/v2/accounts/{account_id}/multisigs
+ */
+type GetAccountMultisigsOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        accountId: Address | string;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getAccountMultisigs = async <ThrowOnError extends boolean = false>(
+    options: GetAccountMultisigsOptions<ThrowOnError>
+): Promise<MethodResultSync<GetAccountMultisigsData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getAccountMultisigs(options.path.accountId, options.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetAccountMultisigsData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetAccountMultisigsData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetAccountMultisigsData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get account's balance change
+ *
+ * @tags Accounts
+ * @name GetAccountDiff
+ * @request GET:/v2/accounts/{account_id}/diff
+ */
+type GetAccountDiffOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        accountId: Address | string;
+    };
+    query: {
+        /**
+         * @format int64
+         * @max 2114380800
+         * @example 1668436763
+         */
+        start_date: number;
+        /**
+         * @format int64
+         * @max 2114380800
+         * @example 1668436763
+         */
+        end_date: number;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getAccountDiff = async <ThrowOnError extends boolean = false>(
+    options: GetAccountDiffOptions<ThrowOnError>
+): Promise<MethodResultSync<GetAccountDiffData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getAccountDiff(
+            options.path.accountId,
+            options.query,
+            options.params
+        );
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetAccountDiffData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<GetAccountDiffData, ThrowOnError>;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetAccountDiffData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get the transfer history of extra currencies for an account.
+ *
+ * @tags Accounts
+ * @name GetAccountExtraCurrencyHistoryById
+ * @request GET:/v2/accounts/{account_id}/extra-currency/{id}/history
+ */
+type GetAccountExtraCurrencyHistoryByIdOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        accountId: Address | string;
+        id: number;
+    };
+    query: {
+        /**
+         * omit this parameter to get last events
+         * @format bigint
+         * @example 25758317000002
+         */
+        before_lt?: bigint;
+        /**
+         * @min 1
+         * @max 1000
+         * @example 100
+         */
+        limit: number;
+        /**
+         * @format int64
+         * @max 2114380800
+         * @example 1668436763
+         */
+        start_date?: number;
+        /**
+         * @format int64
+         * @max 2114380800
+         * @example 1668436763
+         */
+        end_date?: number;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getAccountExtraCurrencyHistoryById = async <ThrowOnError extends boolean = false>(
+    options: GetAccountExtraCurrencyHistoryByIdOptions<ThrowOnError>
+): Promise<MethodResultSync<GetAccountExtraCurrencyHistoryByIdData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getAccountExtraCurrencyHistoryById(
+            options.path.accountId,
+            options.path.id,
+            options.query,
+            options.params
+        );
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetAccountExtraCurrencyHistoryByIdData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetAccountExtraCurrencyHistoryByIdData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetAccountExtraCurrencyHistoryByIdData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get the transfer jetton history for account and jetton
+ *
+ * @tags Accounts
+ * @name GetJettonAccountHistoryById
+ * @request GET:/v2/jettons/{jetton_id}/accounts/{account_id}/history
+ */
+type GetJettonAccountHistoryByIdOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        accountId: Address | string;
+        jettonId: Address | string;
+    };
+    query: {
+        /**
+         * omit this parameter to get last events
+         * @format bigint
+         * @example 25758317000002
+         */
+        before_lt?: bigint;
+        /**
+         * @min 1
+         * @max 1000
+         * @example 100
+         */
+        limit: number;
+        /**
+         * @format int64
+         * @max 2114380800
+         * @example 1668436763
+         */
+        start_date?: number;
+        /**
+         * @format int64
+         * @max 2114380800
+         * @example 1668436763
+         */
+        end_date?: number;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getJettonAccountHistoryById = async <ThrowOnError extends boolean = false>(
+    options: GetJettonAccountHistoryByIdOptions<ThrowOnError>
+): Promise<MethodResultSync<GetJettonAccountHistoryByIdData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getJettonAccountHistoryById(
+            options.path.accountId,
+            options.path.jettonId,
+            options.query,
+            options.params
+        );
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetJettonAccountHistoryByIdData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetJettonAccountHistoryByIdData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetJettonAccountHistoryByIdData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get the transfer nft history
+ *
+ * @tags NFT
+ * @name GetAccountNftHistory
+ * @request GET:/v2/accounts/{account_id}/nfts/history
+ */
+type GetAccountNftHistoryOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        accountId: Address | string;
+    };
+    query: {
+        /**
+         * omit this parameter to get last events
+         * @format bigint
+         * @example 25758317000002
+         */
+        before_lt?: bigint;
+        /**
+         * @min 1
+         * @max 1000
+         * @example 100
+         */
+        limit: number;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getAccountNftHistory = async <ThrowOnError extends boolean = false>(
+    options: GetAccountNftHistoryOptions<ThrowOnError>
+): Promise<MethodResultSync<GetAccountNftHistoryData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getAccountNftHistory(
+            options.path.accountId,
+            options.query,
+            options.params
+        );
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetAccountNftHistoryData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetAccountNftHistoryData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetAccountNftHistoryData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get NFT collections
+ *
+ * @tags NFT
+ * @name GetNftCollections
+ * @request GET:/v2/nfts/collections
+ */
+type GetNftCollectionsOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    query?: {
+        /**
+         * @format int32
+         * @min 1
+         * @max 1000
+         * @default 100
+         * @example 15
+         */
+        limit?: number;
+        /**
+         * @format int32
+         * @min 0
+         * @default 0
+         * @example 10
+         */
+        offset?: number;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getNftCollections = async <ThrowOnError extends boolean = false>(
+    options?: GetNftCollectionsOptions<ThrowOnError>
+): Promise<MethodResultSync<GetNftCollectionsData, ThrowOnError>> => {
+    try {
+        const client = options?.client || getDefaultClient();
+        const result = await client.getNftCollections(options?.query, options?.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetNftCollectionsData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetNftCollectionsData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetNftCollectionsData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get NFT collection by collection address
+ *
+ * @tags NFT
+ * @name GetNftCollection
+ * @request GET:/v2/nfts/collections/{account_id}
+ */
+type GetNftCollectionOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        accountId: Address | string;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getNftCollection = async <ThrowOnError extends boolean = false>(
+    options: GetNftCollectionOptions<ThrowOnError>
+): Promise<MethodResultSync<GetNftCollectionData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getNftCollection(options.path.accountId, options.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetNftCollectionData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetNftCollectionData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetNftCollectionData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get NFT collection items by their addresses
+ *
+ * @tags NFT
+ * @name GetNftCollectionItemsByAddresses
+ * @request POST:/v2/nfts/collections/_bulk
+ */
+type GetNftCollectionItemsByAddressesOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    body: {
+        accountIds: (Address | string)[];
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getNftCollectionItemsByAddresses = async <ThrowOnError extends boolean = false>(
+    options: GetNftCollectionItemsByAddressesOptions<ThrowOnError>
+): Promise<MethodResultSync<GetNftCollectionItemsByAddressesData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getNftCollectionItemsByAddresses(options.body, options.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetNftCollectionItemsByAddressesData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetNftCollectionItemsByAddressesData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetNftCollectionItemsByAddressesData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get NFT items from collection by collection address
+ *
+ * @tags NFT
+ * @name GetItemsFromCollection
+ * @request GET:/v2/nfts/collections/{account_id}/items
+ */
+type GetItemsFromCollectionOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        accountId: Address | string;
+    };
+    query?: {
+        /**
+         * @min 1
+         * @max 1000
+         * @default 1000
+         */
+        limit?: number;
+        /**
+         * @min 0
+         * @default 0
+         */
+        offset?: number;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getItemsFromCollection = async <ThrowOnError extends boolean = false>(
+    options: GetItemsFromCollectionOptions<ThrowOnError>
+): Promise<MethodResultSync<GetItemsFromCollectionData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getItemsFromCollection(
+            options.path.accountId,
+            options?.query,
+            options.params
+        );
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetItemsFromCollectionData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetItemsFromCollectionData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetItemsFromCollectionData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get NFT items by their addresses
+ *
+ * @tags NFT
+ * @name GetNftItemsByAddresses
+ * @request POST:/v2/nfts/_bulk
+ */
+type GetNftItemsByAddressesOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    body: {
+        accountIds: (Address | string)[];
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getNftItemsByAddresses = async <ThrowOnError extends boolean = false>(
+    options: GetNftItemsByAddressesOptions<ThrowOnError>
+): Promise<MethodResultSync<GetNftItemsByAddressesData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getNftItemsByAddresses(options.body, options.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetNftItemsByAddressesData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetNftItemsByAddressesData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetNftItemsByAddressesData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get NFT item by its address
+ *
+ * @tags NFT
+ * @name GetNftItemByAddress
+ * @request GET:/v2/nfts/{account_id}
+ */
+type GetNftItemByAddressOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        accountId: Address | string;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getNftItemByAddress = async <ThrowOnError extends boolean = false>(
+    options: GetNftItemByAddressOptions<ThrowOnError>
+): Promise<MethodResultSync<GetNftItemByAddressData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getNftItemByAddress(options.path.accountId, options.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetNftItemByAddressData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetNftItemByAddressData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetNftItemByAddressData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Please use `getAccountNftHistory`` instead
+ *
+ * @tags NFT
+ * @name GetNftHistoryById
+ * @request GET:/v2/nfts/{account_id}/history
+ * @deprecated
+ */
+type GetNftHistoryByIdOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        accountId: Address | string;
+    };
+    query: {
+        /**
+         * omit this parameter to get last events
+         * @format bigint
+         * @example 25758317000002
+         */
+        before_lt?: bigint;
+        /**
+         * @min 1
+         * @max 1000
+         * @example 100
+         */
+        limit: number;
+        /**
+         * @format int64
+         * @max 2114380800
+         * @example 1668436763
+         */
+        start_date?: number;
+        /**
+         * @format int64
+         * @max 2114380800
+         * @example 1668436763
+         */
+        end_date?: number;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getNftHistoryById = async <ThrowOnError extends boolean = false>(
+    options: GetNftHistoryByIdOptions<ThrowOnError>
+): Promise<MethodResultSync<GetNftHistoryByIdData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getNftHistoryById(
+            options.path.accountId,
+            options.query,
+            options.params
+        );
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetNftHistoryByIdData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetNftHistoryByIdData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetNftHistoryByIdData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get full information about domain name
+ *
+ * @tags DNS
+ * @name GetDnsInfo
+ * @request GET:/v2/dns/{domain_name}
+ */
+type GetDnsInfoOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        domainName: string;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getDnsInfo = async <ThrowOnError extends boolean = false>(
+    options: GetDnsInfoOptions<ThrowOnError>
+): Promise<MethodResultSync<GetDnsInfoData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getDnsInfo(options.path.domainName, options.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetDnsInfoData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<GetDnsInfoData, ThrowOnError>;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetDnsInfoData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description DNS resolve for domain name
+ *
+ * @tags DNS
+ * @name DnsResolve
+ * @request GET:/v2/dns/{domain_name}/resolve
+ */
+type DnsResolveOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        domainName: string;
+    };
+    query?: {
+        /** @default false */
+        filter?: boolean;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const dnsResolve = async <ThrowOnError extends boolean = false>(
+    options: DnsResolveOptions<ThrowOnError>
+): Promise<MethodResultSync<DnsResolveData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.dnsResolve(
+            options.path.domainName,
+            options?.query,
+            options.params
+        );
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<DnsResolveData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<DnsResolveData, ThrowOnError>;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            DnsResolveData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get domain bids
+ *
+ * @tags DNS
+ * @name GetDomainBids
+ * @request GET:/v2/dns/{domain_name}/bids
+ */
+type GetDomainBidsOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        domainName: string;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getDomainBids = async <ThrowOnError extends boolean = false>(
+    options: GetDomainBidsOptions<ThrowOnError>
+): Promise<MethodResultSync<GetDomainBidsData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getDomainBids(options.path.domainName, options.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetDomainBidsData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<GetDomainBidsData, ThrowOnError>;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetDomainBidsData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get all auctions
+ *
+ * @tags DNS
+ * @name GetAllAuctions
+ * @request GET:/v2/dns/auctions
+ */
+type GetAllAuctionsOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    query?: {
+        /**
+         * domain filter for current auctions "ton" or "t.me"
+         * @example "ton"
+         */
+        tld?: string;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getAllAuctions = async <ThrowOnError extends boolean = false>(
+    options?: GetAllAuctionsOptions<ThrowOnError>
+): Promise<MethodResultSync<GetAllAuctionsData, ThrowOnError>> => {
+    try {
+        const client = options?.client || getDefaultClient();
+        const result = await client.getAllAuctions(options?.query, options?.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetAllAuctionsData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<GetAllAuctionsData, ThrowOnError>;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetAllAuctionsData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get the trace by trace ID or hash of any transaction in trace
+ *
+ * @tags Traces
+ * @name GetTrace
+ * @request GET:/v2/traces/{trace_id}
+ */
+type GetTraceOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        traceId: string;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getTrace = async <ThrowOnError extends boolean = false>(
+    options: GetTraceOptions<ThrowOnError>
+): Promise<MethodResultSync<GetTraceData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getTrace(options.path.traceId, options.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetTraceData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<GetTraceData, ThrowOnError>;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetTraceData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get an event either by event ID or a hash of any transaction in a trace. An event is built on top of a trace which is a series of transactions caused by one inbound message. TonAPI looks for known patterns inside the trace and splits the trace into actions, where a single action represents a meaningful high-level operation like a Jetton Transfer or an NFT Purchase. Actions are expected to be shown to users. It is advised not to build any logic on top of actions because actions can be changed at any time.
+ *
+ * @tags Events
+ * @name GetEvent
+ * @request GET:/v2/events/{event_id}
+ */
+type GetEventOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        eventId: string;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getEvent = async <ThrowOnError extends boolean = false>(
+    options: GetEventOptions<ThrowOnError>
+): Promise<MethodResultSync<GetEventData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getEvent(options.path.eventId, options.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetEventData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<GetEventData, ThrowOnError>;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetEventData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get a list of all indexed jetton masters in the blockchain.
+ *
+ * @tags Jettons
+ * @name GetJettons
+ * @request GET:/v2/jettons
+ */
+type GetJettonsOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    query?: {
+        /**
+         * @format int32
+         * @min 1
+         * @max 1000
+         * @default 100
+         * @example 15
+         */
+        limit?: number;
+        /**
+         * @format int32
+         * @min 0
+         * @default 0
+         * @example 10
+         */
+        offset?: number;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getJettons = async <ThrowOnError extends boolean = false>(
+    options?: GetJettonsOptions<ThrowOnError>
+): Promise<MethodResultSync<GetJettonsData, ThrowOnError>> => {
+    try {
+        const client = options?.client || getDefaultClient();
+        const result = await client.getJettons(options?.query, options?.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetJettonsData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<GetJettonsData, ThrowOnError>;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetJettonsData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get jetton metadata by jetton master address
+ *
+ * @tags Jettons
+ * @name GetJettonInfo
+ * @request GET:/v2/jettons/{account_id}
+ */
+type GetJettonInfoOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        accountId: Address | string;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getJettonInfo = async <ThrowOnError extends boolean = false>(
+    options: GetJettonInfoOptions<ThrowOnError>
+): Promise<MethodResultSync<GetJettonInfoData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getJettonInfo(options.path.accountId, options.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetJettonInfoData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<GetJettonInfoData, ThrowOnError>;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetJettonInfoData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get jetton metadata items by jetton master addresses
+ *
+ * @tags Jettons
+ * @name GetJettonInfosByAddresses
+ * @request POST:/v2/jettons/_bulk
+ */
+type GetJettonInfosByAddressesOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    body: {
+        accountIds: (Address | string)[];
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getJettonInfosByAddresses = async <ThrowOnError extends boolean = false>(
+    options: GetJettonInfosByAddressesOptions<ThrowOnError>
+): Promise<MethodResultSync<GetJettonInfosByAddressesData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getJettonInfosByAddresses(options.body, options.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetJettonInfosByAddressesData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetJettonInfosByAddressesData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetJettonInfosByAddressesData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get jetton's holders
+ *
+ * @tags Jettons
+ * @name GetJettonHolders
+ * @request GET:/v2/jettons/{account_id}/holders
+ */
+type GetJettonHoldersOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        accountId: Address | string;
+    };
+    query?: {
+        /**
+         * @min 1
+         * @max 1000
+         * @default 1000
+         */
+        limit?: number;
+        /**
+         * @min 0
+         * @max 9000
+         * @default 0
+         */
+        offset?: number;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getJettonHolders = async <ThrowOnError extends boolean = false>(
+    options: GetJettonHoldersOptions<ThrowOnError>
+): Promise<MethodResultSync<GetJettonHoldersData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getJettonHolders(
+            options.path.accountId,
+            options?.query,
+            options.params
+        );
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetJettonHoldersData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetJettonHoldersData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetJettonHoldersData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get jetton's custom payload and state init required for transfer
+ *
+ * @tags Jettons
+ * @name GetJettonTransferPayload
+ * @request GET:/v2/jettons/{jetton_id}/transfer/{account_id}/payload
+ */
+type GetJettonTransferPayloadOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        accountId: Address | string;
+        jettonId: Address | string;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getJettonTransferPayload = async <ThrowOnError extends boolean = false>(
+    options: GetJettonTransferPayloadOptions<ThrowOnError>
+): Promise<MethodResultSync<GetJettonTransferPayloadData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getJettonTransferPayload(
+            options.path.accountId,
+            options.path.jettonId,
+            options.params
+        );
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetJettonTransferPayloadData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetJettonTransferPayloadData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetJettonTransferPayloadData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get only jetton transfers in the event
+ *
+ * @tags Jettons
+ * @name GetJettonsEvents
+ * @request GET:/v2/events/{event_id}/jettons
+ */
+type GetJettonsEventsOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        eventId: string;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getJettonsEvents = async <ThrowOnError extends boolean = false>(
+    options: GetJettonsEventsOptions<ThrowOnError>
+): Promise<MethodResultSync<GetJettonsEventsData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getJettonsEvents(options.path.eventId, options.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetJettonsEventsData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetJettonsEventsData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetJettonsEventsData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get extra currency info by id
+ *
+ * @tags ExtraCurrency
+ * @name GetExtraCurrencyInfo
+ * @request GET:/v2/extra-currency/{id}
+ */
+type GetExtraCurrencyInfoOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        id: number;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getExtraCurrencyInfo = async <ThrowOnError extends boolean = false>(
+    options: GetExtraCurrencyInfoOptions<ThrowOnError>
+): Promise<MethodResultSync<GetExtraCurrencyInfoData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getExtraCurrencyInfo(options.path.id, options.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetExtraCurrencyInfoData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetExtraCurrencyInfoData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetExtraCurrencyInfoData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description All pools where account participates
+ *
+ * @tags Staking
+ * @name GetAccountNominatorsPools
+ * @request GET:/v2/staking/nominator/{account_id}/pools
+ */
+type GetAccountNominatorsPoolsOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        accountId: Address | string;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getAccountNominatorsPools = async <ThrowOnError extends boolean = false>(
+    options: GetAccountNominatorsPoolsOptions<ThrowOnError>
+): Promise<MethodResultSync<GetAccountNominatorsPoolsData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getAccountNominatorsPools(
+            options.path.accountId,
+            options.params
+        );
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetAccountNominatorsPoolsData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetAccountNominatorsPoolsData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetAccountNominatorsPoolsData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Stacking pool info
+ *
+ * @tags Staking
+ * @name GetStakingPoolInfo
+ * @request GET:/v2/staking/pool/{account_id}
+ */
+type GetStakingPoolInfoOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        accountId: Address | string;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getStakingPoolInfo = async <ThrowOnError extends boolean = false>(
+    options: GetStakingPoolInfoOptions<ThrowOnError>
+): Promise<MethodResultSync<GetStakingPoolInfoData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getStakingPoolInfo(options.path.accountId, options.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetStakingPoolInfoData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetStakingPoolInfoData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetStakingPoolInfoData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Pool history
+ *
+ * @tags Staking
+ * @name GetStakingPoolHistory
+ * @request GET:/v2/staking/pool/{account_id}/history
+ */
+type GetStakingPoolHistoryOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        accountId: Address | string;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getStakingPoolHistory = async <ThrowOnError extends boolean = false>(
+    options: GetStakingPoolHistoryOptions<ThrowOnError>
+): Promise<MethodResultSync<GetStakingPoolHistoryData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getStakingPoolHistory(options.path.accountId, options.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetStakingPoolHistoryData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetStakingPoolHistoryData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetStakingPoolHistoryData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description All pools available in network
+ *
+ * @tags Staking
+ * @name GetStakingPools
+ * @request GET:/v2/staking/pools
+ */
+type GetStakingPoolsOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    query?: {
+        /**
+         * account ID
+         * @format address
+         * @example "0:97264395BD65A255A429B11326C84128B7D70FFED7949ABAE3036D506BA38621"
+         */
+        available_for?: Address | string;
+        /**
+         * return also pools not from white list - just compatible by interfaces (maybe dangerous!)
+         * @example false
+         */
+        include_unverified?: boolean;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getStakingPools = async <ThrowOnError extends boolean = false>(
+    options?: GetStakingPoolsOptions<ThrowOnError>
+): Promise<MethodResultSync<GetStakingPoolsData, ThrowOnError>> => {
+    try {
+        const client = options?.client || getDefaultClient();
+        const result = await client.getStakingPools(options?.query, options?.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetStakingPoolsData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<GetStakingPoolsData, ThrowOnError>;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetStakingPoolsData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get TON storage providers deployed to the blockchain.
+ *
+ * @tags Storage
+ * @name GetStorageProviders
+ * @request GET:/v2/storage/providers
+ */
+type GetStorageProvidersOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getStorageProviders = async <ThrowOnError extends boolean = false>(
+    options?: GetStorageProvidersOptions<ThrowOnError>
+): Promise<MethodResultSync<GetStorageProvidersData, ThrowOnError>> => {
+    try {
+        const client = options?.client || getDefaultClient();
+        const result = await client.getStorageProviders(options?.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetStorageProvidersData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetStorageProvidersData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetStorageProvidersData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get the token price in the chosen currency for display only. Don’t use this for financial transactions.
+ *
+ * @tags Rates
+ * @name GetRates
+ * @request GET:/v2/rates
+ */
+type GetRatesOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    query: {
+        /**
+         * accept cryptocurrencies and jetton master addresses, separated by commas
+         * @maxItems 100
+         * @example ["ton","btc","EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs"]
+         */
+        tokens: (Address | string)[];
+        /**
+         * accept cryptocurrencies and all possible fiat currencies
+         * @maxItems 50
+         * @example ["ton","btc","usd","rub"]
+         */
+        currencies: string[];
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getRates = async <ThrowOnError extends boolean = false>(
+    options: GetRatesOptions<ThrowOnError>
+): Promise<MethodResultSync<GetRatesData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getRates(options.query, options.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetRatesData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<GetRatesData, ThrowOnError>;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetRatesData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get chart by token
+ *
+ * @tags Rates
+ * @name GetChartRates
+ * @request GET:/v2/rates/chart
+ */
+type GetChartRatesOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    query: {
+        /**
+         * accept cryptocurrency or jetton master address
+         * @format token-or-address
+         * @example [{"value":"ton","description":"cryptocurrency code (ton, btc, etc.)"},{"value":"EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs","description":"jetton master address usdt for example"}]
+         */
+        token: Address | string;
+        /** @example "usd" */
+        currency?: string;
+        /**
+         * @format int64
+         * @max 2114380800
+         * @example 1668436763
+         */
+        start_date?: number;
+        /**
+         * @format int64
+         * @max 2114380800
+         * @example 1668436763
+         */
+        end_date?: number;
+        /**
+         * @format int
+         * @min 0
+         * @max 200
+         * @default 200
+         */
+        points_count?: number;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getChartRates = async <ThrowOnError extends boolean = false>(
+    options: GetChartRatesOptions<ThrowOnError>
+): Promise<MethodResultSync<GetChartRatesData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getChartRates(options.query, options.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetChartRatesData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<GetChartRatesData, ThrowOnError>;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetChartRatesData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get the TON price from markets
+ *
+ * @tags Rates
+ * @name GetMarketsRates
+ * @request GET:/v2/rates/markets
+ */
+type GetMarketsRatesOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getMarketsRates = async <ThrowOnError extends boolean = false>(
+    options?: GetMarketsRatesOptions<ThrowOnError>
+): Promise<MethodResultSync<GetMarketsRatesData, ThrowOnError>> => {
+    try {
+        const client = options?.client || getDefaultClient();
+        const result = await client.getMarketsRates(options?.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetMarketsRatesData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<GetMarketsRatesData, ThrowOnError>;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetMarketsRatesData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get a payload for further token receipt
+ *
+ * @tags Connect
+ * @name GetTonConnectPayload
+ * @request GET:/v2/tonconnect/payload
+ */
+type GetTonConnectPayloadOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getTonConnectPayload = async <ThrowOnError extends boolean = false>(
+    options?: GetTonConnectPayloadOptions<ThrowOnError>
+): Promise<MethodResultSync<GetTonConnectPayloadData, ThrowOnError>> => {
+    try {
+        const client = options?.client || getDefaultClient();
+        const result = await client.getTonConnectPayload(options?.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetTonConnectPayloadData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetTonConnectPayloadData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetTonConnectPayloadData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get account info by state init
+ *
+ * @tags Connect
+ * @name GetAccountInfoByStateInit
+ * @request POST:/v2/tonconnect/stateinit
+ */
+type GetAccountInfoByStateInitOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    body: {
+        /** @format cell-base64 */
+        stateInit: Cell | string;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getAccountInfoByStateInit = async <ThrowOnError extends boolean = false>(
+    options: GetAccountInfoByStateInitOptions<ThrowOnError>
+): Promise<MethodResultSync<GetAccountInfoByStateInitData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getAccountInfoByStateInit(options.body, options.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetAccountInfoByStateInitData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetAccountInfoByStateInitData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetAccountInfoByStateInitData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Account verification and token issuance
+ *
+ * @tags Wallet
+ * @name TonConnectProof
+ * @request POST:/v2/wallet/auth/proof
+ */
+type TonConnectProofOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    body: {
+        /**
+         * @format address
+         * @example "0:97146a46acc2654y27947f14c4a4b14273e954f78bc017790b41208b0043200b"
+         */
+        address: Address | string;
+        proof: {
+            /**
+             * @format int64
+             * @example "1678275313"
+             */
+            timestamp: number;
+            domain: {
+                /** @format int32 */
+                lengthBytes?: number;
+                value: string;
+            };
+            signature: string;
+            /** @example "84jHVNLQmZsAAAAAZB0Zryi2wqVJI-KaKNXOvCijEi46YyYzkaSHyJrMPBMOkVZa" */
+            payload: string;
+            /** @format cell-base64 */
+            stateInit?: Cell | string;
+        };
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const tonConnectProof = async <ThrowOnError extends boolean = false>(
+    options: TonConnectProofOptions<ThrowOnError>
+): Promise<MethodResultSync<TonConnectProofData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.tonConnectProof(options.body, options.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<TonConnectProofData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<TonConnectProofData, ThrowOnError>;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            TonConnectProofData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get account seqno
+ *
+ * @tags Wallet
+ * @name GetAccountSeqno
+ * @request GET:/v2/wallet/{account_id}/seqno
+ */
+type GetAccountSeqnoOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        accountId: Address | string;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getAccountSeqno = async <ThrowOnError extends boolean = false>(
+    options: GetAccountSeqnoOptions<ThrowOnError>
+): Promise<MethodResultSync<GetAccountSeqnoData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getAccountSeqno(options.path.accountId, options.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetAccountSeqnoData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<GetAccountSeqnoData, ThrowOnError>;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetAccountSeqnoData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get human-friendly information about a wallet without low-level details.
+ *
+ * @tags Wallet
+ * @name GetWalletInfo
+ * @request GET:/v2/wallet/{account_id}
+ */
+type GetWalletInfoOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        accountId: Address | string;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getWalletInfo = async <ThrowOnError extends boolean = false>(
+    options: GetWalletInfoOptions<ThrowOnError>
+): Promise<MethodResultSync<GetWalletInfoData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getWalletInfo(options.path.accountId, options.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetWalletInfoData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<GetWalletInfoData, ThrowOnError>;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetWalletInfoData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get wallets by public key
+ *
+ * @tags Wallet
+ * @name GetWalletsByPublicKey
+ * @request GET:/v2/pubkeys/{public_key}/wallets
+ */
+type GetWalletsByPublicKeyOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        publicKey: string;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getWalletsByPublicKey = async <ThrowOnError extends boolean = false>(
+    options: GetWalletsByPublicKeyOptions<ThrowOnError>
+): Promise<MethodResultSync<GetWalletsByPublicKeyData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getWalletsByPublicKey(options.path.publicKey, options.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetWalletsByPublicKeyData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetWalletsByPublicKeyData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetWalletsByPublicKeyData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Returns configuration of gasless transfers
+ *
+ * @tags Gasless
+ * @name GaslessConfig
+ * @request GET:/v2/gasless/config
+ */
+type GaslessConfigOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const gaslessConfig = async <ThrowOnError extends boolean = false>(
+    options?: GaslessConfigOptions<ThrowOnError>
+): Promise<MethodResultSync<GaslessConfigData, ThrowOnError>> => {
+    try {
+        const client = options?.client || getDefaultClient();
+        const result = await client.gaslessConfig(options?.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GaslessConfigData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<GaslessConfigData, ThrowOnError>;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GaslessConfigData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Estimates the cost of the given messages and returns a payload to sign
+ *
+ * @tags Gasless
+ * @name GaslessEstimate
+ * @request POST:/v2/gasless/estimate/{master_id}
+ */
+type GaslessEstimateOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        masterId: Address | string;
+    };
+    body: {
+        /**
+         * TONAPI verifies that the account has enough jettons to pay the commission and make a transfer.
+         * @default false
+         */
+        throwErrorIfNotEnoughJettons?: boolean;
+        /** @default false */
+        returnEmulation?: boolean;
+        /** @format address */
+        walletAddress: Address | string;
+        walletPublicKey: string;
+        messages: {
+            /** @format cell */
+            boc: Cell | string;
+        }[];
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const gaslessEstimate = async <ThrowOnError extends boolean = false>(
+    options: GaslessEstimateOptions<ThrowOnError>
+): Promise<MethodResultSync<GaslessEstimateData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.gaslessEstimate(
+            options.path.masterId,
+            options.body,
+            options.params
+        );
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GaslessEstimateData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<GaslessEstimateData, ThrowOnError>;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GaslessEstimateData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Submits the signed gasless transaction message to the network
+ *
+ * @tags Gasless
+ * @name GaslessSend
+ * @request POST:/v2/gasless/send
+ */
+type GaslessSendOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    body: {
+        /** hex encoded public key */
+        walletPublicKey: string;
+        /** @format cell */
+        boc: Cell | string;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const gaslessSend = async <ThrowOnError extends boolean = false>(
+    options: GaslessSendOptions<ThrowOnError>
+): Promise<MethodResultSync<GaslessSendData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.gaslessSend(options.body, options.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GaslessSendData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<GaslessSendData, ThrowOnError>;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GaslessSendData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get raw masterchain info
+ *
+ * @tags Lite Server
+ * @name GetRawMasterchainInfo
+ * @request GET:/v2/liteserver/get_masterchain_info
+ */
+type GetRawMasterchainInfoOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getRawMasterchainInfo = async <ThrowOnError extends boolean = false>(
+    options?: GetRawMasterchainInfoOptions<ThrowOnError>
+): Promise<MethodResultSync<GetRawMasterchainInfoData, ThrowOnError>> => {
+    try {
+        const client = options?.client || getDefaultClient();
+        const result = await client.getRawMasterchainInfo(options?.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetRawMasterchainInfoData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetRawMasterchainInfoData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetRawMasterchainInfoData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get raw masterchain info ext
+ *
+ * @tags Lite Server
+ * @name GetRawMasterchainInfoExt
+ * @request GET:/v2/liteserver/get_masterchain_info_ext
+ */
+type GetRawMasterchainInfoExtOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    query: {
+        /**
+         * mode
+         * @format int32
+         * @example 0
+         */
+        mode: number;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getRawMasterchainInfoExt = async <ThrowOnError extends boolean = false>(
+    options: GetRawMasterchainInfoExtOptions<ThrowOnError>
+): Promise<MethodResultSync<GetRawMasterchainInfoExtData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getRawMasterchainInfoExt(options.query, options.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetRawMasterchainInfoExtData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetRawMasterchainInfoExtData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetRawMasterchainInfoExtData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get raw time
+ *
+ * @tags Lite Server
+ * @name GetRawTime
+ * @request GET:/v2/liteserver/get_time
+ */
+type GetRawTimeOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getRawTime = async <ThrowOnError extends boolean = false>(
+    options?: GetRawTimeOptions<ThrowOnError>
+): Promise<MethodResultSync<GetRawTimeData, ThrowOnError>> => {
+    try {
+        const client = options?.client || getDefaultClient();
+        const result = await client.getRawTime(options?.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetRawTimeData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<GetRawTimeData, ThrowOnError>;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetRawTimeData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get raw blockchain block
+ *
+ * @tags Lite Server
+ * @name GetRawBlockchainBlock
+ * @request GET:/v2/liteserver/get_block/{block_id}
+ */
+type GetRawBlockchainBlockOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        blockId: string;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getRawBlockchainBlock = async <ThrowOnError extends boolean = false>(
+    options: GetRawBlockchainBlockOptions<ThrowOnError>
+): Promise<MethodResultSync<GetRawBlockchainBlockData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getRawBlockchainBlock(options.path.blockId, options.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetRawBlockchainBlockData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetRawBlockchainBlockData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetRawBlockchainBlockData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get raw blockchain block state
+ *
+ * @tags Lite Server
+ * @name GetRawBlockchainBlockState
+ * @request GET:/v2/liteserver/get_state/{block_id}
+ */
+type GetRawBlockchainBlockStateOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        blockId: string;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getRawBlockchainBlockState = async <ThrowOnError extends boolean = false>(
+    options: GetRawBlockchainBlockStateOptions<ThrowOnError>
+): Promise<MethodResultSync<GetRawBlockchainBlockStateData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getRawBlockchainBlockState(
+            options.path.blockId,
+            options.params
+        );
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetRawBlockchainBlockStateData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetRawBlockchainBlockStateData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetRawBlockchainBlockStateData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get raw blockchain block header
+ *
+ * @tags Lite Server
+ * @name GetRawBlockchainBlockHeader
+ * @request GET:/v2/liteserver/get_block_header/{block_id}
+ */
+type GetRawBlockchainBlockHeaderOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        blockId: string;
+    };
+    query: {
+        /**
+         * mode
+         * @format int32
+         * @example 0
+         */
+        mode: number;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getRawBlockchainBlockHeader = async <ThrowOnError extends boolean = false>(
+    options: GetRawBlockchainBlockHeaderOptions<ThrowOnError>
+): Promise<MethodResultSync<GetRawBlockchainBlockHeaderData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getRawBlockchainBlockHeader(
+            options.path.blockId,
+            options.query,
+            options.params
+        );
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetRawBlockchainBlockHeaderData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetRawBlockchainBlockHeaderData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetRawBlockchainBlockHeaderData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Send raw message to blockchain
+ *
+ * @tags Lite Server
+ * @name SendRawMessage
+ * @request POST:/v2/liteserver/send_message
+ */
+type SendRawMessageOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    body: {
+        /** @format cell-base64 */
+        body: Cell | string;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const sendRawMessage = async <ThrowOnError extends boolean = false>(
+    options: SendRawMessageOptions<ThrowOnError>
+): Promise<MethodResultSync<SendRawMessageData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.sendRawMessage(options.body, options.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<SendRawMessageData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<SendRawMessageData, ThrowOnError>;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            SendRawMessageData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get raw account state
+ *
+ * @tags Lite Server
+ * @name GetRawAccountState
+ * @request GET:/v2/liteserver/get_account_state/{account_id}
+ */
+type GetRawAccountStateOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        accountId: Address | string;
+    };
+    query?: {
+        /**
+         * target block: (workchain,shard,seqno,root_hash,file_hash)
+         * @example "(-1,8000000000000000,4234234,3E575DAB1D25...90D8,47192E5C46C...BB29)"
+         */
+        target_block?: string;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getRawAccountState = async <ThrowOnError extends boolean = false>(
+    options: GetRawAccountStateOptions<ThrowOnError>
+): Promise<MethodResultSync<GetRawAccountStateData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getRawAccountState(
+            options.path.accountId,
+            options?.query,
+            options.params
+        );
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetRawAccountStateData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetRawAccountStateData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetRawAccountStateData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get raw shard info
+ *
+ * @tags Lite Server
+ * @name GetRawShardInfo
+ * @request GET:/v2/liteserver/get_shard_info/{block_id}
+ */
+type GetRawShardInfoOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        blockId: string;
+    };
+    query: {
+        /**
+         * workchain
+         * @format int32
+         * @example 1
+         */
+        workchain: number;
+        /**
+         * shard
+         * @format int64
+         * @example 1
+         */
+        shard: number;
+        /**
+         * exact
+         * @example false
+         */
+        exact: boolean;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getRawShardInfo = async <ThrowOnError extends boolean = false>(
+    options: GetRawShardInfoOptions<ThrowOnError>
+): Promise<MethodResultSync<GetRawShardInfoData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getRawShardInfo(
+            options.path.blockId,
+            options.query,
+            options.params
+        );
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetRawShardInfoData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<GetRawShardInfoData, ThrowOnError>;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetRawShardInfoData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get all raw shards info
+ *
+ * @tags Lite Server
+ * @name GetAllRawShardsInfo
+ * @request GET:/v2/liteserver/get_all_shards_info/{block_id}
+ */
+type GetAllRawShardsInfoOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        blockId: string;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getAllRawShardsInfo = async <ThrowOnError extends boolean = false>(
+    options: GetAllRawShardsInfoOptions<ThrowOnError>
+): Promise<MethodResultSync<GetAllRawShardsInfoData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getAllRawShardsInfo(options.path.blockId, options.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetAllRawShardsInfoData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetAllRawShardsInfoData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetAllRawShardsInfoData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get raw transactions
+ *
+ * @tags Lite Server
+ * @name GetRawTransactions
+ * @request GET:/v2/liteserver/get_transactions/{account_id}
+ */
+type GetRawTransactionsOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        accountId: Address | string;
+    };
+    query: {
+        /**
+         * count
+         * @format int32
+         * @example 100
+         */
+        count: number;
+        /**
+         * lt
+         * @format int64
+         * @example 23814011000000
+         */
+        lt: number;
+        /**
+         * hash
+         * @example "131D0C65055F04E9C19D687B51BC70F952FD9CA6F02C2801D3B89964A779DF85"
+         */
+        hash: string;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getRawTransactions = async <ThrowOnError extends boolean = false>(
+    options: GetRawTransactionsOptions<ThrowOnError>
+): Promise<MethodResultSync<GetRawTransactionsData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getRawTransactions(
+            options.path.accountId,
+            options.query,
+            options.params
+        );
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetRawTransactionsData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetRawTransactionsData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetRawTransactionsData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get raw list block transactions
+ *
+ * @tags Lite Server
+ * @name GetRawListBlockTransactions
+ * @request GET:/v2/liteserver/list_block_transactions/{block_id}
+ */
+type GetRawListBlockTransactionsOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        blockId: string;
+    };
+    query: {
+        /**
+         * mode
+         * @format int32
+         * @example 0
+         */
+        mode: number;
+        /**
+         * count
+         * @format int32
+         * @example 100
+         */
+        count: number;
+        /**
+         * account ID
+         * @format address
+         * @example "0:97264395BD65A255A429B11326C84128B7D70FFED7949ABAE3036D506BA38621"
+         */
+        account_id?: Address | string;
+        /**
+         * lt
+         * @format int64
+         * @example 23814011000000
+         */
+        lt?: number;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getRawListBlockTransactions = async <ThrowOnError extends boolean = false>(
+    options: GetRawListBlockTransactionsOptions<ThrowOnError>
+): Promise<MethodResultSync<GetRawListBlockTransactionsData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getRawListBlockTransactions(
+            options.path.blockId,
+            options.query,
+            options.params
+        );
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetRawListBlockTransactionsData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetRawListBlockTransactionsData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetRawListBlockTransactionsData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get raw block proof
+ *
+ * @tags Lite Server
+ * @name GetRawBlockProof
+ * @request GET:/v2/liteserver/get_block_proof
+ */
+type GetRawBlockProofOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    query: {
+        /**
+         * known block: (workchain,shard,seqno,root_hash,file_hash)
+         * @example "(-1,8000000000000000,4234234,3E575DAB1D25...90D8,47192E5C46C...BB29)"
+         */
+        known_block: string;
+        /**
+         * target block: (workchain,shard,seqno,root_hash,file_hash)
+         * @example "(-1,8000000000000000,4234234,3E575DAB1D25...90D8,47192E5C46C...BB29)"
+         */
+        target_block?: string;
+        /**
+         * mode
+         * @format int32
+         * @example 0
+         */
+        mode: number;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getRawBlockProof = async <ThrowOnError extends boolean = false>(
+    options: GetRawBlockProofOptions<ThrowOnError>
+): Promise<MethodResultSync<GetRawBlockProofData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getRawBlockProof(options.query, options.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetRawBlockProofData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetRawBlockProofData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetRawBlockProofData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get raw config
+ *
+ * @tags Lite Server
+ * @name GetRawConfig
+ * @request GET:/v2/liteserver/get_config_all/{block_id}
+ */
+type GetRawConfigOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        blockId: string;
+    };
+    query: {
+        /**
+         * mode
+         * @format int32
+         * @example 0
+         */
+        mode: number;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getRawConfig = async <ThrowOnError extends boolean = false>(
+    options: GetRawConfigOptions<ThrowOnError>
+): Promise<MethodResultSync<GetRawConfigData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getRawConfig(
+            options.path.blockId,
+            options.query,
+            options.params
+        );
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetRawConfigData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<GetRawConfigData, ThrowOnError>;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetRawConfigData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get raw shard block proof
+ *
+ * @tags Lite Server
+ * @name GetRawShardBlockProof
+ * @request GET:/v2/liteserver/get_shard_block_proof/{block_id}
+ */
+type GetRawShardBlockProofOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        blockId: string;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getRawShardBlockProof = async <ThrowOnError extends boolean = false>(
+    options: GetRawShardBlockProofOptions<ThrowOnError>
+): Promise<MethodResultSync<GetRawShardBlockProofData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getRawShardBlockProof(options.path.blockId, options.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetRawShardBlockProofData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetRawShardBlockProofData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetRawShardBlockProofData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get out msg queue sizes
+ *
+ * @tags Lite Server
+ * @name GetOutMsgQueueSizes
+ * @request GET:/v2/liteserver/get_out_msg_queue_sizes
+ */
+type GetOutMsgQueueSizesOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getOutMsgQueueSizes = async <ThrowOnError extends boolean = false>(
+    options?: GetOutMsgQueueSizesOptions<ThrowOnError>
+): Promise<MethodResultSync<GetOutMsgQueueSizesData, ThrowOnError>> => {
+    try {
+        const client = options?.client || getDefaultClient();
+        const result = await client.getOutMsgQueueSizes(options?.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetOutMsgQueueSizesData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetOutMsgQueueSizesData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetOutMsgQueueSizesData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get multisig account info
+ *
+ * @tags Multisig
+ * @name GetMultisigAccount
+ * @request GET:/v2/multisig/{account_id}
+ */
+type GetMultisigAccountOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        accountId: Address | string;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getMultisigAccount = async <ThrowOnError extends boolean = false>(
+    options: GetMultisigAccountOptions<ThrowOnError>
+): Promise<MethodResultSync<GetMultisigAccountData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getMultisigAccount(options.path.accountId, options.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetMultisigAccountData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetMultisigAccountData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetMultisigAccountData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get multisig order
+ *
+ * @tags Multisig
+ * @name GetMultisigOrder
+ * @request GET:/v2/multisig/order/{account_id}
+ */
+type GetMultisigOrderOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        accountId: Address | string;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getMultisigOrder = async <ThrowOnError extends boolean = false>(
+    options: GetMultisigOrderOptions<ThrowOnError>
+): Promise<MethodResultSync<GetMultisigOrderData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getMultisigOrder(options.path.accountId, options.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetMultisigOrderData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetMultisigOrderData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetMultisigOrderData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Decode a given message. Only external incoming messages can be decoded currently.
+ *
+ * @tags Emulation
+ * @name DecodeMessage
+ * @request POST:/v2/message/decode
+ */
+type DecodeMessageOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    body: {
+        /** @format cell */
+        boc: Cell | string;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const decodeMessage = async <ThrowOnError extends boolean = false>(
+    options: DecodeMessageOptions<ThrowOnError>
+): Promise<MethodResultSync<DecodeMessageData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.decodeMessage(options.body, options.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<DecodeMessageData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<DecodeMessageData, ThrowOnError>;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            DecodeMessageData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Emulate sending message to retrieve general blockchain events
+ *
+ * @tags Emulation, Events
+ * @name EmulateMessageToEvent
+ * @request POST:/v2/events/emulate
+ */
+type EmulateMessageToEventOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    body: {
+        /** @format cell */
+        boc: Cell | string;
+    };
+    query?: {
+        ignore_signature_check?: boolean;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const emulateMessageToEvent = async <ThrowOnError extends boolean = false>(
+    options: EmulateMessageToEventOptions<ThrowOnError>
+): Promise<MethodResultSync<EmulateMessageToEventData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.emulateMessageToEvent(
+            options.body,
+            options?.query,
+            options.params
+        );
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<EmulateMessageToEventData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            EmulateMessageToEventData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            EmulateMessageToEventData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Emulate sending message to retrieve with a detailed execution trace
+ *
+ * @tags Emulation, Traces
+ * @name EmulateMessageToTrace
+ * @request POST:/v2/traces/emulate
+ */
+type EmulateMessageToTraceOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    body: {
+        /** @format cell */
+        boc: Cell | string;
+    };
+    query?: {
+        ignore_signature_check?: boolean;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const emulateMessageToTrace = async <ThrowOnError extends boolean = false>(
+    options: EmulateMessageToTraceOptions<ThrowOnError>
+): Promise<MethodResultSync<EmulateMessageToTraceData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.emulateMessageToTrace(
+            options.body,
+            options?.query,
+            options.params
+        );
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<EmulateMessageToTraceData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            EmulateMessageToTraceData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            EmulateMessageToTraceData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Emulate sending message to retrieve the resulting wallet state
+ *
+ * @tags Emulation, Wallet
+ * @name EmulateMessageToWallet
+ * @request POST:/v2/wallet/emulate
+ */
+type EmulateMessageToWalletOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    body: {
+        /** @format cell */
+        boc: Cell | string;
+        /** additional per account configuration */
+        params?: {
+            /**
+             * @format address
+             * @example "0:97146a46acc2654y27947f14c4a4b14273e954f78bc017790b41208b0043200b"
+             */
+            address: Address | string;
+            /**
+             * @format bigint
+             * @example 10000000000
+             */
+            balance?: bigint;
+        }[];
+    };
+    query?: {
+        /** @example "usd" */
+        currency?: string;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const emulateMessageToWallet = async <ThrowOnError extends boolean = false>(
+    options: EmulateMessageToWalletOptions<ThrowOnError>
+): Promise<MethodResultSync<EmulateMessageToWalletData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.emulateMessageToWallet(
+            options.body,
+            options?.query,
+            options.params
+        );
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<EmulateMessageToWalletData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            EmulateMessageToWalletData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            EmulateMessageToWalletData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Emulate sending message to retrieve account-specific events
+ *
+ * @tags Emulation, Accounts
+ * @name EmulateMessageToAccountEvent
+ * @request POST:/v2/accounts/{account_id}/events/emulate
+ */
+type EmulateMessageToAccountEventOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        accountId: Address | string;
+    };
+    body: {
+        /** @format cell */
+        boc: Cell | string;
+    };
+    query?: {
+        ignore_signature_check?: boolean;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const emulateMessageToAccountEvent = async <ThrowOnError extends boolean = false>(
+    options: EmulateMessageToAccountEventOptions<ThrowOnError>
+): Promise<MethodResultSync<EmulateMessageToAccountEventData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.emulateMessageToAccountEvent(
+            options.path.accountId,
+            options.body,
+            options?.query,
+            options.params
+        );
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<EmulateMessageToAccountEventData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            EmulateMessageToAccountEventData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            EmulateMessageToAccountEventData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get history of purchases
+ *
+ * @tags Purchases
+ * @name GetPurchaseHistory
+ * @request GET:/v2/purchases/{account_id}/history
+ */
+type GetPurchaseHistoryOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        accountId: Address | string;
+    };
+    query?: {
+        /**
+         * omit this parameter to get last invoices
+         * @format bigint
+         * @example 25758317000002
+         */
+        before_lt?: bigint;
+        /**
+         * @min 1
+         * @max 1000
+         * @default 100
+         * @example 100
+         */
+        limit?: number;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getPurchaseHistory = async <ThrowOnError extends boolean = false>(
+    options: GetPurchaseHistoryOptions<ThrowOnError>
+): Promise<MethodResultSync<GetPurchaseHistoryData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getPurchaseHistory(
+            options.path.accountId,
+            options?.query,
+            options.params
+        );
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetPurchaseHistoryData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetPurchaseHistoryData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetPurchaseHistoryData,
+            ThrowOnError
+        >;
+    }
+};

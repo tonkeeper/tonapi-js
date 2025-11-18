@@ -1,0 +1,207 @@
+/**
+ * Base abstract error class for all TonAPI SDK errors
+ * Not exported - only used for internal inheritance
+ */
+abstract class TonApiErrorAbstract extends Error {
+  abstract readonly type: string;
+  readonly message: string;
+  readonly originalCause?: unknown;
+
+  constructor(message: string, cause?: unknown) {
+    super(message);
+    this.message = message;
+    this.originalCause = cause;
+
+    // Maintain proper stack trace in V8
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor);
+    }
+  }
+}
+
+/**
+ * HTTP error returned by TonAPI
+ * Represents 4xx and 5xx responses from the API
+ *
+ * @example
+ * ```typescript
+ * if (error instanceof TonApiHttpError) {
+ *   console.log('HTTP Status:', error.status);
+ *   console.log('Error code:', error.code);
+ *   console.log('Request URL:', error.url);
+ * }
+ * ```
+ */
+export class TonApiHttpError extends TonApiErrorAbstract {
+  readonly type = 'http_error' as const;
+  readonly status: number;
+  readonly code?: string;
+  readonly url: string;
+
+  constructor(status: number, message: string, url: string, code?: string, cause?: unknown) {
+    const formattedMessage = code
+      ? `HTTP ${status} [${code}]: ${message}`
+      : `HTTP ${status}: ${message}`;
+    super(formattedMessage, cause);
+    this.name = 'TonApiHttpError';
+    this.status = status;
+    this.url = url;
+    this.code = code;
+  }
+}
+
+/**
+ * Network error (connection failed, timeout, etc.)
+ * Thrown when the HTTP request itself fails, not when it returns an error response
+ *
+ * @example
+ * ```typescript
+ * if (error instanceof TonApiNetworkError) {
+ *   console.log('Network error:', error.message);
+ *   console.log('Cause:', error.originalCause);
+ * }
+ * ```
+ */
+export class TonApiNetworkError extends TonApiErrorAbstract {
+  readonly type = 'network_error' as const;
+
+  constructor(message: string, cause: unknown) {
+    const formattedMessage = `Network error: ${message}`;
+    super(formattedMessage, cause);
+    this.name = 'TonApiNetworkError';
+  }
+}
+
+/**
+ * Parsing error for Address, Cell, BigInt, TupleItem, or Unknown
+ * Thrown when SDK fails to parse data returned from TonAPI
+ *
+ * @example
+ * ```typescript
+ * if (error instanceof TonApiParsingError) {
+ *   console.log('Parsing type:', error.parsingType); // 'Address', 'Cell', 'BigInt', 'TupleItem', 'Unknown'
+ *   console.log('Error message:', error.message);
+ *   console.log('Original response:', error.response);
+ * }
+ * ```
+ */
+export class TonApiParsingError extends TonApiErrorAbstract {
+  readonly type = 'parsing_error' as const;
+  readonly parsingType: 'Address' | 'MaybeAddress' | 'Cell' | 'BigInt' | 'TupleItem' | 'Unknown';
+  readonly response: unknown;
+
+  constructor(parsingType: 'Address' | 'MaybeAddress' | 'Cell' | 'BigInt' | 'TupleItem' | 'Unknown', message: string, cause: unknown, response: unknown) {
+    const formattedMessage = `SDK parsing error [${parsingType}]: ${message}`;
+    super(formattedMessage, cause);
+    this.name = 'TonApiParsingError';
+    this.parsingType = parsingType;
+    this.response = response;
+
+    // Log to console with request to report issue
+    console.error(
+      `[TonAPI SDK] Parsing error occurred. This might be a bug in the SDK.\n` +
+      `Please report this issue at: https://github.com/tonkeeper/tonapi-js/issues\n` +
+      `Error details:`,
+      {
+        type: parsingType,
+        message: message,
+        response: response
+      }
+    );
+  }
+}
+
+/**
+ * Validation error for client-side input validation
+ * Thrown when user provides invalid input (e.g., invalid address string, invalid Cell string)
+ * This happens before making any network request
+ *
+ * @example
+ * ```typescript
+ * if (error instanceof TonApiValidationError) {
+ *   console.log('Validation type:', error.validationType); // 'Address' or 'Cell'
+ *   console.log('Error message:', error.message);
+ *   console.log('Invalid input:', error.invalidInput);
+ * }
+ * ```
+ */
+export class TonApiValidationError extends TonApiErrorAbstract {
+  readonly type = 'validation_error' as const;
+  readonly validationType: 'Address' | 'Cell';
+  readonly invalidInput: string;
+
+  constructor(validationType: 'Address' | 'Cell', message: string, invalidInput: string, cause?: unknown) {
+    const formattedMessage = `Validation error [${validationType}]: ${message}`;
+    super(formattedMessage, cause);
+    this.name = 'TonApiValidationError';
+    this.validationType = validationType;
+    this.invalidInput = invalidInput;
+  }
+}
+
+/**
+ * Unknown error type
+ * Thrown when an error occurs that doesn't fit other categories
+ *
+ * @example
+ * ```typescript
+ * if (error instanceof TonApiUnknownError) {
+ *   console.log('Unknown error:', error.message);
+ *   console.log('Cause:', error.originalCause);
+ * }
+ * ```
+ */
+export class TonApiUnknownError extends TonApiErrorAbstract {
+  readonly type = 'unknown_error' as const;
+
+  constructor(message: string, cause: unknown) {
+    const formattedMessage = `Unknown error: ${message}`;
+    super(formattedMessage, cause);
+    this.name = 'TonApiUnknownError';
+  }
+}
+
+/**
+ * Union type of all possible TonAPI errors
+ * Use this type in Result<T> and for error handling
+ *
+ * @example
+ * ```typescript
+ * const { data, error } = await getAccount(address);
+ *
+ * if (error) {
+ *   // Type-safe instanceof checks
+ *   if (error instanceof TonApiHttpError) {
+ *     console.log(`HTTP ${error.status}: ${error.message}`);
+ *   } else if (error instanceof TonApiNetworkError) {
+ *     console.log(`Network error: ${error.message}`);
+ *   } else if (error instanceof TonApiParsingError) {
+ *     console.log(`Parsing ${error.parsingType} failed: ${error.message}`);
+ *   } else if (error instanceof TonApiValidationError) {
+ *     console.log(`Validation ${error.validationType} failed: ${error.message}`);
+ *   } else if (error instanceof TonApiUnknownError) {
+ *     console.log(`Unknown error: ${error.message}`);
+ *   }
+ *
+ *   // Or use discriminated union
+ *   switch (error.type) {
+ *     case 'http_error':
+ *       console.log(error.status, error.code, error.url);
+ *       break;
+ *     case 'network_error':
+ *       console.log(error.originalCause);
+ *       break;
+ *     case 'parsing_error':
+ *       console.log(error.parsingType);
+ *       break;
+ *     case 'validation_error':
+ *       console.log(error.validationType, error.invalidInput);
+ *       break;
+ *     case 'unknown_error':
+ *       console.log(error.originalCause);
+ *       break;
+ *   }
+ * }
+ * ```
+ */
+export type TonApiError = TonApiHttpError | TonApiNetworkError | TonApiParsingError | TonApiValidationError | TonApiUnknownError;
