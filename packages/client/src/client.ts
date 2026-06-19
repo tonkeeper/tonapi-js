@@ -741,6 +741,37 @@ export interface SizeLimitsConfig {
     maxAccStateBits?: number;
 }
 
+export interface NewConsensusConfig {
+    /**
+     * @format bigint
+     * @example 0
+     */
+    flags: bigint;
+    /** @example false */
+    useQuic: boolean;
+    /**
+     * @format bigint
+     * @example 1000
+     */
+    targetRateMs?: bigint;
+    /**
+     * @format bigint
+     * @example 1
+     */
+    slotsPerLeaderWindow: bigint;
+    /**
+     * @format bigint
+     * @example 1000
+     */
+    firstBlockTimeoutMs?: bigint;
+    /**
+     * @format bigint
+     * @example 4
+     */
+    maxLeaderWindowDesync?: bigint;
+    noncriticalParams?: Record<string, bigint>;
+}
+
 export interface ValidatorsSet {
     utimeSince: number;
     utimeUntil: number;
@@ -784,12 +815,24 @@ export interface JettonBridgePrices {
     bridgeBurnFee: number;
     /** @format int64 */
     bridgeMintFee: number;
+    /**
+     * this field will gone after Sept. 2026, use wallet_min_gram_for_storage instead
+     * @deprecated
+     * @format int64
+     */
+    walletMinTonsForStorage?: number;
     /** @format int64 */
-    walletMinTonsForStorage: number;
+    walletMinGramForStorage: number;
     /** @format int64 */
     walletGasConsumption: number;
+    /**
+     * this field will gone after Sept. 2026, use wallet_min_gram_for_storage instead
+     * @deprecated
+     * @format int64
+     */
+    minterMinTonsForStorage?: number;
     /** @format int64 */
-    minterMinTonsForStorage: number;
+    minterMinGramForStorage: number;
     /** @format int64 */
     discoverGasConsumption: number;
 }
@@ -921,6 +964,10 @@ export interface BlockchainRawAccount {
     }[];
 }
 
+export interface BlockchainRawAccounts {
+    accounts: BlockchainRawAccount[];
+}
+
 export interface BlockchainLibrary {
     /**
      * @format cell
@@ -965,6 +1012,20 @@ export interface WalletPlugin {
 
 export interface Wallets {
     accounts: Wallet[];
+}
+
+export interface WalletsByPublicKeys {
+    /** Wallets grouped by the originating public key */
+    items: WalletsByPublicKey[];
+}
+
+export interface WalletsByPublicKey {
+    /**
+     * hex-encoded ed25519 public key
+     * @example "d8519b83d5b04b17a706ef6d04f3566422be47c2b676b0823235d67b1ef4b1b2"
+     */
+    publicKey: string;
+    wallets: Wallet[];
 }
 
 export interface Wallet {
@@ -1086,6 +1147,8 @@ export interface SignRawMessage {
 
 export interface GaslessTx {
     protocolName: string;
+    /** Normalized hash of the external message. */
+    external?: string;
 }
 
 export interface SignRawParams {
@@ -1215,14 +1278,14 @@ export interface BlockchainConfig {
         /** @format int64 */
         cellPrice: number;
     };
-    /** The reward in nanoTons for block creation in the TON blockchain. */
+    /** The reward in nanoGram for block creation in the TON blockchain. */
     '14'?: {
         /** @format int64 */
         masterchainBlockFee: number;
         /** @format int64 */
         basechainBlockFee: number;
     };
-    /** The reward in nanoTons for block creation in the TON blockchain. */
+    /** The reward in nanograms for block creation in the TON blockchain. */
     '15'?: {
         /**
          * @format int64
@@ -1405,6 +1468,11 @@ export interface BlockchainConfig {
          */
         catchainMaxBlocksCoeff?: number;
     };
+    /** The configuration for the new consensus protocol. Each chain can have its own optional configuration. */
+    '30'?: {
+        mc?: NewConsensusConfig;
+        shard?: NewConsensusConfig;
+    };
     /** The configuration for the consensus protocol above catchain. */
     '31'?: {
         fundamentalSmcAddr: Address[];
@@ -1415,7 +1483,7 @@ export interface BlockchainConfig {
     '35'?: ValidatorsSet;
     '36'?: ValidatorsSet;
     '37'?: ValidatorsSet;
-    /** The configuration for punishment for improper behavior (non-validation). In the absence of the parameter, the default fine size is 101 TON */
+    /** The configuration for punishment for improper behavior (non-validation). In the absence of the parameter, the default fine size is 101 Gram */
     '40'?: {
         misbehaviourPunishmentConfig: MisbehaviourPunishmentConfig;
     };
@@ -1522,6 +1590,13 @@ export interface JettonPreview {
     /** @format int32 */
     score: number;
     scaledUi?: ScaledUI;
+    description?: string;
+    assetInfo?: JettonAssetInfo;
+}
+
+export interface JettonAssetInfo {
+    tokenType: DefiAssetAssetType;
+    defiProvider: DefiProvider;
 }
 
 export interface ScaledUI {
@@ -1592,7 +1667,7 @@ export interface Price {
     value: bigint;
     /** @example 9 */
     decimals: number;
-    /** @example "TON" */
+    /** @example "Gram" */
     tokenName: string;
     verification: TrustType;
     /** @example "https://cache.tonapi.io/images/jetton.jpg" */
@@ -1674,6 +1749,10 @@ export interface NftItem {
     /** @example false */
     includeCnft?: boolean;
     trust: TrustType;
+    /** Hash of the NFT item account code cell (hex) */
+    codeHash?: string;
+    /** Hash of the NFT item account data cell (hex) */
+    dataHash?: string;
 }
 
 export interface NftItems {
@@ -1742,10 +1821,17 @@ export interface Refund {
 export interface ValueFlow {
     account: AccountAddress;
     /**
+     * this field will gone after Sept. 2026, use gram instead
+     * @deprecated
      * @format bigint
      * @example 80
      */
-    ton: bigint;
+    ton?: bigint;
+    /**
+     * @format bigint
+     * @example 80
+     */
+    gram: bigint;
     /**
      * @format bigint
      * @example 10
@@ -1775,6 +1861,7 @@ export interface Action {
         | 'ExtraCurrencyTransfer'
         | 'ContractDeploy'
         | 'JettonTransfer'
+        | 'FlawedJettonTransfer'
         | 'JettonBurn'
         | 'JettonMint'
         | 'NftItemTransfer'
@@ -1798,6 +1885,9 @@ export interface Action {
         | 'DepositTokenStake'
         | 'WithdrawTokenStakeRequest'
         | 'LiquidityDeposit'
+        | 'OracleRequest'
+        | 'DepositXTR'
+        | 'WithdrawXTR'
         | 'Unknown';
     /** @example "ok" */
     status: 'ok' | 'failed';
@@ -1805,6 +1895,7 @@ export interface Action {
     ExtraCurrencyTransfer?: ExtraCurrencyTransferAction;
     ContractDeploy?: ContractDeployAction;
     JettonTransfer?: JettonTransferAction;
+    FlawedJettonTransfer?: FlawedJettonTransferAction;
     JettonBurn?: JettonBurnAction;
     JettonMint?: JettonMintAction;
     NftItemTransfer?: NftItemTransferAction;
@@ -1831,6 +1922,9 @@ export interface Action {
     DepositTokenStake?: DepositTokenStakeAction;
     WithdrawTokenStakeRequest?: WithdrawTokenStakeRequestAction;
     LiquidityDeposit?: LiquidityDepositAction;
+    OracleRequest?: OracleRequestAction;
+    WithdrawXTR?: WithdrawXTRAction;
+    DepositXTR?: DepositXTRAction;
     /** shortly describes what this action is about. */
     simplePreview: ActionSimplePreview;
     baseTransactions: string[];
@@ -1840,7 +1934,7 @@ export interface TonTransferAction {
     sender: AccountAddress;
     recipient: AccountAddress;
     /**
-     * amount in nanotons
+     * amount in nanograms
      * @format bigint
      * @example 123456789
      */
@@ -1852,6 +1946,42 @@ export interface TonTransferAction {
     comment?: string;
     encryptedComment?: EncryptedComment;
     refund?: Refund;
+}
+
+export interface OracleRequestAction {
+    requester: AccountAddress;
+    responseTo: AccountAddress;
+    priceFeeds: OraclePriceFeed[];
+}
+
+export interface OraclePriceFeed {
+    /** @example "e62df6c8b4a85fe1a67f1c4d1f1e1d4335c04d1d7e2c50e0d7da7ad911f2d4" */
+    id: string;
+    /** @example "GRAM/USD" */
+    displaySymbol: string;
+    /**
+     * @format double
+     * @example 5.24
+     */
+    rate?: number;
+}
+
+export interface DepositXTRAction {
+    recipient: AccountAddress;
+    /**
+     * @format bigint
+     * @example "123000000000"
+     */
+    amount: bigint;
+}
+
+export interface WithdrawXTRAction {
+    user: AccountAddress;
+    /**
+     * @format bigint
+     * @example "123000000000"
+     */
+    amount: bigint;
 }
 
 export interface ExtraCurrencies {
@@ -1894,11 +2024,18 @@ export interface SmartContractAction {
     executor: AccountAddress;
     contract: AccountAddress;
     /**
-     * amount in nanotons
+     * amount in nanograms
+     * @deprecated
      * @format bigint
      * @example 123456789
      */
-    tonAttached: bigint;
+    tonAttached?: bigint;
+    /**
+     * amount in nanograms
+     * @format bigint
+     * @example 123456789
+     */
+    gramAttached: bigint;
     /** @example "NftTransfer or 0x35d95a12" */
     operation: string;
     payload?: string;
@@ -2009,6 +2146,41 @@ export interface JettonTransferAction {
     jetton: JettonPreview;
 }
 
+export interface FlawedJettonTransferAction {
+    sender?: AccountAddress;
+    recipient?: AccountAddress;
+    /**
+     * @format address
+     * @example "0:E93E7D444180608B8520C00DC664383A387356FB6E16FDDF99DBE5E1415A574B"
+     */
+    sendersWallet: Address;
+    /**
+     * @format address
+     * @example "0:E93E7D444180608B8520C00DC664383A387356FB6E16FDDF99DBE5E1415A574B"
+     */
+    recipientsWallet: Address;
+    /**
+     * sent amount in quanta of tokens
+     * @format bigint
+     * @example "1000000000"
+     */
+    sentAmount: bigint;
+    /**
+     * actually received amount in quanta of tokens
+     * @format bigint
+     * @example "1000000000"
+     */
+    receivedAmount: bigint;
+    /**
+     * @example "Hi! This is your salary.
+     * From accounting with love."
+     */
+    comment?: string;
+    encryptedComment?: EncryptedComment;
+    refund?: Refund;
+    jetton: JettonPreview;
+}
+
 export interface JettonBurnAction {
     sender: AccountAddress;
     /**
@@ -2100,6 +2272,8 @@ export interface DepositStakeAction {
     staker: AccountAddress;
     pool: AccountAddress;
     implementation: PoolImplementationType;
+    /** If present, should be used instead of amount */
+    stakeMeta?: Price;
 }
 
 /** validator's participation in elections */
@@ -2124,6 +2298,8 @@ export interface WithdrawStakeRequestAction {
     staker: AccountAddress;
     pool: AccountAddress;
     implementation: PoolImplementationType;
+    /** If present, should be used instead of amount */
+    stakeMeta?: Price;
 }
 
 export interface ElectionsRecoverStakeAction {
@@ -2158,15 +2334,29 @@ export interface JettonSwapAction {
      */
     amountOut: bigint;
     /**
+     * this field will gone after Sept. 2026, use gram_in instead
+     * @deprecated
      * @format bigint
      * @example 1000000000
      */
     tonIn?: bigint;
     /**
+     * this field will gone after Sept. 2026, use gram_out instead
+     * @deprecated
      * @format bigint
      * @example 2000000000
      */
     tonOut?: bigint;
+    /**
+     * @format bigint
+     * @example 1000000000
+     */
+    gramIn?: bigint;
+    /**
+     * @format bigint
+     * @example 2000000000
+     */
+    gramOut?: bigint;
     userWallet: AccountAddress;
     router: AccountAddress;
     jettonMasterIn?: JettonPreview;
@@ -2201,13 +2391,13 @@ export interface LiquidityDepositAction {
 
 /** shortly describes what this action is about. */
 export interface ActionSimplePreview {
-    /** @example "Ton Transfer" */
+    /** @example "Gram Transfer" */
     name: string;
-    /** @example "Transferring 5 Ton" */
+    /** @example "Transferring 5 Gram" */
     description: string;
     /** a link to an image for this particular action. */
     actionImage?: string;
-    /** @example "5 Ton" */
+    /** @example "5 Gram" */
     value?: string;
     /** a link to an image that depicts this action's asset. */
     valueImage?: string;
@@ -2241,7 +2431,7 @@ export interface AccountEvent {
      */
     inProgress: boolean;
     /**
-     * Net TON change for this account not explained by actions, in nanotons: extra = final_balance - initial_balance - sum(explicit TON changes from actions). extra < 0 - implicit fee, extra > 0 - refund. For UI display only
+     * Net Gram change for this account not explained by actions, in nanograms: extra = final_balance - initial_balance - sum(explicit Gram changes from actions). extra < 0 - implicit fee, extra > 0 - refund. For UI display only
      * @format bigint
      * @example 3
      */
@@ -2254,6 +2444,11 @@ export interface AccountEvent {
      * @example 0.5
      */
     progress: number;
+    /**
+     * Normalized hash of the root external inbound message (hex).
+     * @example "a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456"
+     */
+    extMsgHash?: string;
 }
 
 /** Paginated list of events for a single account. */
@@ -2434,6 +2629,17 @@ export interface DnsRecord {
      * @example "da6b1b6663a0e4d18cc8574ccd9db5296e367dd9324706f3bbd9eb1cd2caf0bf"
      */
     storage?: string;
+    picture?: PictureDNS;
+}
+
+export interface PictureDNS {
+    type: 'url' | 'bag_id';
+    /**
+     * WARNING! This is arbitrary url supplied by domain owner, use it very carefully.
+     * There is no guarantee that URL resolves to an image file and is not a phishing site.
+     */
+    url?: string;
+    bagId?: string;
 }
 
 export interface NftCollection {
@@ -2454,6 +2660,7 @@ export interface NftCollection {
     metadata?: Record<string, any>;
     previews?: ImagePreview[];
     approvedBy: NftApprovedBy;
+    trust: TrustType;
 }
 
 export interface NftCollections {
@@ -2481,22 +2688,29 @@ export interface MessageConsequences {
 /** Conservative upper bound on assets this wallet may lose if the emulated message is sent and the counterparty behaves maliciously. Values may exceed current balances (e.g. already-authorized future receipts). For UI display only. */
 export interface Risk {
     /**
-     * True if the message semantics allow sweeping all current and future remaining TON balance of the wallet (e.g. “send all” / drain patterns).
+     * True if the message semantics allow sweeping all current and future remaining Gram balance of the wallet (e.g. “send all” / drain patterns).
      * @example true
      */
     transferAllRemainingBalance: boolean;
     /**
-     * Maximum TON amount that may leave the wallet in the worst case, in nanotons.
+     * this field will gone after Sept. 2026, use gram instead
+     * @deprecated
      * @format bigint
      * @example 500
      */
-    ton: bigint;
+    ton?: bigint;
+    /**
+     * Maximum Gram amount that may leave the wallet in the worst case, in nanogram.
+     * @format bigint
+     * @example 500
+     */
+    gram: bigint;
     /** Jetton positions that may be debited from the wallet in the worst case. */
     jettons: JettonQuantity[];
     /** NFT items that may be transferred out of the wallet in the worst case. */
     nfts: NftItem[];
     /**
-     * Estimated equivalent of all assets at risk (TON, jettons, NFTs) in the selected currency from currencyQuery (e.g. USD). Approximate, best-effort UI value.
+     * Estimated equivalent of all assets at risk (Gram, jettons, NFTs) in the selected currency from currencyQuery (e.g. USD). Approximate, best-effort UI value.
      * @format float
      */
     totalEquivalent?: number;
@@ -2628,6 +2842,17 @@ export interface Event {
      * @example 0.5
      */
     progress: number;
+    /**
+     * ID of the slice where this event was finalized. Null if not yet finalized.
+     * @format int64
+     * @example 12345678
+     */
+    lastSliceId?: number;
+    /**
+     * Normalized hash of the root external inbound message (hex).
+     * @example "a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456"
+     */
+    extMsgHash?: string;
 }
 
 export interface JettonMetadata {
@@ -2647,7 +2872,7 @@ export interface JettonMetadata {
      * @example "https://bitcoincash-example.github.io/website/logo.png"
      */
     image?: string;
-    /** @example "Wrapped Toncoin" */
+    /** @example "Wrapped Gram" */
     description?: string;
     social?: string[];
     websites?: string[];
@@ -2679,6 +2904,32 @@ export interface JettonInfo {
      */
     holdersCount: number;
     scaledUi?: ScaledUI;
+    /**
+     * base64-encoded hash of jetton master code cell
+     * @example "rOIINk/O5kGub/FI/RARmMN6SY7BLesBSOonmxrz5f4="
+     */
+    codeHash?: string;
+    /**
+     * base64-encoded hash of jetton master data cell
+     * @example "xd7cWaRQdVSysuG+WVJv9KRuRUGxnehLoByEcK5ukOE="
+     */
+    dataHash?: string;
+    /**
+     * last transaction lt of the jetton master account
+     * @format bigint
+     * @example "26640202000003"
+     */
+    lastTransactionLt?: bigint;
+    /**
+     * DNS name resolving to this address (e.g. admin.ton)
+     * @example "admin.ton"
+     */
+    name?: string | null;
+    /**
+     * Contract interfaces implemented by the account (e.g. multisig_v2, wallet_v3r2)
+     * @example ["multisig_v2","wallet_v3r2"]
+     */
+    interfaces?: string[];
 }
 
 export interface JettonHolders {
@@ -2715,6 +2966,57 @@ export interface JettonTransferPayload {
      * @format cell
      */
     stateInit?: Cell;
+}
+
+export interface DefiAssets {
+    assets: DefiAsset[];
+}
+
+export enum DefiAssetAssetType {
+    Staking = 'staking',
+    LendingSupply = 'lending_supply',
+    LendingBorrow = 'lending_borrow',
+    LiquidStaking = 'liquid_staking',
+    LiquidPool = 'liquid_pool',
+    YieldToken = 'yield_token'
+}
+
+export interface DefiAsset {
+    assetType: DefiAssetAssetType;
+    /**
+     * amount in minimal units of the locked asset
+     * @format bigint
+     * @example "1000000000"
+     */
+    amount: bigint;
+    /** @format address */
+    poolAddress?: Address;
+    /** @format address */
+    assetAddress?: Address;
+    defiProvider: DefiProvider;
+    lockedAsset: DefiLockedAsset;
+}
+
+export interface DefiLockedAsset {
+    /** native Gram or jetton asset */
+    type: 'native' | 'jetton';
+    jetton?: JettonPreview;
+}
+
+export interface DefiProvider {
+    /** @example "Morpho" */
+    name: string;
+    /** @example "Earn up to 15% yield on your crypto" */
+    description: string;
+    /** @example "https://lite.morpho.org/tac/earn/" */
+    link: string;
+    /** @example "https://t.me/MorphoOrgBot" */
+    miniappLink?: string;
+    icon: string;
+    card: string;
+    full: string;
+    /** @example "morpho" */
+    tag: string;
 }
 
 export interface AccountStaking {
@@ -2819,7 +3121,7 @@ export interface PoolInfo {
 export interface PoolImplementation {
     /** @example "TON Whales" */
     name: string;
-    /** @example "Oldest pool with minimal staking amount 50 TON" */
+    /** @example "Oldest pool with minimal staking amount 50 Gram" */
     description: string;
     /** @example "https://tonvalidators.org/" */
     url: string;
@@ -2955,17 +3257,18 @@ export interface BlockchainAccountInspect {
 export enum PoolImplementationType {
     Whales = 'whales',
     Tf = 'tf',
-    LiquidTF = 'liquidTF'
+    LiquidTF = 'liquidTF',
+    Ffvault = 'ffvault'
 }
 
 export interface TokenRates {
-    /** @example {"TON":1.3710752873163712} */
+    /** @example {"GRAM":1.3710752873163712} */
     prices?: Record<string, number>;
-    /** @example {"TON":"-1.28%"} */
+    /** @example {"GRAM":"-1.28%"} */
     diff24h?: Record<string, string>;
-    /** @example {"TON":"-2.74%"} */
+    /** @example {"GRAM":"-2.74%"} */
     diff7d?: Record<string, string>;
-    /** @example {"TON":"-0.56%"} */
+    /** @example {"GRAM":"-0.56%"} */
     diff30d?: Record<string, string>;
 }
 
@@ -3130,6 +3433,334 @@ export interface Protocol {
     image?: string;
 }
 
+export interface BlockInfo {
+    /**
+     * Masterchain block sequence number.
+     * @format uint32
+     * @example 57486221
+     */
+    seqno: number;
+    /**
+     * @format int64
+     * @example 23814011000000
+     */
+    utime?: number;
+}
+
+export interface RoundInfo {
+    /**
+     * @format int64
+     * @example 23814011000000
+     */
+    startUtime?: number;
+    /**
+     * @format int64
+     * @example 23814011000000
+     */
+    endUtime?: number;
+    /**
+     * Masterchain block seqno at (or nearest to) validation round start.
+     * @format uint32
+     * @example 57480000
+     */
+    startBlock: number;
+    /**
+     * Masterchain block seqno at (or nearest to) validation round end.
+     * @format uint32
+     * @example 57546000
+     */
+    endBlock: number;
+}
+
+export interface ValidatorsResponse {
+    /**
+     * Server-side response time in milliseconds.
+     * @format int64
+     * @example 12345
+     */
+    responseTimeMs: number;
+    block: BlockInfo;
+    validationRound: RoundInfo;
+    /**
+     * Current election ID (electAt timestamp).
+     * @format int64
+     * @example 1740053384
+     */
+    electionId: number;
+    /**
+     * Election ID of the round immediately before this one.
+     * @format int64
+     * @example 1772486024
+     */
+    prevElectionId?: number;
+    /**
+     * Election ID of the round immediately after this one. Omitted when the current round is not yet finished (next round not known).
+     * @format int64
+     * @example 1772658824
+     */
+    nextElectionId?: number;
+    /**
+     * amount in nanograms
+     * @format bigint
+     * @example 123456789
+     */
+    electorBalance: bigint;
+    /**
+     * amount in nanograms
+     * @format bigint
+     * @example 123456789
+     */
+    totalStake: bigint;
+    /**
+     * amount in nanograms
+     * @format bigint
+     * @example 123456789
+     */
+    rewardPerBlock: bigint;
+    validators: ValidatorRewardEntry[];
+}
+
+export interface ValidationRound {
+    /**
+     * Election ID (electAt timestamp).
+     * @format int64
+     * @example 1740053384
+     */
+    electionId: number;
+    /**
+     * @format int64
+     * @example 23814011000000
+     */
+    startUtime?: number;
+    /**
+     * @format int64
+     * @example 23814011000000
+     */
+    endUtime?: number;
+    /**
+     * Masterchain block seqno at (or nearest to) round start.
+     * @format uint32
+     * @example 57480000
+     */
+    startBlock: number;
+    /**
+     * Masterchain block seqno at (or nearest to) round end. Omitted if round hasn't finished.
+     * @format uint32
+     * @example 57546000
+     */
+    endBlock?: number;
+    /**
+     * Election ID of the round immediately before this one.
+     * @format int64
+     * @example 1772486024
+     */
+    prevElectionId?: number;
+    /**
+     * Election ID of the round immediately after this one. Omitted when this round is not yet finished (next round not known).
+     * @format int64
+     * @example 1772658824
+     */
+    nextElectionId?: number;
+    /**
+     * Total stake locked in the round.
+     * @format bigint
+     * @example 123456789
+     */
+    totalStake?: bigint;
+    /**
+     * Total rewards the elector pays for the round. Omitted if round hasn't finished.
+     * @format bigint
+     * @example 123456789
+     */
+    bonuses?: bigint;
+    /**
+     * Whether the validation round is complete.
+     * @example true
+     */
+    finished: boolean;
+}
+
+export interface ValidationRoundsResponse {
+    /**
+     * Server-side response time in milliseconds.
+     * @format int64
+     * @example 1234
+     */
+    responseTimeMs: number;
+    rounds: ValidationRound[];
+}
+
+export interface NominatorRewardEntry {
+    /**
+     * Nominator's wallet address (bounceable, base64url).
+     * @example "EQAqR4RYauq7p3jqKGnD-eSYVDoOCak9g8ZsSNVHI9fevCzB"
+     */
+    address: string;
+    /**
+     * Nominator's share of total nominators' deposit (0–1).
+     * @format double
+     * @example 0.15
+     */
+    weight: number;
+    /**
+     * amount in nanograms
+     * @format bigint
+     * @example 123456789
+     */
+    reward: bigint;
+    /**
+     * amount in nanograms
+     * @format bigint
+     * @example 123456789
+     */
+    effectiveStake: bigint;
+    /**
+     * amount in nanograms
+     * @format bigint
+     * @example 123456789
+     */
+    stake: bigint;
+}
+
+export interface ValidatorRewardEntry {
+    /**
+     * Position sorted by effective stake (descending).
+     * @example 1
+     */
+    rank: number;
+    /**
+     * Validator's public key (hex-encoded Ed25519).
+     * @example "e33f0e53552f951e0a27c8e5a461a1bd65975af369a2c85a06e51f7fbb8ae667"
+     */
+    publicKey: string;
+    /**
+     * amount in nanograms
+     * @format bigint
+     * @example 123456789
+     */
+    effectiveStake: bigint;
+    /**
+     * Fraction of total effective stake (0–1).
+     * @format double
+     * @example 0.004648
+     */
+    weight: number;
+    /**
+     * amount in nanograms
+     * @format bigint
+     * @example 123456789
+     */
+    reward: bigint;
+    /**
+     * Pool smart contract address (bounceable, base64url).
+     * @example "Ef_bmCmMPsrHKOC4hV8foWBs2TEUAggQ1Wfe6EAqjrI3sGNI"
+     */
+    pool?: string;
+    /** Contract type detected by code hash. */
+    poolType?:
+        | 'nominator-pool-v1.0'
+        | 'single-nominator-pool-v1.0'
+        | 'single-nominator-pool-v1.1'
+        | 'other';
+    ownerAddress?: string;
+    validatorAddress?: string;
+    /**
+     * amount in nanograms
+     * @format bigint
+     * @example 123456789
+     */
+    validatorStake?: bigint;
+    /**
+     * amount in nanograms
+     * @format bigint
+     * @example 123456789
+     */
+    nominatorsStake?: bigint;
+    /**
+     * Total funds deposited by the pool: effective_stake + credit (leftover balance kept in the elector contract after election).
+     * @format bigint
+     * @example 123456789
+     */
+    totalStake?: bigint;
+    /**
+     * Fraction of staking rewards kept by the validator (0.3 = 30%).
+     * @format double
+     * @example 0.3
+     */
+    validatorRewardShare?: number;
+    /** @format uint32 */
+    nominatorsCount?: number;
+    nominators?: NominatorRewardEntry[];
+}
+
+export interface RoundRewardsResponse {
+    /**
+     * Server-side response time in milliseconds.
+     * @format int64
+     * @example 5432
+     */
+    responseTimeMs: number;
+    /**
+     * Election ID (electAt timestamp).
+     * @format int64
+     * @example 1740053384
+     */
+    electionId: number;
+    /**
+     * Election ID of the round immediately before this one.
+     * @format int64
+     * @example 1772486024
+     */
+    prevElectionId?: number;
+    /**
+     * Election ID of the round immediately after this one.
+     * @format int64
+     * @example 1772658824
+     */
+    nextElectionId?: number;
+    /**
+     * Validation round start time.
+     * @format date-time
+     */
+    roundStart: string;
+    /**
+     * Validation round end time.
+     * @format date-time
+     */
+    roundEnd: string;
+    /**
+     * First masterchain block of the round.
+     * @format uint32
+     */
+    startBlock: number;
+    /**
+     * Last masterchain block of the round.
+     * @format uint32
+     */
+    endBlock: number;
+    /**
+     * amount in nanograms
+     * @format bigint
+     * @example 123456789
+     */
+    totalBonuses: bigint;
+    /**
+     * amount in nanograms
+     * @format bigint
+     * @example 123456789
+     */
+    totalStake: bigint;
+    validators: ValidatorRewardEntry[];
+    error?: string;
+}
+
+export interface RewardsStats {
+    /** Time series of APY values as [timestamp_ms, apy] pairs */
+    apy: number[][];
+    /** Time series of total stake in Gram as [timestamp_ms, stake] pairs */
+    totalStake: number[][];
+}
+
 export type GetOpenapiJsonData = any;
 
 /** @format binary */
@@ -3165,6 +3796,8 @@ export type GetBlockchainValidatorsData = Validators;
 export type GetBlockchainMasterchainHeadData = BlockchainBlock;
 
 export type GetBlockchainRawAccountData = BlockchainRawAccount;
+
+export type GetBlockchainRawAccountsData = BlockchainRawAccounts;
 
 export type GetBlockchainAccountTransactionsData = Transactions;
 
@@ -3246,6 +3879,8 @@ export interface GetAccountDiffData {
      */
     balanceChange: number;
 }
+
+export type GetAccountDefiAssetsData = DefiAssets;
 
 export type GetAccountExtraCurrencyHistoryByIdData = AccountEvents;
 
@@ -3346,6 +3981,8 @@ export type GaslessEstimateData = SignRawParams;
 export type GaslessSendData = GaslessTx;
 
 export type GetWalletsByPublicKeyData = Wallets;
+
+export type GetWalletsByPublicKeyBulkData = WalletsByPublicKeys;
 
 export interface GetRawMasterchainInfoData {
     last: BlockRaw;
@@ -3579,6 +4216,20 @@ export type EmulateMessageToWalletData = MessageConsequences;
 export type EmulateMessageToAccountEventData = AccountEvent;
 
 export type GetPurchaseHistoryData = AccountPurchases;
+
+export type GetValidatorsData = ValidatorsResponse;
+
+export type GetValidationRoundsData = ValidationRoundsResponse;
+
+export type GetRoundRewardsData = RoundRewardsResponse;
+
+export type GetRewardsStatsData = RewardsStats;
+
+/**
+ * @format double
+ * @example 3.3
+ */
+export type GetRewardsApyData = number;
 
 export type QueryParamsType = Record<string | number, any>;
 export type ResponseFormat = keyof Omit<Body, 'body' | 'bodyUsed'>;
@@ -4407,6 +5058,22 @@ const components = {
             max_acc_state_bits: { type: 'integer', format: 'int64' }
         }
     },
+    '#/components/schemas/NewConsensusConfig': {
+        type: 'object',
+        required: ['flags', 'use_quic', 'slots_per_leader_window'],
+        properties: {
+            flags: { type: 'integer', format: 'int', 'x-js-format': 'bigint' },
+            use_quic: { type: 'boolean' },
+            target_rate_ms: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            slots_per_leader_window: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            first_block_timeout_ms: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            max_leader_window_desync: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            noncritical_params: {
+                type: 'object',
+                additionalProperties: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' }
+            }
+        }
+    },
     '#/components/schemas/ValidatorsSet': {
         type: 'object',
         required: ['utime_since', 'utime_until', 'total', 'main', 'list'],
@@ -4453,17 +5120,19 @@ const components = {
         required: [
             'bridge_burn_fee',
             'bridge_mint_fee',
-            'wallet_min_tons_for_storage',
+            'wallet_min_gram_for_storage',
             'wallet_gas_consumption',
-            'minter_min_tons_for_storage',
+            'minter_min_gram_for_storage',
             'discover_gas_consumption'
         ],
         properties: {
             bridge_burn_fee: { type: 'integer', format: 'int64' },
             bridge_mint_fee: { type: 'integer', format: 'int64' },
-            wallet_min_tons_for_storage: { type: 'integer', format: 'int64' },
+            wallet_min_tons_for_storage: { type: 'integer', format: 'int64', deprecated: true },
+            wallet_min_gram_for_storage: { type: 'integer', format: 'int64' },
             wallet_gas_consumption: { type: 'integer', format: 'int64' },
-            minter_min_tons_for_storage: { type: 'integer', format: 'int64' },
+            minter_min_tons_for_storage: { type: 'integer', format: 'int64', deprecated: true },
+            minter_min_gram_for_storage: { type: 'integer', format: 'int64' },
             discover_gas_consumption: { type: 'integer', format: 'int64' }
         }
     },
@@ -4539,6 +5208,16 @@ const components = {
             }
         }
     },
+    '#/components/schemas/BlockchainRawAccounts': {
+        type: 'object',
+        required: ['accounts'],
+        properties: {
+            accounts: {
+                type: 'array',
+                items: { $ref: '#/components/schemas/BlockchainRawAccount' }
+            }
+        }
+    },
     '#/components/schemas/BlockchainLibrary': {
         type: 'object',
         required: ['boc'],
@@ -4567,6 +5246,21 @@ const components = {
         type: 'object',
         required: ['accounts'],
         properties: { accounts: { type: 'array', items: { $ref: '#/components/schemas/Wallet' } } }
+    },
+    '#/components/schemas/WalletsByPublicKeys': {
+        type: 'object',
+        required: ['items'],
+        properties: {
+            items: { type: 'array', items: { $ref: '#/components/schemas/WalletsByPublicKey' } }
+        }
+    },
+    '#/components/schemas/WalletsByPublicKey': {
+        type: 'object',
+        required: ['public_key', 'wallets'],
+        properties: {
+            public_key: { type: 'string' },
+            wallets: { type: 'array', items: { $ref: '#/components/schemas/Wallet' } }
+        }
     },
     '#/components/schemas/Wallet': {
         type: 'object',
@@ -4651,7 +5345,7 @@ const components = {
     '#/components/schemas/GaslessTx': {
         type: 'object',
         required: ['protocol_name'],
-        properties: { protocol_name: { type: 'string' } }
+        properties: { protocol_name: { type: 'string' }, external: { type: 'string' } }
     },
     '#/components/schemas/SignRawParams': {
         type: 'object',
@@ -4938,6 +5632,13 @@ const components = {
                     catchain_max_blocks_coeff: { type: 'integer', format: 'int64' }
                 }
             },
+            '30': {
+                type: 'object',
+                properties: {
+                    mc: { $ref: '#/components/schemas/NewConsensusConfig' },
+                    shard: { $ref: '#/components/schemas/NewConsensusConfig' }
+                }
+            },
             '31': {
                 type: 'object',
                 required: ['fundamental_smc_addr'],
@@ -5077,7 +5778,17 @@ const components = {
             verification: { $ref: '#/components/schemas/JettonVerificationType' },
             custom_payload_api_uri: { type: 'string' },
             score: { type: 'integer', format: 'int32' },
-            scaled_ui: { $ref: '#/components/schemas/ScaledUI' }
+            scaled_ui: { $ref: '#/components/schemas/ScaledUI' },
+            description: { type: 'string' },
+            asset_info: { $ref: '#/components/schemas/JettonAssetInfo' }
+        }
+    },
+    '#/components/schemas/JettonAssetInfo': {
+        type: 'object',
+        required: ['token_type', 'defi_provider'],
+        properties: {
+            token_type: { $ref: '#/components/schemas/DefiAssetAssetType' },
+            defi_provider: { $ref: '#/components/schemas/DefiProvider' }
         }
     },
     '#/components/schemas/ScaledUI': {
@@ -5189,7 +5900,9 @@ const components = {
                 description: 'Please use trust field'
             },
             include_cnft: { type: 'boolean' },
-            trust: { $ref: '#/components/schemas/TrustType' }
+            trust: { $ref: '#/components/schemas/TrustType' },
+            code_hash: { type: 'string' },
+            data_hash: { type: 'string' }
         }
     },
     '#/components/schemas/NftItems': {
@@ -5266,10 +5979,11 @@ const components = {
     },
     '#/components/schemas/ValueFlow': {
         type: 'object',
-        required: ['account', 'ton', 'fees'],
+        required: ['account', 'gram', 'fees'],
         properties: {
             account: { $ref: '#/components/schemas/AccountAddress' },
-            ton: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            ton: { type: 'integer', format: 'int64', 'x-js-format': 'bigint', deprecated: true },
+            gram: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             fees: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             jettons: {
                 type: 'array',
@@ -5302,6 +6016,7 @@ const components = {
                     'ExtraCurrencyTransfer',
                     'ContractDeploy',
                     'JettonTransfer',
+                    'FlawedJettonTransfer',
                     'JettonBurn',
                     'JettonMint',
                     'NftItemTransfer',
@@ -5325,6 +6040,9 @@ const components = {
                     'DepositTokenStake',
                     'WithdrawTokenStakeRequest',
                     'LiquidityDeposit',
+                    'OracleRequest',
+                    'DepositXTR',
+                    'WithdrawXTR',
                     'Unknown'
                 ]
             },
@@ -5333,6 +6051,7 @@ const components = {
             ExtraCurrencyTransfer: { $ref: '#/components/schemas/ExtraCurrencyTransferAction' },
             ContractDeploy: { $ref: '#/components/schemas/ContractDeployAction' },
             JettonTransfer: { $ref: '#/components/schemas/JettonTransferAction' },
+            FlawedJettonTransfer: { $ref: '#/components/schemas/FlawedJettonTransferAction' },
             JettonBurn: { $ref: '#/components/schemas/JettonBurnAction' },
             JettonMint: { $ref: '#/components/schemas/JettonMintAction' },
             NftItemTransfer: { $ref: '#/components/schemas/NftItemTransferAction' },
@@ -5358,6 +6077,9 @@ const components = {
                 $ref: '#/components/schemas/WithdrawTokenStakeRequestAction'
             },
             LiquidityDeposit: { $ref: '#/components/schemas/LiquidityDepositAction' },
+            OracleRequest: { $ref: '#/components/schemas/OracleRequestAction' },
+            WithdrawXTR: { $ref: '#/components/schemas/WithdrawXTRAction' },
+            DepositXTR: { $ref: '#/components/schemas/DepositXTRAction' },
             simple_preview: { $ref: '#/components/schemas/ActionSimplePreview' },
             base_transactions: { type: 'array', items: { type: 'string' } }
         }
@@ -5372,6 +6094,40 @@ const components = {
             comment: { type: 'string' },
             encrypted_comment: { $ref: '#/components/schemas/EncryptedComment' },
             refund: { $ref: '#/components/schemas/Refund' }
+        }
+    },
+    '#/components/schemas/OracleRequestAction': {
+        type: 'object',
+        required: ['requester', 'response_to', 'price_feeds'],
+        properties: {
+            requester: { $ref: '#/components/schemas/AccountAddress' },
+            response_to: { $ref: '#/components/schemas/AccountAddress' },
+            price_feeds: { type: 'array', items: { $ref: '#/components/schemas/OraclePriceFeed' } }
+        }
+    },
+    '#/components/schemas/OraclePriceFeed': {
+        type: 'object',
+        required: ['id', 'display_symbol'],
+        properties: {
+            id: { type: 'string' },
+            display_symbol: { type: 'string' },
+            rate: { type: 'number', format: 'double' }
+        }
+    },
+    '#/components/schemas/DepositXTRAction': {
+        type: 'object',
+        required: ['recipient', 'amount'],
+        properties: {
+            recipient: { $ref: '#/components/schemas/AccountAddress' },
+            amount: { type: 'string', 'x-js-format': 'bigint' }
+        }
+    },
+    '#/components/schemas/WithdrawXTRAction': {
+        type: 'object',
+        required: ['user', 'amount'],
+        properties: {
+            user: { $ref: '#/components/schemas/AccountAddress' },
+            amount: { type: 'string', 'x-js-format': 'bigint' }
         }
     },
     '#/components/schemas/ExtraCurrencies': {
@@ -5405,11 +6161,17 @@ const components = {
     },
     '#/components/schemas/SmartContractAction': {
         type: 'object',
-        required: ['executor', 'contract', 'ton_attached', 'operation'],
+        required: ['executor', 'contract', 'gram_attached', 'operation'],
         properties: {
             executor: { $ref: '#/components/schemas/AccountAddress' },
             contract: { $ref: '#/components/schemas/AccountAddress' },
-            ton_attached: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            ton_attached: {
+                type: 'integer',
+                format: 'int64',
+                'x-js-format': 'bigint',
+                deprecated: true
+            },
+            gram_attached: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             operation: { type: 'string' },
             payload: { type: 'string' },
             refund: { $ref: '#/components/schemas/Refund' }
@@ -5496,6 +6258,28 @@ const components = {
             jetton: { $ref: '#/components/schemas/JettonPreview' }
         }
     },
+    '#/components/schemas/FlawedJettonTransferAction': {
+        type: 'object',
+        required: [
+            'sent_amount',
+            'received_amount',
+            'jetton',
+            'senders_wallet',
+            'recipients_wallet'
+        ],
+        properties: {
+            sender: { $ref: '#/components/schemas/AccountAddress' },
+            recipient: { $ref: '#/components/schemas/AccountAddress' },
+            senders_wallet: { type: 'string', format: 'address' },
+            recipients_wallet: { type: 'string', format: 'address' },
+            sent_amount: { type: 'string', 'x-js-format': 'bigint' },
+            received_amount: { type: 'string', 'x-js-format': 'bigint' },
+            comment: { type: 'string' },
+            encrypted_comment: { $ref: '#/components/schemas/EncryptedComment' },
+            refund: { $ref: '#/components/schemas/Refund' },
+            jetton: { $ref: '#/components/schemas/JettonPreview' }
+        }
+    },
     '#/components/schemas/JettonBurnAction': {
         type: 'object',
         required: ['amount', 'jetton', 'sender', 'senders_wallet'],
@@ -5565,7 +6349,11 @@ const components = {
             amount: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             staker: { $ref: '#/components/schemas/AccountAddress' },
             pool: { $ref: '#/components/schemas/AccountAddress' },
-            implementation: { $ref: '#/components/schemas/PoolImplementationType' }
+            implementation: { $ref: '#/components/schemas/PoolImplementationType' },
+            stake_meta: {
+                description: 'If present, should be used instead of amount',
+                $ref: '#/components/schemas/Price'
+            }
         }
     },
     '#/components/schemas/WithdrawStakeAction': {
@@ -5585,7 +6373,11 @@ const components = {
             amount: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             staker: { $ref: '#/components/schemas/AccountAddress' },
             pool: { $ref: '#/components/schemas/AccountAddress' },
-            implementation: { $ref: '#/components/schemas/PoolImplementationType' }
+            implementation: { $ref: '#/components/schemas/PoolImplementationType' },
+            stake_meta: {
+                description: 'If present, should be used instead of amount',
+                $ref: '#/components/schemas/Price'
+            }
         }
     },
     '#/components/schemas/ElectionsRecoverStakeAction': {
@@ -5611,8 +6403,15 @@ const components = {
             dex: { type: 'string' },
             amount_in: { type: 'string', 'x-js-format': 'bigint' },
             amount_out: { type: 'string', 'x-js-format': 'bigint' },
-            ton_in: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            ton_out: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            ton_in: { type: 'integer', format: 'int64', 'x-js-format': 'bigint', deprecated: true },
+            ton_out: {
+                type: 'integer',
+                format: 'int64',
+                'x-js-format': 'bigint',
+                deprecated: true
+            },
+            gram_in: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            gram_out: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             user_wallet: { $ref: '#/components/schemas/AccountAddress' },
             router: { $ref: '#/components/schemas/AccountAddress' },
             jetton_master_in: { $ref: '#/components/schemas/JettonPreview' },
@@ -5691,7 +6490,8 @@ const components = {
             lt: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             in_progress: { type: 'boolean' },
             extra: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
-            progress: { type: 'number', format: 'float', minimum: 0, maximum: 1 }
+            progress: { type: 'number', format: 'float', minimum: 0, maximum: 1 },
+            ext_msg_hash: { type: 'string' }
         }
     },
     '#/components/schemas/AccountEvents': {
@@ -5840,12 +6640,22 @@ const components = {
             wallet: { $ref: '#/components/schemas/WalletDNS' },
             next_resolver: { type: 'string', format: 'maybe-address' },
             sites: { type: 'array', items: { type: 'string' } },
-            storage: { type: 'string' }
+            storage: { type: 'string' },
+            picture: { $ref: '#/components/schemas/PictureDNS' }
+        }
+    },
+    '#/components/schemas/PictureDNS': {
+        type: 'object',
+        required: ['type'],
+        properties: {
+            type: { type: 'string', enum: ['url', 'bag_id'] },
+            url: { type: 'string' },
+            bag_id: { type: 'string' }
         }
     },
     '#/components/schemas/NftCollection': {
         type: 'object',
-        required: ['address', 'next_item_index', 'raw_collection_content', 'approved_by'],
+        required: ['address', 'next_item_index', 'raw_collection_content', 'approved_by', 'trust'],
         properties: {
             address: { type: 'string', format: 'address' },
             next_item_index: { type: 'integer', format: 'int64' },
@@ -5853,7 +6663,8 @@ const components = {
             raw_collection_content: { type: 'string', format: 'cell' },
             metadata: { type: 'object', additionalProperties: true },
             previews: { type: 'array', items: { $ref: '#/components/schemas/ImagePreview' } },
-            approved_by: { $ref: '#/components/schemas/NftApprovedBy' }
+            approved_by: { $ref: '#/components/schemas/NftApprovedBy' },
+            trust: { $ref: '#/components/schemas/TrustType' }
         }
     },
     '#/components/schemas/NftCollections': {
@@ -5887,10 +6698,11 @@ const components = {
     },
     '#/components/schemas/Risk': {
         type: 'object',
-        required: ['transfer_all_remaining_balance', 'ton', 'jettons', 'nfts'],
+        required: ['transfer_all_remaining_balance', 'gram', 'jettons', 'nfts'],
         properties: {
             transfer_all_remaining_balance: { type: 'boolean' },
-            ton: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            ton: { type: 'integer', format: 'int64', 'x-js-format': 'bigint', deprecated: true },
+            gram: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             jettons: { type: 'array', items: { $ref: '#/components/schemas/JettonQuantity' } },
             nfts: { type: 'array', items: { $ref: '#/components/schemas/NftItem' } },
             total_equivalent: { type: 'number', format: 'float' }
@@ -6005,7 +6817,9 @@ const components = {
             is_scam: { type: 'boolean' },
             lt: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
             in_progress: { type: 'boolean' },
-            progress: { type: 'number', format: 'float', minimum: 0, maximum: 1 }
+            progress: { type: 'number', format: 'float', minimum: 0, maximum: 1 },
+            last_slice_id: { type: 'integer', format: 'int64' },
+            ext_msg_hash: { type: 'string' }
         }
     },
     '#/components/schemas/JettonMetadata': {
@@ -6049,7 +6863,12 @@ const components = {
             preview: { type: 'string' },
             verification: { $ref: '#/components/schemas/JettonVerificationType' },
             holders_count: { type: 'integer', format: 'int32' },
-            scaled_ui: { $ref: '#/components/schemas/ScaledUI' }
+            scaled_ui: { $ref: '#/components/schemas/ScaledUI' },
+            code_hash: { type: 'string' },
+            data_hash: { type: 'string' },
+            last_transaction_lt: { type: 'string', 'x-js-format': 'bigint' },
+            name: { type: 'string', nullable: true },
+            interfaces: { type: 'array', items: { type: 'string' } }
         }
     },
     '#/components/schemas/JettonHolders': {
@@ -6077,6 +6896,56 @@ const components = {
         properties: {
             custom_payload: { type: 'string', format: 'cell' },
             state_init: { type: 'string', format: 'cell' }
+        }
+    },
+    '#/components/schemas/DefiAssets': {
+        type: 'object',
+        required: ['assets'],
+        properties: { assets: { type: 'array', items: { $ref: '#/components/schemas/DefiAsset' } } }
+    },
+    '#/components/schemas/DefiAssetAssetType': {
+        type: 'string',
+        enum: [
+            'staking',
+            'lending_supply',
+            'lending_borrow',
+            'liquid_staking',
+            'liquid_pool',
+            'yield_token'
+        ]
+    },
+    '#/components/schemas/DefiAsset': {
+        type: 'object',
+        required: ['asset_type', 'amount', 'defi_provider', 'locked_asset'],
+        properties: {
+            asset_type: { $ref: '#/components/schemas/DefiAssetAssetType' },
+            amount: { type: 'string', 'x-js-format': 'bigint' },
+            pool_address: { type: 'string', format: 'address' },
+            asset_address: { type: 'string', format: 'address' },
+            defi_provider: { $ref: '#/components/schemas/DefiProvider' },
+            locked_asset: { $ref: '#/components/schemas/DefiLockedAsset' }
+        }
+    },
+    '#/components/schemas/DefiLockedAsset': {
+        type: 'object',
+        required: ['type'],
+        properties: {
+            type: { type: 'string', enum: ['native', 'jetton'] },
+            jetton: { $ref: '#/components/schemas/JettonPreview' }
+        }
+    },
+    '#/components/schemas/DefiProvider': {
+        type: 'object',
+        required: ['name', 'description', 'link', 'icon', 'card', 'full', 'tag'],
+        properties: {
+            name: { type: 'string' },
+            description: { type: 'string' },
+            link: { type: 'string' },
+            miniapp_link: { type: 'string' },
+            icon: { type: 'string' },
+            card: { type: 'string' },
+            full: { type: 'string' },
+            tag: { type: 'string' }
         }
     },
     '#/components/schemas/AccountStaking': {
@@ -6259,7 +7128,7 @@ const components = {
     },
     '#/components/schemas/PoolImplementationType': {
         type: 'string',
-        enum: ['whales', 'tf', 'liquidTF']
+        enum: ['whales', 'tf', 'liquidTF', 'ffvault']
     },
     '#/components/schemas/TokenRates': {
         type: 'object',
@@ -6379,6 +7248,164 @@ const components = {
         type: 'object',
         required: ['name'],
         properties: { name: { type: 'string' }, image: { type: 'string' } }
+    },
+    '#/components/schemas/BlockInfo': {
+        type: 'object',
+        required: ['seqno', 'time'],
+        properties: {
+            seqno: { type: 'integer', format: 'uint32' },
+            utime: { type: 'integer', format: 'int64' }
+        }
+    },
+    '#/components/schemas/RoundInfo': {
+        type: 'object',
+        required: ['start', 'end', 'start_block', 'end_block'],
+        properties: {
+            start_utime: { type: 'integer', format: 'int64' },
+            end_utime: { type: 'integer', format: 'int64' },
+            start_block: { type: 'integer', format: 'uint32' },
+            end_block: { type: 'integer', format: 'uint32' }
+        }
+    },
+    '#/components/schemas/ValidatorsResponse': {
+        type: 'object',
+        required: [
+            'response_time_ms',
+            'block',
+            'validation_round',
+            'election_id',
+            'elector_balance',
+            'total_stake',
+            'reward_per_block',
+            'validators'
+        ],
+        properties: {
+            response_time_ms: { type: 'integer', format: 'int64' },
+            block: { $ref: '#/components/schemas/BlockInfo' },
+            validation_round: { $ref: '#/components/schemas/RoundInfo' },
+            election_id: { type: 'integer', format: 'int64' },
+            prev_election_id: { type: 'integer', format: 'int64' },
+            next_election_id: { type: 'integer', format: 'int64' },
+            elector_balance: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            total_stake: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            reward_per_block: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            validators: {
+                type: 'array',
+                items: { $ref: '#/components/schemas/ValidatorRewardEntry' }
+            }
+        }
+    },
+    '#/components/schemas/ValidationRound': {
+        type: 'object',
+        required: ['election_id', 'start', 'end', 'start_block', 'finished'],
+        properties: {
+            election_id: { type: 'integer', format: 'int64' },
+            start_utime: { type: 'integer', format: 'int64' },
+            end_utime: { type: 'integer', format: 'int64' },
+            start_block: { type: 'integer', format: 'uint32' },
+            end_block: { type: 'integer', format: 'uint32' },
+            prev_election_id: { type: 'integer', format: 'int64' },
+            next_election_id: { type: 'integer', format: 'int64' },
+            total_stake: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            bonuses: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            finished: { type: 'boolean' }
+        }
+    },
+    '#/components/schemas/ValidationRoundsResponse': {
+        type: 'object',
+        required: ['response_time_ms', 'rounds'],
+        properties: {
+            response_time_ms: { type: 'integer', format: 'int64' },
+            rounds: { type: 'array', items: { $ref: '#/components/schemas/ValidationRound' } }
+        }
+    },
+    '#/components/schemas/NominatorRewardEntry': {
+        type: 'object',
+        required: ['address', 'weight', 'reward', 'effective_stake', 'stake'],
+        properties: {
+            address: { type: 'string' },
+            weight: { type: 'number', format: 'double' },
+            reward: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            effective_stake: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            stake: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' }
+        }
+    },
+    '#/components/schemas/ValidatorRewardEntry': {
+        type: 'object',
+        required: ['rank', 'public_key', 'effective_stake', 'weight', 'reward'],
+        properties: {
+            rank: { type: 'integer' },
+            public_key: { type: 'string' },
+            effective_stake: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            weight: { type: 'number', format: 'double' },
+            reward: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            pool: { type: 'string' },
+            pool_type: {
+                type: 'string',
+                enum: [
+                    'nominator-pool-v1.0',
+                    'single-nominator-pool-v1.0',
+                    'single-nominator-pool-v1.1',
+                    'other'
+                ]
+            },
+            owner_address: { type: 'string' },
+            validator_address: { type: 'string' },
+            validator_stake: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            nominators_stake: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            total_stake: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            validator_reward_share: { type: 'number', format: 'double' },
+            nominators_count: { type: 'integer', format: 'uint32' },
+            nominators: {
+                type: 'array',
+                items: { $ref: '#/components/schemas/NominatorRewardEntry' }
+            }
+        }
+    },
+    '#/components/schemas/RoundRewardsResponse': {
+        type: 'object',
+        required: [
+            'response_time_ms',
+            'election_id',
+            'round_start',
+            'round_end',
+            'start_block',
+            'end_block',
+            'total_bonuses',
+            'total_stake',
+            'validators'
+        ],
+        properties: {
+            response_time_ms: { type: 'integer', format: 'int64' },
+            election_id: { type: 'integer', format: 'int64' },
+            prev_election_id: { type: 'integer', format: 'int64' },
+            next_election_id: { type: 'integer', format: 'int64' },
+            round_start: { type: 'string', format: 'date-time' },
+            round_end: { type: 'string', format: 'date-time' },
+            start_block: { type: 'integer', format: 'uint32' },
+            end_block: { type: 'integer', format: 'uint32' },
+            total_bonuses: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            total_stake: { type: 'integer', format: 'int64', 'x-js-format': 'bigint' },
+            validators: {
+                type: 'array',
+                items: { $ref: '#/components/schemas/ValidatorRewardEntry' }
+            },
+            error: { type: 'string' }
+        }
+    },
+    '#/components/schemas/RewardsStats': {
+        type: 'object',
+        required: ['apy', 'total_stake'],
+        properties: {
+            apy: {
+                type: 'array',
+                items: { type: 'array', items: { type: 'number', format: 'double' } }
+            },
+            total_stake: {
+                type: 'array',
+                items: { type: 'array', items: { type: 'number', format: 'double' } }
+            }
+        }
     }
 };
 /**
@@ -6896,7 +7923,12 @@ function prepareResponseData<U>(obj: any, orSchema?: any, originalResponse: unkn
                     case 'slice':
                         return {
                             type: 'slice',
-                            slice: cellParse(obj.slice as string, originalResponse)
+                            cell: cellParse(obj.slice as string, originalResponse)
+                        } as U;
+                    case 'builder':
+                        return {
+                            type: 'builder',
+                            cell: cellParse(obj.builder as string, originalResponse)
                         } as U;
                     case 'null':
                         return {
@@ -7323,11 +8355,24 @@ export class TonApiClient {
      */
     getBlockchainMasterchainTransactions(
         masterchainSeqno: number,
+        query?: {
+            /**
+             * @min 0
+             * @default 0
+             */
+            offset?: number;
+            /**
+             * @min 1
+             * @example 100
+             */
+            limit?: number;
+        },
         params: RequestParams = {}
     ): TonApiPromise<GetBlockchainMasterchainTransactionsData, TonApiError> {
         const req = this.http.request<GetBlockchainMasterchainTransactionsData, TonApiError>({
             path: `/v2/blockchain/masterchain/${masterchainSeqno}/transactions`,
             method: 'GET',
+            query: query,
             format: 'json',
             ...params
         });
@@ -7573,6 +8618,45 @@ export class TonApiClient {
 
         return prepareResponse<GetBlockchainRawAccountData, TonApiError>(req, {
             $ref: '#/components/schemas/BlockchainRawAccount'
+        });
+    }
+
+    /**
+     * @description Get low-level information about several accounts taken directly from the blockchain.
+     *
+     * @tags Blockchain
+     * @name GetBlockchainRawAccounts
+     * @request POST:/v2/blockchain/accounts/_bulk
+     */
+    /**
+     * @description Get low-level information about several accounts taken directly from the blockchain.
+     *
+     * @tags Blockchain
+     * @name GetBlockchainRawAccounts
+     * @request POST:/v2/blockchain/accounts/_bulk
+     */
+    getBlockchainRawAccounts(
+        data: {
+            accountIds: (Address | string)[];
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<GetBlockchainRawAccountsData, TonApiError> {
+        const req = this.http.request<GetBlockchainRawAccountsData, TonApiError>({
+            path: `/v2/blockchain/accounts/_bulk`,
+            method: 'POST',
+            body: prepareRequestData(data, {
+                type: 'object',
+                required: ['accountIds'],
+                properties: {
+                    accountIds: { type: 'array', items: { type: 'string', format: 'address' } }
+                }
+            }),
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetBlockchainRawAccountsData, TonApiError>(req, {
+            $ref: '#/components/schemas/BlockchainRawAccounts'
         });
     }
 
@@ -8015,15 +9099,26 @@ export class TonApiClient {
         accountId_Address: Address | string,
         query?: {
             /**
-             * accept ton and all possible fiat currencies, separated by commas
-             * @example ["ton","usd","rub"]
+             * accept gram and all possible fiat currencies, separated by commas
+             * @example ["gram","usd","rub"]
              */
             currencies?: string[];
             /**
              * comma separated list supported extensions
-             * @example ["custom_payload"]
+             * @example ["custom_payload","defi"]
              */
             supported_extensions?: string[];
+            /**
+             * @min 1
+             * @max 1000
+             * @default 1000
+             */
+            limit?: number;
+            /**
+             * @min 0
+             * @default 0
+             */
+            offset?: number;
         },
         params: RequestParams = {}
     ): TonApiPromise<GetAccountJettonsBalancesData, TonApiError> {
@@ -8061,13 +9156,13 @@ export class TonApiClient {
         jettonId_Address: Address | string,
         query?: {
             /**
-             * accept ton and all possible fiat currencies, separated by commas
-             * @example ["ton","usd","rub"]
+             * accept gram and all possible fiat currencies, separated by commas
+             * @example ["gram","usd","rub"]
              */
             currencies?: string[];
             /**
              * comma separated list supported extensions
-             * @example ["custom_payload"]
+             * @example ["custom_payload","defi"]
              */
             supported_extensions?: string[];
         },
@@ -8232,7 +9327,7 @@ export class TonApiClient {
              */
             offset?: number;
             /**
-             * Selling nft items in ton implemented usually via transfer items to special selling account. This option enables including items which owned not directly.
+             * Selling nft items in TON implemented usually via transfer items to special selling account. This option enables including items which owned not directly.
              * @default false
              */
             indirect_ownership?: boolean;
@@ -8288,6 +9383,12 @@ export class TonApiClient {
              * @format bigint
              * @example 25758317000002
              */
+            after_lt?: bigint;
+            /**
+             * omit this parameter to get last events
+             * @format bigint
+             * @example 25758317000002
+             */
             before_lt?: bigint;
             /**
              * @min 1
@@ -8307,6 +9408,11 @@ export class TonApiClient {
              * @example 1668436763
              */
             end_date?: number;
+            /**
+             * used to sort the result-set in ascending or descending order by lt.
+             * @default "desc"
+             */
+            sort_order?: 'desc' | 'asc';
         },
         params: RequestParams = {}
     ): TonApiPromise<GetAccountEventsData, TonApiError> {
@@ -8657,6 +9763,37 @@ export class TonApiClient {
             type: 'object',
             required: ['balance_change'],
             properties: { balance_change: { type: 'integer', format: 'int64' } }
+        });
+    }
+
+    /**
+     * @description Return DeFi assets locked in custom smart contracts: currently returns TON Whales staking and EVAA lending positions.
+     *
+     * @tags Accounts
+     * @name GetAccountDefiAssets
+     * @request GET:/v2/accounts/{account_id}/defi/assets
+     */
+    /**
+     * @description Return DeFi assets locked in custom smart contracts: currently returns TON Whales staking and EVAA lending positions.
+     *
+     * @tags Accounts
+     * @name GetAccountDefiAssets
+     * @request GET:/v2/accounts/{account_id}/defi/assets
+     */
+    getAccountDefiAssets(
+        accountId_Address: Address | string,
+        params: RequestParams = {}
+    ): TonApiPromise<GetAccountDefiAssetsData, TonApiError> {
+        const accountId = addressToString(accountId_Address);
+        const req = this.http.request<GetAccountDefiAssetsData, TonApiError>({
+            path: `/v2/accounts/${accountId}/defi/assets`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetAccountDefiAssetsData, TonApiError>(req, {
+            $ref: '#/components/schemas/DefiAssets'
         });
     }
 
@@ -9648,12 +10785,29 @@ export class TonApiClient {
      */
     getStakingPoolHistory(
         accountId_Address: Address | string,
+        query?: {
+            /**
+             * omit this parameter to get last log entries
+             * @format bigint
+             * @example 25758317000002
+             */
+            before_lt?: bigint;
+            /**
+             * @format int32
+             * @min 1
+             * @max 100
+             * @default 100
+             * @example 100
+             */
+            limit?: number;
+        },
         params: RequestParams = {}
     ): TonApiPromise<GetStakingPoolHistoryData, TonApiError> {
         const accountId = addressToString(accountId_Address);
         const req = this.http.request<GetStakingPoolHistoryData, TonApiError>({
             path: `/v2/staking/pool/${accountId}/history`,
             method: 'GET',
+            query: query,
             format: 'json',
             ...params
         });
@@ -9879,14 +11033,14 @@ export class TonApiClient {
     }
 
     /**
-     * @description Get the TON price from markets
+     * @description Get the Gram price from markets
      *
      * @tags Rates
      * @name GetMarketsRates
      * @request GET:/v2/rates/markets
      */
     /**
-     * @description Get the TON price from markets
+     * @description Get the Gram price from markets
      *
      * @tags Rates
      * @name GetMarketsRates
@@ -10151,6 +11305,43 @@ export class TonApiClient {
     }
 
     /**
+     * @description Get wallets by a list of public keys
+     *
+     * @tags Wallet
+     * @name GetWalletsByPublicKeyBulk
+     * @request POST:/v2/pubkeys/wallets/_bulk
+     */
+    /**
+     * @description Get wallets by a list of public keys
+     *
+     * @tags Wallet
+     * @name GetWalletsByPublicKeyBulk
+     * @request POST:/v2/pubkeys/wallets/_bulk
+     */
+    getWalletsByPublicKeyBulk(
+        data: {
+            publicKeys: string[];
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<GetWalletsByPublicKeyBulkData, TonApiError> {
+        const req = this.http.request<GetWalletsByPublicKeyBulkData, TonApiError>({
+            path: `/v2/pubkeys/wallets/_bulk`,
+            method: 'POST',
+            body: prepareRequestData(data, {
+                type: 'object',
+                required: ['publicKeys'],
+                properties: { publicKeys: { type: 'array', items: { type: 'string' } } }
+            }),
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetWalletsByPublicKeyBulkData, TonApiError>(req, {
+            $ref: '#/components/schemas/WalletsByPublicKeys'
+        });
+    }
+
+    /**
      * @description Returns configuration of gasless transfers
      *
      * @tags Gasless
@@ -10259,7 +11450,7 @@ export class TonApiClient {
     gaslessSend(
         data: {
             /** hex encoded public key */
-            walletPublicKey: string;
+            walletPublicKey?: string;
             /** @format cell */
             boc: Cell | string;
         },
@@ -10270,7 +11461,7 @@ export class TonApiClient {
             method: 'POST',
             body: prepareRequestData(data, {
                 type: 'object',
-                required: ['boc', 'walletPublicKey'],
+                required: ['boc'],
                 properties: {
                     walletPublicKey: { type: 'string' },
                     boc: { type: 'string', format: 'cell' }
@@ -11446,6 +12637,217 @@ export class TonApiClient {
             $ref: '#/components/schemas/AccountPurchases'
         });
     }
+
+    /**
+     * @description Returns all current validators with stakes, rewards, pool addresses, and (optionally) nominator breakdowns.
+     *
+     * @tags Rewards
+     * @name GetValidators
+     * @summary Get all current validators
+     * @request GET:/v2/rewards/validators
+     */
+    /**
+     * @description Returns all current validators with stakes, rewards, pool addresses, and (optionally) nominator breakdowns.
+     *
+     * @tags Rewards
+     * @name GetValidators
+     * @summary Get all current validators
+     * @request GET:/v2/rewards/validators
+     */
+    getValidators(
+        query?: {
+            /**
+             * Masterchain block seqno. Defaults to latest. Mutually exclusive with `unixtime`.
+             * @format uint32
+             */
+            seqno?: number;
+            /**
+             * Unix timestamp (seconds). Looks up the masterchain block at this time and uses it as the anchor. Mutually exclusive with `seqno`.
+             * @format uint32
+             */
+            unixtime?: number;
+            /**
+             * Set to `1` to return only basic validator info (rank, pubkey, effective_stake, weight, reward, pool). Skips pool type detection, owner/validator addresses, nominator data, and returned-stake lookup — significantly faster.
+             * @default false
+             */
+            shallow?: boolean;
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<GetValidatorsData, TonApiError> {
+        const req = this.http.request<GetValidatorsData, TonApiError>({
+            path: `/v2/rewards/validators`,
+            method: 'GET',
+            query: query,
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetValidatorsData, TonApiError>(req, {
+            $ref: '#/components/schemas/ValidatorsResponse'
+        });
+    }
+
+    /**
+     * @description Returns past and current validation rounds with boundaries, stakes, and bonuses. Always uses the latest masterchain block.
+     *
+     * @tags Rewards
+     * @name GetValidationRounds
+     * @summary Get validation round metadata
+     * @request GET:/v2/rewards/validation-rounds
+     */
+    /**
+     * @description Returns past and current validation rounds with boundaries, stakes, and bonuses. Always uses the latest masterchain block.
+     *
+     * @tags Rewards
+     * @name GetValidationRounds
+     * @summary Get validation round metadata
+     * @request GET:/v2/rewards/validation-rounds
+     */
+    getValidationRounds(
+        query?: {
+            /**
+             * Return the single round matching this election ID. Mutually exclusive with `block` and `unixtime`.
+             * @format int64
+             */
+            election_id?: number;
+            /**
+             * Find the round containing this masterchain block seqno and return it plus up to `limit-1` older rounds. Mutually exclusive with `election_id` and `unixtime`.
+             * @format uint32
+             */
+            block?: number;
+            /**
+             * Unix timestamp (seconds). Looks up the masterchain block at this time and uses it as the anchor. Mutually exclusive with `election_id` and `block`.
+             * @format uint32
+             */
+            unixtime?: number;
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<GetValidationRoundsData, TonApiError> {
+        const req = this.http.request<GetValidationRoundsData, TonApiError>({
+            path: `/v2/rewards/validation-rounds`,
+            method: 'GET',
+            query: query,
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetValidationRoundsData, TonApiError>(req, {
+            $ref: '#/components/schemas/ValidationRoundsResponse'
+        });
+    }
+
+    /**
+     * @description Computes per-validator and per-nominator reward distribution for a finished validation round using the elector's bonuses value.
+     *
+     * @tags Rewards
+     * @name GetRoundRewards
+     * @summary Get per-validator reward distribution for a finished round
+     * @request GET:/v2/rewards/round-rewards
+     */
+    /**
+     * @description Computes per-validator and per-nominator reward distribution for a finished validation round using the elector's bonuses value.
+     *
+     * @tags Rewards
+     * @name GetRoundRewards
+     * @summary Get per-validator reward distribution for a finished round
+     * @request GET:/v2/rewards/round-rewards
+     */
+    getRoundRewards(
+        query?: {
+            /**
+             * Election ID of the finished round. Mutually exclusive with `block` and `unixtime`.
+             * @format int64
+             */
+            election_id?: number;
+            /**
+             * Masterchain block seqno within the finished round. Mutually exclusive with `election_id` and `unixtime`.
+             * @format uint32
+             */
+            block?: number;
+            /**
+             * Unix timestamp (seconds). Looks up the masterchain block at this time and uses it as the anchor. Mutually exclusive with `election_id` and `block`.
+             * @format uint32
+             */
+            unixtime?: number;
+            /**
+             * Set to `1` to return only basic validator info (rank, pubkey, effective_stake, weight, reward, pool). Skips pool type detection, owner/validator addresses, nominator data, and returned-stake lookup — significantly faster.
+             * @default false
+             */
+            shallow?: boolean;
+        },
+        params: RequestParams = {}
+    ): TonApiPromise<GetRoundRewardsData, TonApiError> {
+        const req = this.http.request<GetRoundRewardsData, TonApiError>({
+            path: `/v2/rewards/round-rewards`,
+            method: 'GET',
+            query: query,
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetRoundRewardsData, TonApiError>(req, {
+            $ref: '#/components/schemas/RoundRewardsResponse'
+        });
+    }
+
+    /**
+     * @description Returns time series of APY and total stake from past validation rounds.
+     *
+     * @tags Rewards
+     * @name GetRewardsStats
+     * @summary Get historical APY and stake statistics
+     * @request GET:/v2/rewards/stats
+     */
+    /**
+     * @description Returns time series of APY and total stake from past validation rounds.
+     *
+     * @tags Rewards
+     * @name GetRewardsStats
+     * @summary Get historical APY and stake statistics
+     * @request GET:/v2/rewards/stats
+     */
+    getRewardsStats(params: RequestParams = {}): TonApiPromise<GetRewardsStatsData, TonApiError> {
+        const req = this.http.request<GetRewardsStatsData, TonApiError>({
+            path: `/v2/rewards/stats`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetRewardsStatsData, TonApiError>(req, {
+            $ref: '#/components/schemas/RewardsStats'
+        });
+    }
+
+    /**
+     * @description Returns the current TON blockchain APY as a percent based on the latest completed validation round.
+     *
+     * @tags Rewards
+     * @name GetRewardsApy
+     * @summary Get current TON blockchain APY
+     * @request GET:/v2/rewards/apy
+     */
+    /**
+     * @description Returns the current TON blockchain APY as a percent based on the latest completed validation round.
+     *
+     * @tags Rewards
+     * @name GetRewardsApy
+     * @summary Get current TON blockchain APY
+     * @request GET:/v2/rewards/apy
+     */
+    getRewardsApy(params: RequestParams = {}): TonApiPromise<GetRewardsApyData, TonApiError> {
+        const req = this.http.request<GetRewardsApyData, TonApiError>({
+            path: `/v2/rewards/apy`,
+            method: 'GET',
+            format: 'json',
+            ...params
+        });
+
+        return prepareResponse<GetRewardsApyData, TonApiError>(req, {
+            type: 'number',
+            format: 'double'
+        });
+    }
 }
 
 // Default client instance for global methods
@@ -11883,6 +13285,18 @@ type GetBlockchainMasterchainTransactionsOptions<ThrowOnError extends boolean = 
     path: {
         masterchainSeqno: number;
     };
+    query?: {
+        /**
+         * @min 0
+         * @default 0
+         */
+        offset?: number;
+        /**
+         * @min 1
+         * @example 100
+         */
+        limit?: number;
+    };
     params?: RequestParams;
     throwOnError?: ThrowOnError;
 };
@@ -11893,6 +13307,7 @@ export const getBlockchainMasterchainTransactions = async <ThrowOnError extends 
         const client = options.client || getDefaultClient();
         const result = await client.getBlockchainMasterchainTransactions(
             options.path.masterchainSeqno,
+            options?.query,
             options.params
         );
 
@@ -12271,6 +13686,49 @@ export const getBlockchainRawAccount = async <ThrowOnError extends boolean = fal
         }
         return { data: null, error: error as TonApiError } as MethodResultSync<
             GetBlockchainRawAccountData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Get low-level information about several accounts taken directly from the blockchain.
+ *
+ * @tags Blockchain
+ * @name GetBlockchainRawAccounts
+ * @request POST:/v2/blockchain/accounts/_bulk
+ */
+type GetBlockchainRawAccountsOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    body: {
+        accountIds: (Address | string)[];
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getBlockchainRawAccounts = async <ThrowOnError extends boolean = false>(
+    options: GetBlockchainRawAccountsOptions<ThrowOnError>
+): Promise<MethodResultSync<GetBlockchainRawAccountsData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getBlockchainRawAccounts(options.body, options.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetBlockchainRawAccountsData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetBlockchainRawAccountsData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetBlockchainRawAccountsData,
             ThrowOnError
         >;
     }
@@ -12827,15 +14285,26 @@ type GetAccountJettonsBalancesOptions<ThrowOnError extends boolean = false> = {
     };
     query?: {
         /**
-         * accept ton and all possible fiat currencies, separated by commas
-         * @example ["ton","usd","rub"]
+         * accept gram and all possible fiat currencies, separated by commas
+         * @example ["gram","usd","rub"]
          */
         currencies?: string[];
         /**
          * comma separated list supported extensions
-         * @example ["custom_payload"]
+         * @example ["custom_payload","defi"]
          */
         supported_extensions?: string[];
+        /**
+         * @min 1
+         * @max 1000
+         * @default 1000
+         */
+        limit?: number;
+        /**
+         * @min 0
+         * @default 0
+         */
+        offset?: number;
     };
     params?: RequestParams;
     throwOnError?: ThrowOnError;
@@ -12887,13 +14356,13 @@ type GetAccountJettonBalanceOptions<ThrowOnError extends boolean = false> = {
     };
     query?: {
         /**
-         * accept ton and all possible fiat currencies, separated by commas
-         * @example ["ton","usd","rub"]
+         * accept gram and all possible fiat currencies, separated by commas
+         * @example ["gram","usd","rub"]
          */
         currencies?: string[];
         /**
          * comma separated list supported extensions
-         * @example ["custom_payload"]
+         * @example ["custom_payload","defi"]
          */
         supported_extensions?: string[];
     };
@@ -13101,7 +14570,7 @@ type GetAccountNftItemsOptions<ThrowOnError extends boolean = false> = {
          */
         offset?: number;
         /**
-         * Selling nft items in ton implemented usually via transfer items to special selling account. This option enables including items which owned not directly.
+         * Selling nft items in TON implemented usually via transfer items to special selling account. This option enables including items which owned not directly.
          * @default false
          */
         indirect_ownership?: boolean;
@@ -13169,6 +14638,12 @@ type GetAccountEventsOptions<ThrowOnError extends boolean = false> = {
          * @format bigint
          * @example 25758317000002
          */
+        after_lt?: bigint;
+        /**
+         * omit this parameter to get last events
+         * @format bigint
+         * @example 25758317000002
+         */
         before_lt?: bigint;
         /**
          * @min 1
@@ -13188,6 +14663,11 @@ type GetAccountEventsOptions<ThrowOnError extends boolean = false> = {
          * @example 1668436763
          */
         end_date?: number;
+        /**
+         * used to sort the result-set in ascending or descending order by lt.
+         * @default "desc"
+         */
+        sort_order?: 'desc' | 'asc';
     };
     params?: RequestParams;
     throwOnError?: ThrowOnError;
@@ -13660,6 +15140,49 @@ export const getAccountDiff = async <ThrowOnError extends boolean = false>(
         }
         return { data: null, error: error as TonApiError } as MethodResultSync<
             GetAccountDiffData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Return DeFi assets locked in custom smart contracts: currently returns TON Whales staking and EVAA lending positions.
+ *
+ * @tags Accounts
+ * @name GetAccountDefiAssets
+ * @request GET:/v2/accounts/{account_id}/defi/assets
+ */
+type GetAccountDefiAssetsOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    path: {
+        accountId: Address | string;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getAccountDefiAssets = async <ThrowOnError extends boolean = false>(
+    options: GetAccountDefiAssetsOptions<ThrowOnError>
+): Promise<MethodResultSync<GetAccountDefiAssetsData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getAccountDefiAssets(options.path.accountId, options.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetAccountDefiAssetsData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetAccountDefiAssetsData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetAccountDefiAssetsData,
             ThrowOnError
         >;
     }
@@ -14924,6 +16447,22 @@ type GetStakingPoolHistoryOptions<ThrowOnError extends boolean = false> = {
     path: {
         accountId: Address | string;
     };
+    query?: {
+        /**
+         * omit this parameter to get last log entries
+         * @format bigint
+         * @example 25758317000002
+         */
+        before_lt?: bigint;
+        /**
+         * @format int32
+         * @min 1
+         * @max 100
+         * @default 100
+         * @example 100
+         */
+        limit?: number;
+    };
     params?: RequestParams;
     throwOnError?: ThrowOnError;
 };
@@ -14932,7 +16471,11 @@ export const getStakingPoolHistory = async <ThrowOnError extends boolean = false
 ): Promise<MethodResultSync<GetStakingPoolHistoryData, ThrowOnError>> => {
     try {
         const client = options.client || getDefaultClient();
-        const result = await client.getStakingPoolHistory(options.path.accountId, options.params);
+        const result = await client.getStakingPoolHistory(
+            options.path.accountId,
+            options?.query,
+            options.params
+        );
 
         // If throwOnError is true, return data directly
         if (options?.throwOnError) {
@@ -15163,7 +16706,7 @@ export const getChartRates = async <ThrowOnError extends boolean = false>(
 };
 
 /**
- * @description Get the TON price from markets
+ * @description Get the Gram price from markets
  *
  * @tags Rates
  * @name GetMarketsRates
@@ -15468,6 +17011,49 @@ export const getWalletsByPublicKey = async <ThrowOnError extends boolean = false
 };
 
 /**
+ * @description Get wallets by a list of public keys
+ *
+ * @tags Wallet
+ * @name GetWalletsByPublicKeyBulk
+ * @request POST:/v2/pubkeys/wallets/_bulk
+ */
+type GetWalletsByPublicKeyBulkOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    body: {
+        publicKeys: string[];
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getWalletsByPublicKeyBulk = async <ThrowOnError extends boolean = false>(
+    options: GetWalletsByPublicKeyBulkOptions<ThrowOnError>
+): Promise<MethodResultSync<GetWalletsByPublicKeyBulkData, ThrowOnError>> => {
+    try {
+        const client = options.client || getDefaultClient();
+        const result = await client.getWalletsByPublicKeyBulk(options.body, options.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetWalletsByPublicKeyBulkData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetWalletsByPublicKeyBulkData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetWalletsByPublicKeyBulkData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
  * @description Returns configuration of gasless transfers
  *
  * @tags Gasless
@@ -15575,7 +17161,7 @@ type GaslessSendOptions<ThrowOnError extends boolean = false> = {
     client?: TonApiClient;
     body: {
         /** hex encoded public key */
-        walletPublicKey: string;
+        walletPublicKey?: string;
         /** @format cell */
         boc: Cell | string;
     };
@@ -16815,6 +18401,255 @@ export const getPurchaseHistory = async <ThrowOnError extends boolean = false>(
         }
         return { data: null, error: error as TonApiError } as MethodResultSync<
             GetPurchaseHistoryData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Returns all current validators with stakes, rewards, pool addresses, and (optionally) nominator breakdowns.
+ *
+ * @tags Rewards
+ * @name GetValidators
+ * @summary Get all current validators
+ * @request GET:/v2/rewards/validators
+ */
+type GetValidatorsOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    query?: {
+        /**
+         * Masterchain block seqno. Defaults to latest. Mutually exclusive with `unixtime`.
+         * @format uint32
+         */
+        seqno?: number;
+        /**
+         * Unix timestamp (seconds). Looks up the masterchain block at this time and uses it as the anchor. Mutually exclusive with `seqno`.
+         * @format uint32
+         */
+        unixtime?: number;
+        /**
+         * Set to `1` to return only basic validator info (rank, pubkey, effective_stake, weight, reward, pool). Skips pool type detection, owner/validator addresses, nominator data, and returned-stake lookup — significantly faster.
+         * @default false
+         */
+        shallow?: boolean;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getValidators = async <ThrowOnError extends boolean = false>(
+    options?: GetValidatorsOptions<ThrowOnError>
+): Promise<MethodResultSync<GetValidatorsData, ThrowOnError>> => {
+    try {
+        const client = options?.client || getDefaultClient();
+        const result = await client.getValidators(options?.query, options?.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetValidatorsData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<GetValidatorsData, ThrowOnError>;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetValidatorsData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Returns past and current validation rounds with boundaries, stakes, and bonuses. Always uses the latest masterchain block.
+ *
+ * @tags Rewards
+ * @name GetValidationRounds
+ * @summary Get validation round metadata
+ * @request GET:/v2/rewards/validation-rounds
+ */
+type GetValidationRoundsOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    query?: {
+        /**
+         * Return the single round matching this election ID. Mutually exclusive with `block` and `unixtime`.
+         * @format int64
+         */
+        election_id?: number;
+        /**
+         * Find the round containing this masterchain block seqno and return it plus up to `limit-1` older rounds. Mutually exclusive with `election_id` and `unixtime`.
+         * @format uint32
+         */
+        block?: number;
+        /**
+         * Unix timestamp (seconds). Looks up the masterchain block at this time and uses it as the anchor. Mutually exclusive with `election_id` and `block`.
+         * @format uint32
+         */
+        unixtime?: number;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getValidationRounds = async <ThrowOnError extends boolean = false>(
+    options?: GetValidationRoundsOptions<ThrowOnError>
+): Promise<MethodResultSync<GetValidationRoundsData, ThrowOnError>> => {
+    try {
+        const client = options?.client || getDefaultClient();
+        const result = await client.getValidationRounds(options?.query, options?.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetValidationRoundsData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<
+            GetValidationRoundsData,
+            ThrowOnError
+        >;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetValidationRoundsData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Computes per-validator and per-nominator reward distribution for a finished validation round using the elector's bonuses value.
+ *
+ * @tags Rewards
+ * @name GetRoundRewards
+ * @summary Get per-validator reward distribution for a finished round
+ * @request GET:/v2/rewards/round-rewards
+ */
+type GetRoundRewardsOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    query?: {
+        /**
+         * Election ID of the finished round. Mutually exclusive with `block` and `unixtime`.
+         * @format int64
+         */
+        election_id?: number;
+        /**
+         * Masterchain block seqno within the finished round. Mutually exclusive with `election_id` and `unixtime`.
+         * @format uint32
+         */
+        block?: number;
+        /**
+         * Unix timestamp (seconds). Looks up the masterchain block at this time and uses it as the anchor. Mutually exclusive with `election_id` and `block`.
+         * @format uint32
+         */
+        unixtime?: number;
+        /**
+         * Set to `1` to return only basic validator info (rank, pubkey, effective_stake, weight, reward, pool). Skips pool type detection, owner/validator addresses, nominator data, and returned-stake lookup — significantly faster.
+         * @default false
+         */
+        shallow?: boolean;
+    };
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getRoundRewards = async <ThrowOnError extends boolean = false>(
+    options?: GetRoundRewardsOptions<ThrowOnError>
+): Promise<MethodResultSync<GetRoundRewardsData, ThrowOnError>> => {
+    try {
+        const client = options?.client || getDefaultClient();
+        const result = await client.getRoundRewards(options?.query, options?.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetRoundRewardsData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<GetRoundRewardsData, ThrowOnError>;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetRoundRewardsData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Returns time series of APY and total stake from past validation rounds.
+ *
+ * @tags Rewards
+ * @name GetRewardsStats
+ * @summary Get historical APY and stake statistics
+ * @request GET:/v2/rewards/stats
+ */
+type GetRewardsStatsOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getRewardsStats = async <ThrowOnError extends boolean = false>(
+    options?: GetRewardsStatsOptions<ThrowOnError>
+): Promise<MethodResultSync<GetRewardsStatsData, ThrowOnError>> => {
+    try {
+        const client = options?.client || getDefaultClient();
+        const result = await client.getRewardsStats(options?.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetRewardsStatsData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<GetRewardsStatsData, ThrowOnError>;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetRewardsStatsData,
+            ThrowOnError
+        >;
+    }
+};
+
+/**
+ * @description Returns the current TON blockchain APY as a percent based on the latest completed validation round.
+ *
+ * @tags Rewards
+ * @name GetRewardsApy
+ * @summary Get current TON blockchain APY
+ * @request GET:/v2/rewards/apy
+ */
+type GetRewardsApyOptions<ThrowOnError extends boolean = false> = {
+    client?: TonApiClient;
+    params?: RequestParams;
+    throwOnError?: ThrowOnError;
+};
+export const getRewardsApy = async <ThrowOnError extends boolean = false>(
+    options?: GetRewardsApyOptions<ThrowOnError>
+): Promise<MethodResultSync<GetRewardsApyData, ThrowOnError>> => {
+    try {
+        const client = options?.client || getDefaultClient();
+        const result = await client.getRewardsApy(options?.params);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<GetRewardsApyData, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<GetRewardsApyData, ThrowOnError>;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<
+            GetRewardsApyData,
             ThrowOnError
         >;
     }
