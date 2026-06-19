@@ -298,7 +298,12 @@ function prepareResponseData<U>(obj: any, orSchema?: any, originalResponse: unkn
           case "slice":
             return {
               type: "slice",
-              slice: cellParse(obj.slice as string, originalResponse)
+              cell: cellParse(obj.slice as string, originalResponse)
+            } as U;
+          case "builder":
+            return {
+              type: "builder",
+              cell: cellParse(obj.builder as string, originalResponse)
             } as U;
           case "null":
             return {

@@ -1,4 +1,4 @@
-import { Address, Cell, Tuple, TupleItem } from '@ton/core';
+import { Address, Cell, Tuple, TupleItem, TupleReader } from '@ton/core';
 import { ta } from './utils/client';
 import { execGetMethodForBlockchainAccount as execGetMethodForBlockchainAccountMock } from './__mock__/tuple';
 import { mockFetch } from './utils/mockFetch';
@@ -133,9 +133,9 @@ test('TupleItem slice type parsing', async () => {
     expect(data?.stack[0]?.type).toBe('slice');
 
     if (data?.stack[0]?.type === 'slice') {
-        expect(data.stack[0].slice).toBeDefined();
-        // Should be parsed as Cell
-        expect(data.stack[0].slice).toBeInstanceOf(Cell);
+        expect(data.stack[0].cell).toBeDefined();
+        expect(data.stack[0].cell).toBeInstanceOf(Cell);
+        expect(new TupleReader(data.stack).readCell()).toBeInstanceOf(Cell);
     }
 });
 
