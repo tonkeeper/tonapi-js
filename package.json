@@ -1,7 +1,7 @@
 {
   "name": "ton-api",
   "private": true,
-  "version": "0.5.0-alpha.9",
+  "version": "0.5.1",
   "type": "module",
   "scripts": {
     "postinstall": "patch-package",
@@ -46,7 +46,10 @@
     "vitest": "^3.0.9"
   },
   "workspaces": [
-    "packages/**"
+    "packages/client",
+    "packages/ton-adapter",
+    "packages/streaming",
+    "packages/isomorphic-ws"
   ],
   "packageManager": "npm@10.9.0"
 }

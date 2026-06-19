@@ -1,7 +1,8 @@
 import { AccountsObserver, WebsocketStreamProvider } from '../../src';
 import { TONAPI_TOKEN } from '../env';
+import { describeIntegration } from '../describe-integration';
 
-describe('Accounts observer tests', () => {
+describeIntegration('Accounts observer tests', () => {
     let wsProvider: WebsocketStreamProvider;
     let accountsObserver: AccountsObserver;
 

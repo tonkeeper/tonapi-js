@@ -264,14 +264,6 @@ export const <%~ route.routeName.usage %> = async <ThrowOnError extends boolean 
     }
 };
 <% } else { %>
-/**
-<%~ routeDocs.description %>
-
- *<% /* Here you can add some other JSDoc tags */ %>
-
-<%~ routeDocs.lines %>
-
- */
 <%~ route.routeName.usage %>(<%~ wrapperArgs %>): TonApiPromise<<%~ type %>, TonApiError> {
     <%~ reducedPathParams %>
     const req = this.http.request<<%~ type %>, TonApiError>({

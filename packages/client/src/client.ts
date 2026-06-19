@@ -4343,7 +4343,7 @@ class HttpClient {
         const headers = {
             ...(baseApiParams.headers ?? {}),
             ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
-            'x-tonapi-client': `tonapi-js@0.5.0-alpha.9`
+            'x-tonapi-client': `tonapi-js@0.5.1`
         };
 
         const preparedApiConfig = {
@@ -8070,13 +8070,6 @@ export class TonApiClient {
      * @name GetOpenapiJson
      * @request GET:/v2/openapi.json
      */
-    /**
-     * @description Get the openapi.json file
-     *
-     * @tags Utilities
-     * @name GetOpenapiJson
-     * @request GET:/v2/openapi.json
-     */
     getOpenapiJson(params: RequestParams = {}): TonApiPromise<GetOpenapiJsonData, TonApiError> {
         const req = this.http.request<GetOpenapiJsonData, TonApiError>({
             path: `/v2/openapi.json`,
@@ -8088,13 +8081,6 @@ export class TonApiClient {
         return prepareResponse<GetOpenapiJsonData, TonApiError>(req, {});
     }
 
-    /**
-     * @description Get the openapi.yml file
-     *
-     * @tags Utilities
-     * @name GetOpenapiYml
-     * @request GET:/v2/openapi.yml
-     */
     /**
      * @description Get the openapi.yml file
      *
@@ -8119,13 +8105,6 @@ export class TonApiClient {
      * @name Status
      * @request GET:/v2/status
      */
-    /**
-     * @description Status
-     *
-     * @tags Utilities
-     * @name Status
-     * @request GET:/v2/status
-     */
     status(params: RequestParams = {}): TonApiPromise<StatusData, TonApiError> {
         const req = this.http.request<StatusData, TonApiError>({
             path: `/v2/status`,
@@ -8139,13 +8118,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description parse address and display in all formats
-     *
-     * @tags Utilities
-     * @name AddressParse
-     * @request GET:/v2/address/{account_id}/parse
-     */
     /**
      * @description parse address and display in all formats
      *
@@ -8193,13 +8165,6 @@ export class TonApiClient {
      * @name GetReducedBlockchainBlocks
      * @request GET:/v2/blockchain/reduced/blocks
      */
-    /**
-     * @description Get reduced blockchain blocks data
-     *
-     * @tags Blockchain
-     * @name GetReducedBlockchainBlocks
-     * @request GET:/v2/blockchain/reduced/blocks
-     */
     getReducedBlockchainBlocks(
         query: {
             /** @format int64 */
@@ -8222,13 +8187,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Get blockchain block data
-     *
-     * @tags Blockchain
-     * @name GetBlockchainBlock
-     * @request GET:/v2/blockchain/blocks/{block_id}
-     */
     /**
      * @description Get blockchain block data
      *
@@ -8259,13 +8217,6 @@ export class TonApiClient {
      * @name DownloadBlockchainBlockBoc
      * @request GET:/v2/blockchain/blocks/{block_id}/boc
      */
-    /**
-     * @description Download blockchain block BOC
-     *
-     * @tags Blockchain
-     * @name DownloadBlockchainBlockBoc
-     * @request GET:/v2/blockchain/blocks/{block_id}/boc
-     */
     downloadBlockchainBlockBoc(
         blockId: string,
         params: RequestParams = {}
@@ -8279,13 +8230,6 @@ export class TonApiClient {
         return prepareResponse<DownloadBlockchainBlockBocData, TonApiError>(req);
     }
 
-    /**
-     * @description Get blockchain block shards
-     *
-     * @tags Blockchain
-     * @name GetBlockchainMasterchainShards
-     * @request GET:/v2/blockchain/masterchain/{masterchain_seqno}/shards
-     */
     /**
      * @description Get blockchain block shards
      *
@@ -8316,13 +8260,6 @@ export class TonApiClient {
      * @name GetBlockchainMasterchainBlocks
      * @request GET:/v2/blockchain/masterchain/{masterchain_seqno}/blocks
      */
-    /**
-     * @description Get all blocks in all shards and workchains between target and previous masterchain block according to shards last blocks snapshot in masterchain.  We don't recommend to build your app around this method because it has problem with scalability and will work very slow in the future.
-     *
-     * @tags Blockchain
-     * @name GetBlockchainMasterchainBlocks
-     * @request GET:/v2/blockchain/masterchain/{masterchain_seqno}/blocks
-     */
     getBlockchainMasterchainBlocks(
         masterchainSeqno: number,
         params: RequestParams = {}
@@ -8339,13 +8276,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Get all transactions in all shards and workchains between target and previous masterchain block according to shards last blocks snapshot in masterchain. We don't recommend to build your app around this method because it has problem with scalability and will work very slow in the future.
-     *
-     * @tags Blockchain
-     * @name GetBlockchainMasterchainTransactions
-     * @request GET:/v2/blockchain/masterchain/{masterchain_seqno}/transactions
-     */
     /**
      * @description Get all transactions in all shards and workchains between target and previous masterchain block according to shards last blocks snapshot in masterchain. We don't recommend to build your app around this method because it has problem with scalability and will work very slow in the future.
      *
@@ -8389,13 +8319,6 @@ export class TonApiClient {
      * @name GetBlockchainConfigFromBlock
      * @request GET:/v2/blockchain/masterchain/{masterchain_seqno}/config
      */
-    /**
-     * @description Get blockchain config from a specific block, if present.
-     *
-     * @tags Blockchain
-     * @name GetBlockchainConfigFromBlock
-     * @request GET:/v2/blockchain/masterchain/{masterchain_seqno}/config
-     */
     getBlockchainConfigFromBlock(
         masterchainSeqno: number,
         params: RequestParams = {}
@@ -8412,13 +8335,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Get raw blockchain config from a specific block, if present.
-     *
-     * @tags Blockchain
-     * @name GetRawBlockchainConfigFromBlock
-     * @request GET:/v2/blockchain/masterchain/{masterchain_seqno}/config/raw
-     */
     /**
      * @description Get raw blockchain config from a specific block, if present.
      *
@@ -8449,13 +8365,6 @@ export class TonApiClient {
      * @name GetBlockchainBlockTransactions
      * @request GET:/v2/blockchain/blocks/{block_id}/transactions
      */
-    /**
-     * @description Get transactions from block
-     *
-     * @tags Blockchain
-     * @name GetBlockchainBlockTransactions
-     * @request GET:/v2/blockchain/blocks/{block_id}/transactions
-     */
     getBlockchainBlockTransactions(
         blockId: string,
         params: RequestParams = {}
@@ -8472,13 +8381,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Get transaction data
-     *
-     * @tags Blockchain
-     * @name GetBlockchainTransaction
-     * @request GET:/v2/blockchain/transactions/{transaction_id}
-     */
     /**
      * @description Get transaction data
      *
@@ -8509,13 +8411,6 @@ export class TonApiClient {
      * @name GetBlockchainTransactionByMessageHash
      * @request GET:/v2/blockchain/messages/{msg_id}/transaction
      */
-    /**
-     * @description Get transaction data by message hash
-     *
-     * @tags Blockchain
-     * @name GetBlockchainTransactionByMessageHash
-     * @request GET:/v2/blockchain/messages/{msg_id}/transaction
-     */
     getBlockchainTransactionByMessageHash(
         msgId: string,
         params: RequestParams = {}
@@ -8532,13 +8427,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Get blockchain validators
-     *
-     * @tags Blockchain
-     * @name GetBlockchainValidators
-     * @request GET:/v2/blockchain/validators
-     */
     /**
      * @description Get blockchain validators
      *
@@ -8568,13 +8456,6 @@ export class TonApiClient {
      * @name GetBlockchainMasterchainHead
      * @request GET:/v2/blockchain/masterchain-head
      */
-    /**
-     * @description Get last known masterchain block
-     *
-     * @tags Blockchain
-     * @name GetBlockchainMasterchainHead
-     * @request GET:/v2/blockchain/masterchain-head
-     */
     getBlockchainMasterchainHead(
         params: RequestParams = {}
     ): TonApiPromise<GetBlockchainMasterchainHeadData, TonApiError> {
@@ -8590,13 +8471,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Get low-level information about an account taken directly from the blockchain.
-     *
-     * @tags Blockchain
-     * @name GetBlockchainRawAccount
-     * @request GET:/v2/blockchain/accounts/{account_id}
-     */
     /**
      * @description Get low-level information about an account taken directly from the blockchain.
      *
@@ -8621,13 +8495,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Get low-level information about several accounts taken directly from the blockchain.
-     *
-     * @tags Blockchain
-     * @name GetBlockchainRawAccounts
-     * @request POST:/v2/blockchain/accounts/_bulk
-     */
     /**
      * @description Get low-level information about several accounts taken directly from the blockchain.
      *
@@ -8660,13 +8527,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Get account transactions
-     *
-     * @tags Blockchain
-     * @name GetBlockchainAccountTransactions
-     * @request GET:/v2/blockchain/accounts/{account_id}/transactions
-     */
     /**
      * @description Get account transactions
      *
@@ -8726,13 +8586,6 @@ export class TonApiClient {
      * @name ExecGetMethodForBlockchainAccount
      * @request GET:/v2/blockchain/accounts/{account_id}/methods/{method_name}
      */
-    /**
-     * @description Execute get method for account
-     *
-     * @tags Blockchain
-     * @name ExecGetMethodForBlockchainAccount
-     * @request GET:/v2/blockchain/accounts/{account_id}/methods/{method_name}
-     */
     execGetMethodForBlockchainAccount(
         accountId_Address: Address | string,
         methodName: string,
@@ -8766,13 +8619,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Execute get method for account
-     *
-     * @tags Blockchain
-     * @name ExecGetMethodWithBodyForBlockchainAccount
-     * @request POST:/v2/blockchain/accounts/{account_id}/methods/{method_name}
-     */
     /**
      * @description Execute get method for account
      *
@@ -8818,13 +8664,6 @@ export class TonApiClient {
      * @name SendBlockchainMessage
      * @request POST:/v2/blockchain/message
      */
-    /**
-     * @description Send message to blockchain
-     *
-     * @tags Blockchain
-     * @name SendBlockchainMessage
-     * @request POST:/v2/blockchain/message
-     */
     sendBlockchainMessage(
         data: {
             /** @format cell */
@@ -8863,13 +8702,6 @@ export class TonApiClient {
      * @name GetBlockchainConfig
      * @request GET:/v2/blockchain/config
      */
-    /**
-     * @description Get blockchain config
-     *
-     * @tags Blockchain
-     * @name GetBlockchainConfig
-     * @request GET:/v2/blockchain/config
-     */
     getBlockchainConfig(
         params: RequestParams = {}
     ): TonApiPromise<GetBlockchainConfigData, TonApiError> {
@@ -8892,13 +8724,6 @@ export class TonApiClient {
      * @name GetRawBlockchainConfig
      * @request GET:/v2/blockchain/config/raw
      */
-    /**
-     * @description Get raw blockchain config
-     *
-     * @tags Blockchain
-     * @name GetRawBlockchainConfig
-     * @request GET:/v2/blockchain/config/raw
-     */
     getRawBlockchainConfig(
         params: RequestParams = {}
     ): TonApiPromise<GetRawBlockchainConfigData, TonApiError> {
@@ -8914,13 +8739,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Blockchain account inspect
-     *
-     * @tags Blockchain
-     * @name BlockchainAccountInspect
-     * @request GET:/v2/blockchain/accounts/{account_id}/inspect
-     */
     /**
      * @description Blockchain account inspect
      *
@@ -8952,13 +8770,6 @@ export class TonApiClient {
      * @name GetLibraryByHash
      * @request GET:/v2/blockchain/libraries/{hash}
      */
-    /**
-     * @description Get library cell
-     *
-     * @tags Blockchain
-     * @name GetLibraryByHash
-     * @request GET:/v2/blockchain/libraries/{hash}
-     */
     getLibraryByHash(
         hash: string,
         params: RequestParams = {}
@@ -8975,13 +8786,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Get human-friendly information about several accounts without low-level details.
-     *
-     * @tags Accounts
-     * @name GetAccounts
-     * @request POST:/v2/accounts/_bulk
-     */
     /**
      * @description Get human-friendly information about several accounts without low-level details.
      *
@@ -9026,13 +8830,6 @@ export class TonApiClient {
      * @name GetAccount
      * @request GET:/v2/accounts/{account_id}
      */
-    /**
-     * @description Get human-friendly information about an account without low-level details.
-     *
-     * @tags Accounts
-     * @name GetAccount
-     * @request GET:/v2/accounts/{account_id}
-     */
     getAccount(
         accountId_Address: Address | string,
         params: RequestParams = {}
@@ -9057,13 +8854,6 @@ export class TonApiClient {
      * @name AccountDnsBackResolve
      * @request GET:/v2/accounts/{account_id}/dns/backresolve
      */
-    /**
-     * @description Get account's domains
-     *
-     * @tags Accounts
-     * @name AccountDnsBackResolve
-     * @request GET:/v2/accounts/{account_id}/dns/backresolve
-     */
     accountDnsBackResolve(
         accountId_Address: Address | string,
         params: RequestParams = {}
@@ -9081,13 +8871,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Get all Jettons balances by owner address
-     *
-     * @tags Accounts
-     * @name GetAccountJettonsBalances
-     * @request GET:/v2/accounts/{account_id}/jettons
-     */
     /**
      * @description Get all Jettons balances by owner address
      *
@@ -9144,13 +8927,6 @@ export class TonApiClient {
      * @name GetAccountJettonBalance
      * @request GET:/v2/accounts/{account_id}/jettons/{jetton_id}
      */
-    /**
-     * @description Get Jetton balance by owner address
-     *
-     * @tags Accounts
-     * @name GetAccountJettonBalance
-     * @request GET:/v2/accounts/{account_id}/jettons/{jetton_id}
-     */
     getAccountJettonBalance(
         accountId_Address: Address | string,
         jettonId_Address: Address | string,
@@ -9191,13 +8967,6 @@ export class TonApiClient {
      * @name GetAccountJettonsHistory
      * @request GET:/v2/accounts/{account_id}/jettons/history
      */
-    /**
-     * @description Get the transfer jettons history for account
-     *
-     * @tags Accounts
-     * @name GetAccountJettonsHistory
-     * @request GET:/v2/accounts/{account_id}/jettons/history
-     */
     getAccountJettonsHistory(
         accountId_Address: Address | string,
         query: {
@@ -9230,14 +8999,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Please use `getJettonAccountHistoryByID`` instead
-     *
-     * @tags Accounts
-     * @name GetAccountJettonHistoryById
-     * @request GET:/v2/accounts/{account_id}/jettons/{jetton_id}/history
-     * @deprecated
-     */
     /**
      * @description Please use `getJettonAccountHistoryByID`` instead
      *
@@ -9299,13 +9060,6 @@ export class TonApiClient {
      * @name GetAccountNftItems
      * @request GET:/v2/accounts/{account_id}/nfts
      */
-    /**
-     * @description Get all NFT items by owner address
-     *
-     * @tags Accounts
-     * @name GetAccountNftItems
-     * @request GET:/v2/accounts/{account_id}/nfts
-     */
     getAccountNftItems(
         accountId_Address: Address | string,
         query?: {
@@ -9351,13 +9105,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Get events for an account. Each event is built on top of a trace which is a series of transactions caused by one inbound message. TonAPI looks for known patterns inside the trace and splits the trace into actions, where a single action represents a meaningful high-level operation like a Jetton Transfer or an NFT Purchase. Actions are expected to be shown to users. It is advised not to build any logic on top of actions because actions can be changed at any time.
-     *
-     * @tags Accounts
-     * @name GetAccountEvents
-     * @request GET:/v2/accounts/{account_id}/events
-     */
     /**
      * @description Get events for an account. Each event is built on top of a trace which is a series of transactions caused by one inbound message. TonAPI looks for known patterns inside the trace and splits the trace into actions, where a single action represents a meaningful high-level operation like a Jetton Transfer or an NFT Purchase. Actions are expected to be shown to users. It is advised not to build any logic on top of actions because actions can be changed at any time.
      *
@@ -9438,13 +9185,6 @@ export class TonApiClient {
      * @name GetAccountEvent
      * @request GET:/v2/accounts/{account_id}/events/{event_id}
      */
-    /**
-     * @description Get event for an account by event_id
-     *
-     * @tags Accounts
-     * @name GetAccountEvent
-     * @request GET:/v2/accounts/{account_id}/events/{event_id}
-     */
     getAccountEvent(
         accountId_Address: Address | string,
         eventId: string,
@@ -9471,13 +9211,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Get traces for account
-     *
-     * @tags Accounts
-     * @name GetAccountTraces
-     * @request GET:/v2/accounts/{account_id}/traces
-     */
     /**
      * @description Get traces for account
      *
@@ -9525,13 +9258,6 @@ export class TonApiClient {
      * @name GetAccountSubscriptions
      * @request GET:/v2/accounts/{account_id}/subscriptions
      */
-    /**
-     * @description Get all subscriptions by wallet address
-     *
-     * @tags Accounts
-     * @name GetAccountSubscriptions
-     * @request GET:/v2/accounts/{account_id}/subscriptions
-     */
     getAccountSubscriptions(
         accountId_Address: Address | string,
         params: RequestParams = {}
@@ -9556,13 +9282,6 @@ export class TonApiClient {
      * @name ReindexAccount
      * @request POST:/v2/accounts/{account_id}/reindex
      */
-    /**
-     * @description Update internal cache for a particular account
-     *
-     * @tags Accounts
-     * @name ReindexAccount
-     * @request POST:/v2/accounts/{account_id}/reindex
-     */
     reindexAccount(
         accountId_Address: Address | string,
         params: RequestParams = {}
@@ -9577,13 +9296,6 @@ export class TonApiClient {
         return prepareResponse<ReindexAccountData, TonApiError>(req);
     }
 
-    /**
-     * @description Search by account domain name
-     *
-     * @tags Accounts
-     * @name SearchAccounts
-     * @request GET:/v2/accounts/search
-     */
     /**
      * @description Search by account domain name
      *
@@ -9614,13 +9326,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Get expiring account .ton dns
-     *
-     * @tags Accounts
-     * @name GetAccountDnsExpiring
-     * @request GET:/v2/accounts/{account_id}/dns/expiring
-     */
     /**
      * @description Get expiring account .ton dns
      *
@@ -9661,13 +9366,6 @@ export class TonApiClient {
      * @name GetAccountPublicKey
      * @request GET:/v2/accounts/{account_id}/publickey
      */
-    /**
-     * @description Get public key by account id
-     *
-     * @tags Accounts
-     * @name GetAccountPublicKey
-     * @request GET:/v2/accounts/{account_id}/publickey
-     */
     getAccountPublicKey(
         accountId_Address: Address | string,
         params: RequestParams = {}
@@ -9694,13 +9392,6 @@ export class TonApiClient {
      * @name GetAccountMultisigs
      * @request GET:/v2/accounts/{account_id}/multisigs
      */
-    /**
-     * @description Get account's multisigs
-     *
-     * @tags Accounts
-     * @name GetAccountMultisigs
-     * @request GET:/v2/accounts/{account_id}/multisigs
-     */
     getAccountMultisigs(
         accountId_Address: Address | string,
         params: RequestParams = {}
@@ -9718,13 +9409,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Get account's balance change
-     *
-     * @tags Accounts
-     * @name GetAccountDiff
-     * @request GET:/v2/accounts/{account_id}/diff
-     */
     /**
      * @description Get account's balance change
      *
@@ -9773,13 +9457,6 @@ export class TonApiClient {
      * @name GetAccountDefiAssets
      * @request GET:/v2/accounts/{account_id}/defi/assets
      */
-    /**
-     * @description Return DeFi assets locked in custom smart contracts: currently returns TON Whales staking and EVAA lending positions.
-     *
-     * @tags Accounts
-     * @name GetAccountDefiAssets
-     * @request GET:/v2/accounts/{account_id}/defi/assets
-     */
     getAccountDefiAssets(
         accountId_Address: Address | string,
         params: RequestParams = {}
@@ -9797,13 +9474,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Get the transfer history of extra currencies for an account.
-     *
-     * @tags Accounts
-     * @name GetAccountExtraCurrencyHistoryById
-     * @request GET:/v2/accounts/{account_id}/extra-currency/{id}/history
-     */
     /**
      * @description Get the transfer history of extra currencies for an account.
      *
@@ -9856,13 +9526,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Get the transfer jetton history for account and jetton
-     *
-     * @tags Accounts
-     * @name GetJettonAccountHistoryById
-     * @request GET:/v2/jettons/{jetton_id}/accounts/{account_id}/history
-     */
     /**
      * @description Get the transfer jetton history for account and jetton
      *
@@ -9923,13 +9586,6 @@ export class TonApiClient {
      * @name GetAccountNftHistory
      * @request GET:/v2/accounts/{account_id}/nfts/history
      */
-    /**
-     * @description Get the transfer nft history
-     *
-     * @tags NFT
-     * @name GetAccountNftHistory
-     * @request GET:/v2/accounts/{account_id}/nfts/history
-     */
     getAccountNftHistory(
         accountId_Address: Address | string,
         query: {
@@ -9962,13 +9618,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Get NFT collections
-     *
-     * @tags NFT
-     * @name GetNftCollections
-     * @request GET:/v2/nfts/collections
-     */
     /**
      * @description Get NFT collections
      *
@@ -10016,13 +9665,6 @@ export class TonApiClient {
      * @name GetNftCollection
      * @request GET:/v2/nfts/collections/{account_id}
      */
-    /**
-     * @description Get NFT collection by collection address
-     *
-     * @tags NFT
-     * @name GetNftCollection
-     * @request GET:/v2/nfts/collections/{account_id}
-     */
     getNftCollection(
         accountId_Address: Address | string,
         params: RequestParams = {}
@@ -10040,13 +9682,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Get NFT collection items by their addresses
-     *
-     * @tags NFT
-     * @name GetNftCollectionItemsByAddresses
-     * @request POST:/v2/nfts/collections/_bulk
-     */
     /**
      * @description Get NFT collection items by their addresses
      *
@@ -10079,13 +9714,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Get NFT items from collection by collection address
-     *
-     * @tags NFT
-     * @name GetItemsFromCollection
-     * @request GET:/v2/nfts/collections/{account_id}/items
-     */
     /**
      * @description Get NFT items from collection by collection address
      *
@@ -10131,13 +9759,6 @@ export class TonApiClient {
      * @name GetNftItemsByAddresses
      * @request POST:/v2/nfts/_bulk
      */
-    /**
-     * @description Get NFT items by their addresses
-     *
-     * @tags NFT
-     * @name GetNftItemsByAddresses
-     * @request POST:/v2/nfts/_bulk
-     */
     getNftItemsByAddresses(
         data: {
             accountIds: (Address | string)[];
@@ -10170,13 +9791,6 @@ export class TonApiClient {
      * @name GetNftItemByAddress
      * @request GET:/v2/nfts/{account_id}
      */
-    /**
-     * @description Get NFT item by its address
-     *
-     * @tags NFT
-     * @name GetNftItemByAddress
-     * @request GET:/v2/nfts/{account_id}
-     */
     getNftItemByAddress(
         accountId_Address: Address | string,
         params: RequestParams = {}
@@ -10194,14 +9808,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Please use `getAccountNftHistory`` instead
-     *
-     * @tags NFT
-     * @name GetNftHistoryById
-     * @request GET:/v2/nfts/{account_id}/history
-     * @deprecated
-     */
     /**
      * @description Please use `getAccountNftHistory`` instead
      *
@@ -10261,13 +9867,6 @@ export class TonApiClient {
      * @name GetDnsInfo
      * @request GET:/v2/dns/{domain_name}
      */
-    /**
-     * @description Get full information about domain name
-     *
-     * @tags DNS
-     * @name GetDnsInfo
-     * @request GET:/v2/dns/{domain_name}
-     */
     getDnsInfo(
         domainName: string,
         params: RequestParams = {}
@@ -10284,13 +9883,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description DNS resolve for domain name
-     *
-     * @tags DNS
-     * @name DnsResolve
-     * @request GET:/v2/dns/{domain_name}/resolve
-     */
     /**
      * @description DNS resolve for domain name
      *
@@ -10326,13 +9918,6 @@ export class TonApiClient {
      * @name GetDomainBids
      * @request GET:/v2/dns/{domain_name}/bids
      */
-    /**
-     * @description Get domain bids
-     *
-     * @tags DNS
-     * @name GetDomainBids
-     * @request GET:/v2/dns/{domain_name}/bids
-     */
     getDomainBids(
         domainName: string,
         params: RequestParams = {}
@@ -10349,13 +9934,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Get all auctions
-     *
-     * @tags DNS
-     * @name GetAllAuctions
-     * @request GET:/v2/dns/auctions
-     */
     /**
      * @description Get all auctions
      *
@@ -10393,13 +9971,6 @@ export class TonApiClient {
      * @name GetTrace
      * @request GET:/v2/traces/{trace_id}
      */
-    /**
-     * @description Get the trace by trace ID or hash of any transaction in trace
-     *
-     * @tags Traces
-     * @name GetTrace
-     * @request GET:/v2/traces/{trace_id}
-     */
     getTrace(
         traceId: string,
         params: RequestParams = {}
@@ -10423,13 +9994,6 @@ export class TonApiClient {
      * @name GetEvent
      * @request GET:/v2/events/{event_id}
      */
-    /**
-     * @description Get an event either by event ID or a hash of any transaction in a trace. An event is built on top of a trace which is a series of transactions caused by one inbound message. TonAPI looks for known patterns inside the trace and splits the trace into actions, where a single action represents a meaningful high-level operation like a Jetton Transfer or an NFT Purchase. Actions are expected to be shown to users. It is advised not to build any logic on top of actions because actions can be changed at any time.
-     *
-     * @tags Events
-     * @name GetEvent
-     * @request GET:/v2/events/{event_id}
-     */
     getEvent(
         eventId: string,
         params: RequestParams = {}
@@ -10446,13 +10010,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Get a list of all indexed jetton masters in the blockchain.
-     *
-     * @tags Jettons
-     * @name GetJettons
-     * @request GET:/v2/jettons
-     */
     /**
      * @description Get a list of all indexed jetton masters in the blockchain.
      *
@@ -10500,13 +10057,6 @@ export class TonApiClient {
      * @name GetJettonInfo
      * @request GET:/v2/jettons/{account_id}
      */
-    /**
-     * @description Get jetton metadata by jetton master address
-     *
-     * @tags Jettons
-     * @name GetJettonInfo
-     * @request GET:/v2/jettons/{account_id}
-     */
     getJettonInfo(
         accountId_Address: Address | string,
         params: RequestParams = {}
@@ -10524,13 +10074,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Get jetton metadata items by jetton master addresses
-     *
-     * @tags Jettons
-     * @name GetJettonInfosByAddresses
-     * @request POST:/v2/jettons/_bulk
-     */
     /**
      * @description Get jetton metadata items by jetton master addresses
      *
@@ -10563,13 +10106,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Get jetton's holders
-     *
-     * @tags Jettons
-     * @name GetJettonHolders
-     * @request GET:/v2/jettons/{account_id}/holders
-     */
     /**
      * @description Get jetton's holders
      *
@@ -10616,13 +10152,6 @@ export class TonApiClient {
      * @name GetJettonTransferPayload
      * @request GET:/v2/jettons/{jetton_id}/transfer/{account_id}/payload
      */
-    /**
-     * @description Get jetton's custom payload and state init required for transfer
-     *
-     * @tags Jettons
-     * @name GetJettonTransferPayload
-     * @request GET:/v2/jettons/{jetton_id}/transfer/{account_id}/payload
-     */
     getJettonTransferPayload(
         accountId_Address: Address | string,
         jettonId_Address: Address | string,
@@ -10642,13 +10171,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Get only jetton transfers in the event
-     *
-     * @tags Jettons
-     * @name GetJettonsEvents
-     * @request GET:/v2/events/{event_id}/jettons
-     */
     /**
      * @description Get only jetton transfers in the event
      *
@@ -10679,13 +10201,6 @@ export class TonApiClient {
      * @name GetExtraCurrencyInfo
      * @request GET:/v2/extra-currency/{id}
      */
-    /**
-     * @description Get extra currency info by id
-     *
-     * @tags ExtraCurrency
-     * @name GetExtraCurrencyInfo
-     * @request GET:/v2/extra-currency/{id}
-     */
     getExtraCurrencyInfo(
         id: number,
         params: RequestParams = {}
@@ -10702,13 +10217,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description All pools where account participates
-     *
-     * @tags Staking
-     * @name GetAccountNominatorsPools
-     * @request GET:/v2/staking/nominator/{account_id}/pools
-     */
     /**
      * @description All pools where account participates
      *
@@ -10740,13 +10248,6 @@ export class TonApiClient {
      * @name GetStakingPoolInfo
      * @request GET:/v2/staking/pool/{account_id}
      */
-    /**
-     * @description Stacking pool info
-     *
-     * @tags Staking
-     * @name GetStakingPoolInfo
-     * @request GET:/v2/staking/pool/{account_id}
-     */
     getStakingPoolInfo(
         accountId_Address: Address | string,
         params: RequestParams = {}
@@ -10769,13 +10270,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Pool history
-     *
-     * @tags Staking
-     * @name GetStakingPoolHistory
-     * @request GET:/v2/staking/pool/{account_id}/history
-     */
     /**
      * @description Pool history
      *
@@ -10821,13 +10315,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description All pools available in network
-     *
-     * @tags Staking
-     * @name GetStakingPools
-     * @request GET:/v2/staking/pools
-     */
     /**
      * @description All pools available in network
      *
@@ -10882,13 +10369,6 @@ export class TonApiClient {
      * @name GetStorageProviders
      * @request GET:/v2/storage/providers
      */
-    /**
-     * @description Get TON storage providers deployed to the blockchain.
-     *
-     * @tags Storage
-     * @name GetStorageProviders
-     * @request GET:/v2/storage/providers
-     */
     getStorageProviders(
         params: RequestParams = {}
     ): TonApiPromise<GetStorageProvidersData, TonApiError> {
@@ -10911,13 +10391,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Get the token price in the chosen currency for display only. Don’t use this for financial transactions.
-     *
-     * @tags Rates
-     * @name GetRates
-     * @request GET:/v2/rates
-     */
     /**
      * @description Get the token price in the chosen currency for display only. Don’t use this for financial transactions.
      *
@@ -10966,13 +10439,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Get chart by token
-     *
-     * @tags Rates
-     * @name GetChartRates
-     * @request GET:/v2/rates/chart
-     */
     /**
      * @description Get chart by token
      *
@@ -11039,13 +10505,6 @@ export class TonApiClient {
      * @name GetMarketsRates
      * @request GET:/v2/rates/markets
      */
-    /**
-     * @description Get the Gram price from markets
-     *
-     * @tags Rates
-     * @name GetMarketsRates
-     * @request GET:/v2/rates/markets
-     */
     getMarketsRates(params: RequestParams = {}): TonApiPromise<GetMarketsRatesData, TonApiError> {
         const req = this.http.request<GetMarketsRatesData, TonApiError>({
             path: `/v2/rates/markets`,
@@ -11063,13 +10522,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Get a payload for further token receipt
-     *
-     * @tags Connect
-     * @name GetTonConnectPayload
-     * @request GET:/v2/tonconnect/payload
-     */
     /**
      * @description Get a payload for further token receipt
      *
@@ -11101,13 +10553,6 @@ export class TonApiClient {
      * @name GetAccountInfoByStateInit
      * @request POST:/v2/tonconnect/stateinit
      */
-    /**
-     * @description Get account info by state init
-     *
-     * @tags Connect
-     * @name GetAccountInfoByStateInit
-     * @request POST:/v2/tonconnect/stateinit
-     */
     getAccountInfoByStateInit(
         data: {
             /** @format cell-base64 */
@@ -11132,13 +10577,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Account verification and token issuance
-     *
-     * @tags Wallet
-     * @name TonConnectProof
-     * @request POST:/v2/wallet/auth/proof
-     */
     /**
      * @description Account verification and token issuance
      *
@@ -11219,13 +10657,6 @@ export class TonApiClient {
      * @name GetAccountSeqno
      * @request GET:/v2/wallet/{account_id}/seqno
      */
-    /**
-     * @description Get account seqno
-     *
-     * @tags Wallet
-     * @name GetAccountSeqno
-     * @request GET:/v2/wallet/{account_id}/seqno
-     */
     getAccountSeqno(
         accountId_Address: Address | string,
         params: RequestParams = {}
@@ -11243,13 +10674,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Get human-friendly information about a wallet without low-level details.
-     *
-     * @tags Wallet
-     * @name GetWalletInfo
-     * @request GET:/v2/wallet/{account_id}
-     */
     /**
      * @description Get human-friendly information about a wallet without low-level details.
      *
@@ -11281,13 +10705,6 @@ export class TonApiClient {
      * @name GetWalletsByPublicKey
      * @request GET:/v2/pubkeys/{public_key}/wallets
      */
-    /**
-     * @description Get wallets by public key
-     *
-     * @tags Wallet
-     * @name GetWalletsByPublicKey
-     * @request GET:/v2/pubkeys/{public_key}/wallets
-     */
     getWalletsByPublicKey(
         publicKey: string,
         params: RequestParams = {}
@@ -11304,13 +10721,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Get wallets by a list of public keys
-     *
-     * @tags Wallet
-     * @name GetWalletsByPublicKeyBulk
-     * @request POST:/v2/pubkeys/wallets/_bulk
-     */
     /**
      * @description Get wallets by a list of public keys
      *
@@ -11348,13 +10758,6 @@ export class TonApiClient {
      * @name GaslessConfig
      * @request GET:/v2/gasless/config
      */
-    /**
-     * @description Returns configuration of gasless transfers
-     *
-     * @tags Gasless
-     * @name GaslessConfig
-     * @request GET:/v2/gasless/config
-     */
     gaslessConfig(params: RequestParams = {}): TonApiPromise<GaslessConfigData, TonApiError> {
         const req = this.http.request<GaslessConfigData, TonApiError>({
             path: `/v2/gasless/config`,
@@ -11368,13 +10771,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Estimates the cost of the given messages and returns a payload to sign
-     *
-     * @tags Gasless
-     * @name GaslessEstimate
-     * @request POST:/v2/gasless/estimate/{master_id}
-     */
     /**
      * @description Estimates the cost of the given messages and returns a payload to sign
      *
@@ -11440,13 +10836,6 @@ export class TonApiClient {
      * @name GaslessSend
      * @request POST:/v2/gasless/send
      */
-    /**
-     * @description Submits the signed gasless transaction message to the network
-     *
-     * @tags Gasless
-     * @name GaslessSend
-     * @request POST:/v2/gasless/send
-     */
     gaslessSend(
         data: {
             /** hex encoded public key */
@@ -11483,13 +10872,6 @@ export class TonApiClient {
      * @name GetRawMasterchainInfo
      * @request GET:/v2/liteserver/get_masterchain_info
      */
-    /**
-     * @description Get raw masterchain info
-     *
-     * @tags Lite Server
-     * @name GetRawMasterchainInfo
-     * @request GET:/v2/liteserver/get_masterchain_info
-     */
     getRawMasterchainInfo(
         params: RequestParams = {}
     ): TonApiPromise<GetRawMasterchainInfoData, TonApiError> {
@@ -11511,13 +10893,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Get raw masterchain info ext
-     *
-     * @tags Lite Server
-     * @name GetRawMasterchainInfoExt
-     * @request GET:/v2/liteserver/get_masterchain_info_ext
-     */
     /**
      * @description Get raw masterchain info ext
      *
@@ -11576,13 +10951,6 @@ export class TonApiClient {
      * @name GetRawTime
      * @request GET:/v2/liteserver/get_time
      */
-    /**
-     * @description Get raw time
-     *
-     * @tags Lite Server
-     * @name GetRawTime
-     * @request GET:/v2/liteserver/get_time
-     */
     getRawTime(params: RequestParams = {}): TonApiPromise<GetRawTimeData, TonApiError> {
         const req = this.http.request<GetRawTimeData, TonApiError>({
             path: `/v2/liteserver/get_time`,
@@ -11598,13 +10966,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Get raw blockchain block
-     *
-     * @tags Lite Server
-     * @name GetRawBlockchainBlock
-     * @request GET:/v2/liteserver/get_block/{block_id}
-     */
     /**
      * @description Get raw blockchain block
      *
@@ -11637,13 +10998,6 @@ export class TonApiClient {
      * @name GetRawBlockchainBlockState
      * @request GET:/v2/liteserver/get_state/{block_id}
      */
-    /**
-     * @description Get raw blockchain block state
-     *
-     * @tags Lite Server
-     * @name GetRawBlockchainBlockState
-     * @request GET:/v2/liteserver/get_state/{block_id}
-     */
     getRawBlockchainBlockState(
         blockId: string,
         params: RequestParams = {}
@@ -11667,13 +11021,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Get raw blockchain block header
-     *
-     * @tags Lite Server
-     * @name GetRawBlockchainBlockHeader
-     * @request GET:/v2/liteserver/get_block_header/{block_id}
-     */
     /**
      * @description Get raw blockchain block header
      *
@@ -11719,13 +11066,6 @@ export class TonApiClient {
      * @name SendRawMessage
      * @request POST:/v2/liteserver/send_message
      */
-    /**
-     * @description Send raw message to blockchain
-     *
-     * @tags Lite Server
-     * @name SendRawMessage
-     * @request POST:/v2/liteserver/send_message
-     */
     sendRawMessage(
         data: {
             /** @format cell-base64 */
@@ -11752,13 +11092,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Get raw account state
-     *
-     * @tags Lite Server
-     * @name GetRawAccountState
-     * @request GET:/v2/liteserver/get_account_state/{account_id}
-     */
     /**
      * @description Get raw account state
      *
@@ -11799,13 +11132,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Get raw shard info
-     *
-     * @tags Lite Server
-     * @name GetRawShardInfo
-     * @request GET:/v2/liteserver/get_shard_info/{block_id}
-     */
     /**
      * @description Get raw shard info
      *
@@ -11863,13 +11189,6 @@ export class TonApiClient {
      * @name GetAllRawShardsInfo
      * @request GET:/v2/liteserver/get_all_shards_info/{block_id}
      */
-    /**
-     * @description Get all raw shards info
-     *
-     * @tags Lite Server
-     * @name GetAllRawShardsInfo
-     * @request GET:/v2/liteserver/get_all_shards_info/{block_id}
-     */
     getAllRawShardsInfo(
         blockId: string,
         params: RequestParams = {}
@@ -11892,13 +11211,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Get raw transactions
-     *
-     * @tags Lite Server
-     * @name GetRawTransactions
-     * @request GET:/v2/liteserver/get_transactions/{account_id}
-     */
     /**
      * @description Get raw transactions
      *
@@ -11948,13 +11260,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Get raw list block transactions
-     *
-     * @tags Lite Server
-     * @name GetRawListBlockTransactions
-     * @request GET:/v2/liteserver/list_block_transactions/{block_id}
-     */
     /**
      * @description Get raw list block transactions
      *
@@ -12029,13 +11334,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Get raw block proof
-     *
-     * @tags Lite Server
-     * @name GetRawBlockProof
-     * @request GET:/v2/liteserver/get_block_proof
-     */
     /**
      * @description Get raw block proof
      *
@@ -12162,13 +11460,6 @@ export class TonApiClient {
      * @name GetRawConfig
      * @request GET:/v2/liteserver/get_config_all/{block_id}
      */
-    /**
-     * @description Get raw config
-     *
-     * @tags Lite Server
-     * @name GetRawConfig
-     * @request GET:/v2/liteserver/get_config_all/{block_id}
-     */
     getRawConfig(
         blockId: string,
         query: {
@@ -12201,13 +11492,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Get raw shard block proof
-     *
-     * @tags Lite Server
-     * @name GetRawShardBlockProof
-     * @request GET:/v2/liteserver/get_shard_block_proof/{block_id}
-     */
     /**
      * @description Get raw shard block proof
      *
@@ -12253,13 +11537,6 @@ export class TonApiClient {
      * @name GetOutMsgQueueSizes
      * @request GET:/v2/liteserver/get_out_msg_queue_sizes
      */
-    /**
-     * @description Get out msg queue sizes
-     *
-     * @tags Lite Server
-     * @name GetOutMsgQueueSizes
-     * @request GET:/v2/liteserver/get_out_msg_queue_sizes
-     */
     getOutMsgQueueSizes(
         params: RequestParams = {}
     ): TonApiPromise<GetOutMsgQueueSizesData, TonApiError> {
@@ -12297,13 +11574,6 @@ export class TonApiClient {
      * @name GetMultisigAccount
      * @request GET:/v2/multisig/{account_id}
      */
-    /**
-     * @description Get multisig account info
-     *
-     * @tags Multisig
-     * @name GetMultisigAccount
-     * @request GET:/v2/multisig/{account_id}
-     */
     getMultisigAccount(
         accountId_Address: Address | string,
         params: RequestParams = {}
@@ -12321,13 +11591,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Get multisig order
-     *
-     * @tags Multisig
-     * @name GetMultisigOrder
-     * @request GET:/v2/multisig/order/{account_id}
-     */
     /**
      * @description Get multisig order
      *
@@ -12359,13 +11622,6 @@ export class TonApiClient {
      * @name DecodeMessage
      * @request POST:/v2/message/decode
      */
-    /**
-     * @description Decode a given message. Only external incoming messages can be decoded currently.
-     *
-     * @tags Emulation
-     * @name DecodeMessage
-     * @request POST:/v2/message/decode
-     */
     decodeMessage(
         data: {
             /** @format cell */
@@ -12390,13 +11646,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Emulate sending message to retrieve general blockchain events
-     *
-     * @tags Emulation, Events
-     * @name EmulateMessageToEvent
-     * @request POST:/v2/events/emulate
-     */
     /**
      * @description Emulate sending message to retrieve general blockchain events
      *
@@ -12439,13 +11688,6 @@ export class TonApiClient {
      * @name EmulateMessageToTrace
      * @request POST:/v2/traces/emulate
      */
-    /**
-     * @description Emulate sending message to retrieve with a detailed execution trace
-     *
-     * @tags Emulation, Traces
-     * @name EmulateMessageToTrace
-     * @request POST:/v2/traces/emulate
-     */
     emulateMessageToTrace(
         data: {
             /** @format cell */
@@ -12474,13 +11716,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Emulates a wallet message on the current blockchain state and derives its consequences for the signing wallet
-     *
-     * @tags Emulation, Wallet
-     * @name EmulateMessageToWallet
-     * @request POST:/v2/wallet/emulate
-     */
     /**
      * @description Emulates a wallet message on the current blockchain state and derives its consequences for the signing wallet
      *
@@ -12554,13 +11789,6 @@ export class TonApiClient {
      * @name EmulateMessageToAccountEvent
      * @request POST:/v2/accounts/{account_id}/events/emulate
      */
-    /**
-     * @description Emulate sending message to retrieve account-specific events
-     *
-     * @tags Emulation, Accounts
-     * @name EmulateMessageToAccountEvent
-     * @request POST:/v2/accounts/{account_id}/events/emulate
-     */
     emulateMessageToAccountEvent(
         accountId_Address: Address | string,
         data: {
@@ -12591,13 +11819,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Get history of purchases
-     *
-     * @tags Purchases
-     * @name GetPurchaseHistory
-     * @request GET:/v2/purchases/{account_id}/history
-     */
     /**
      * @description Get history of purchases
      *
@@ -12638,14 +11859,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Returns all current validators with stakes, rewards, pool addresses, and (optionally) nominator breakdowns.
-     *
-     * @tags Rewards
-     * @name GetValidators
-     * @summary Get all current validators
-     * @request GET:/v2/rewards/validators
-     */
     /**
      * @description Returns all current validators with stakes, rewards, pool addresses, and (optionally) nominator breakdowns.
      *
@@ -12695,14 +11908,6 @@ export class TonApiClient {
      * @summary Get validation round metadata
      * @request GET:/v2/rewards/validation-rounds
      */
-    /**
-     * @description Returns past and current validation rounds with boundaries, stakes, and bonuses. Always uses the latest masterchain block.
-     *
-     * @tags Rewards
-     * @name GetValidationRounds
-     * @summary Get validation round metadata
-     * @request GET:/v2/rewards/validation-rounds
-     */
     getValidationRounds(
         query?: {
             /**
@@ -12736,14 +11941,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Computes per-validator and per-nominator reward distribution for a finished validation round using the elector's bonuses value.
-     *
-     * @tags Rewards
-     * @name GetRoundRewards
-     * @summary Get per-validator reward distribution for a finished round
-     * @request GET:/v2/rewards/round-rewards
-     */
     /**
      * @description Computes per-validator and per-nominator reward distribution for a finished validation round using the elector's bonuses value.
      *
@@ -12798,14 +11995,6 @@ export class TonApiClient {
      * @summary Get historical APY and stake statistics
      * @request GET:/v2/rewards/stats
      */
-    /**
-     * @description Returns time series of APY and total stake from past validation rounds.
-     *
-     * @tags Rewards
-     * @name GetRewardsStats
-     * @summary Get historical APY and stake statistics
-     * @request GET:/v2/rewards/stats
-     */
     getRewardsStats(params: RequestParams = {}): TonApiPromise<GetRewardsStatsData, TonApiError> {
         const req = this.http.request<GetRewardsStatsData, TonApiError>({
             path: `/v2/rewards/stats`,
@@ -12819,14 +12008,6 @@ export class TonApiClient {
         });
     }
 
-    /**
-     * @description Returns the current TON blockchain APY as a percent based on the latest completed validation round.
-     *
-     * @tags Rewards
-     * @name GetRewardsApy
-     * @summary Get current TON blockchain APY
-     * @request GET:/v2/rewards/apy
-     */
     /**
      * @description Returns the current TON blockchain APY as a percent based on the latest completed validation round.
      *

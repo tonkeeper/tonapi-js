@@ -39,21 +39,53 @@ const openapiUrl = 'https://tonapi.io/v2/openapi.yml';
  *   }
  * }
  *
- * The patch will be applied every time you run `npm run build`.
- * To add new patches, simply edit src/schema-patches.json.
+ * The patch will be applied when you run `npm run update-schema`.
+ * To add new patches, simply edit src/schema-patches.jsonc.
  */
 const schemaPatchesPath = path.resolve(process.cwd(), 'src/schema-patches.jsonc');
 
-function downloadSchema(url: string, outputPath: string): Promise<void> {
+const MAX_REDIRECTS = 5;
+
+function downloadSchema(url: string, outputPath: string, redirectCount = 0): Promise<void> {
     return new Promise((resolve, reject) => {
-        const file = fs.createWriteStream(outputPath);
+        if (redirectCount > MAX_REDIRECTS) {
+            reject(new Error('Too many redirects while downloading schema'));
+            return;
+        }
+
         https
             .get(url, response => {
+                const { statusCode, headers } = response;
+
+                if (statusCode && statusCode >= 300 && statusCode < 400 && headers.location) {
+                    response.resume();
+                    const redirectUrl = new URL(headers.location, url).toString();
+                    downloadSchema(redirectUrl, outputPath, redirectCount + 1)
+                        .then(resolve)
+                        .catch(reject);
+                    return;
+                }
+
+                if (statusCode !== 200) {
+                    response.resume();
+                    reject(
+                        new Error(`Failed to download schema: HTTP ${statusCode ?? 'unknown'}`)
+                    );
+                    return;
+                }
+
+                const file = fs.createWriteStream(outputPath);
                 response.pipe(file);
+
                 file.on('finish', () => {
-                    file.close();
-                    console.log('Schema downloaded');
-                    resolve();
+                    file.close(() => {
+                        console.log('Schema downloaded');
+                        resolve();
+                    });
+                });
+
+                file.on('error', err => {
+                    fs.unlink(outputPath, () => reject(err));
                 });
             })
             .on('error', err => {
@@ -309,9 +341,14 @@ const generateApiParams: GenerateApiParams = {
 };
 
 async function main() {
-    // Download schema and apply patches automatically
-    await downloadSchema(openapiUrl, openapiPath);
-    applySchemaPatches(openapiPath, schemaPatchesPath);
+    const shouldDownload = process.argv.includes('--download');
+
+    if (shouldDownload) {
+        await downloadSchema(openapiUrl, openapiPath);
+        applySchemaPatches(openapiPath, schemaPatchesPath);
+    } else if (!fs.existsSync(openapiPath)) {
+        throw new Error('src/api.yml not found. Run `npm run update-schema` first.');
+    }
 
     generateApi(generateApiParams);
 }
