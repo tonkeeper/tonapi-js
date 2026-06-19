@@ -1,6 +1,6 @@
 import { Address } from '@ton/core';
 import { ta } from './utils/client';
-import { getAccount, getJettonInfo } from './__mock__/bigint';
+import { getAccount, getJettonInfo as getJettonInfoMock } from './__mock__/bigint';
 import { mockFetch } from './utils/mockFetch';
 import { vi, afterEach, test, expect } from 'vitest';
 
@@ -16,23 +16,50 @@ test('BigInt parse data in number test', async () => {
         '0:7c9fc62291740a143086c807fe322accfd12737b3c2243676228176707c7ce40'
     ];
     const accountIds = addressStrings.map(addr => Address.parse(addr));
-    const res = await ta.accounts.getAccounts({ accountIds });
-    const { accounts } = res;
+    const data = await ta.getAccounts({ accountIds });
 
-    expect(res).toBeDefined();
-    expect(accounts).toHaveLength(2);
-    expect(accounts[0].balance).toBe(471698230471698230471698230471698230n);
-    expect(typeof accounts[0].balance).toBe('bigint');
-    expect(accounts[1].balance).toBe(47602800n);
-    expect(typeof accounts[1].balance).toBe('bigint');
+    expect(data).toBeDefined();
+    expect(data?.accounts).toHaveLength(2);
+    expect(data?.accounts[0]?.balance).toBe(471698230471698230471698230471698230n);
+    expect(typeof data?.accounts[0]?.balance).toBe('bigint');
+    expect(data?.accounts[1]?.balance).toBe(47602800n);
+    expect(typeof data?.accounts[1]?.balance).toBe('bigint');
 });
 
 test('BigInt parse data in string test', async () => {
-    mockFetch(getJettonInfo);
+    mockFetch(getJettonInfoMock);
 
     const usdtJettonAddress = Address.parse('EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs');
-    const res = await ta.jettons.getJettonInfo(usdtJettonAddress);
+    const data = await ta.getJettonInfo(usdtJettonAddress);
 
-    expect(res).toBeDefined();
-    expect(typeof res.totalSupply).toBe('bigint');
+    expect(data).toBeDefined();
+    expect(typeof data?.totalSupply).toBe('bigint');
+});
+
+test('BigInt parse very large numbers beyond Number.MAX_SAFE_INTEGER', async () => {
+    // Number.MAX_SAFE_INTEGER = 9007199254740991 (2^53 - 1)
+    // Test with a number much larger than that
+    const veryLargeNumber = '9999999999999999999999999'; // 25 digits
+
+    mockFetch({
+        accounts: [
+            {
+                address: '0:009d03ddede8c2620a72f999d03d5888102250a214bf574a29ff64df80162168',
+                balance: veryLargeNumber,
+                status: 'active'
+            }
+        ]
+    });
+
+    const addressStrings = ['0:009d03ddede8c2620a72f999d03d5888102250a214bf574a29ff64df80162168'];
+    const accountIds = addressStrings.map(addr => Address.parse(addr));
+    const data = await ta.getAccounts({ accountIds });
+
+    expect(data).toBeDefined();
+    expect(data?.accounts).toHaveLength(1);
+    expect(typeof data?.accounts[0]?.balance).toBe('bigint');
+    // Verify the exact value is preserved without precision loss
+    expect(data?.accounts[0]?.balance).toBe(BigInt(veryLargeNumber));
+    // Verify it's actually larger than Number.MAX_SAFE_INTEGER
+    expect(data?.accounts[0]?.balance).toBeGreaterThan(BigInt(Number.MAX_SAFE_INTEGER));
 });

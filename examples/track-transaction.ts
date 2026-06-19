@@ -35,12 +35,12 @@ function normalizeHash(message: Message, normalizeExternal: boolean): Buffer {
 // 1) Using normalizeHash with a manually-created external message
 // ----------------------------------------------------------
 
-// Step 1: Initialize the TonAPI client
-const ta = new TonApiClient({
+// Step 1: Create TonApiClient instance
+const tonApiClient = new TonApiClient({
     baseUrl: 'https://tonapi.io'
     // apiKey: 'YOUR_API_KEY', // Optional, improves request limits and access
 });
-const adapter = new ContractAdapter(ta);
+const adapter = new ContractAdapter(tonApiClient);
 
 // Step 2: Define the wallet and recipient addresses
 const destination = Address.parse('EQCKWpx7cNMpvmcN5ObM5lLUZHZRFKqYA4xmw9jOry0ZsF9M');
@@ -83,9 +83,13 @@ console.log('Manual Message Hash:', manualExtMessageHash.toString('hex'));
 await delay(10000);
 
 // Step 8: Retrieve the resulting transaction using the normalized external hash
-const manualTransaction = await ta.blockchain.getBlockchainTransactionByMessageHash(
-    manualExtMessageHash.toString('hex')
-);
+// You can retry this step if the transaction is not found, until 
+const manualTransaction = await tonApiClient
+    .getBlockchainTransactionByMessageHash(manualExtMessageHash.toString('hex'))
+    .catch((error) => {
+        console.error('Error fetching transaction:', error.message);
+        return null;
+    });
 console.log('Manual Transaction Details:', manualTransaction);
 
 // ----------------------------------------------------------
@@ -106,7 +110,10 @@ const bocExtMessageHash = normalizeHash(bocMessage, true);
 console.log('BOC Message Hash:', bocExtMessageHash.toString('hex'));
 
 // Step 3: Retrieve the transaction using that hash
-const bocTransaction = await ta.blockchain.getBlockchainTransactionByMessageHash(
-    bocExtMessageHash.toString('hex')
-);
+const bocTransaction = await tonApiClient
+    .getBlockchainTransactionByMessageHash(bocExtMessageHash.toString('hex'))
+    .catch((error) => {
+        console.error('Error fetching transaction:', error.message);
+        return null;
+    });
 console.log('BOC Transaction Details:', bocTransaction);

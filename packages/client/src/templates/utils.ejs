@@ -1,4 +1,48 @@
+<%~ includeFile('./errors.ejs') %>
+
 type ComponentRef = keyof typeof components;
+
+/**
+ * Custom Promise interface with typed error handling
+ * This allows TypeScript to infer the correct error type in .catch() handlers
+ * and preserves error typing through .then() and .finally() chains
+ */
+export interface TonApiPromise<T, E = TonApiError> extends Promise<T> {
+    then<TResult1 = T, TResult2 = never>(
+        onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | null | undefined,
+        onrejected?: ((reason: E) => TResult2 | PromiseLike<TResult2>) | null | undefined
+    ): TonApiPromise<TResult1 | TResult2, E>;
+
+    catch<TResult = never>(
+        onrejected?: ((reason: E) => TResult | PromiseLike<TResult>) | null | undefined
+    ): TonApiPromise<T | TResult, E>;
+
+    finally(onfinally?: (() => void) | null | undefined): TonApiPromise<T, E>;
+}
+
+export type Result<T> =
+  | { data: T; error: null }
+  | { data: null; error: TonApiError };
+
+/**
+ * Conditional return type for Advanced API methods with throwOnError support
+ * @template T - The data type returned on success
+ * @template ThrowOnError - Boolean flag determining if errors should be thrown
+ *
+ * When ThrowOnError is true: returns Promise<T> (throws on error)
+ * When ThrowOnError is false: returns Promise<Result<T>> (returns {data, error})
+ */
+export type MethodResult<T, ThrowOnError extends boolean = false> =
+    ThrowOnError extends true ? Promise<T> : Promise<Result<T>>;
+
+/**
+ * Sync version of MethodResult for use with async functions
+ * (async functions automatically wrap return type in Promise)
+ * When ThrowOnError is true, returns T but the Promise will reject with TonApiError
+ * When ThrowOnError is false, returns Result<T>
+ */
+type MethodResultSync<T, ThrowOnError extends boolean = false> =
+    ThrowOnError extends true ? T : Result<T>;
 
 function snakeToCamel(snakeCaseString: string): string {
   return snakeCaseString.replace(/(_\w)/g, (match) => match[1]?.toUpperCase() ?? '');
@@ -8,42 +52,148 @@ function camelToSnake(camel: string): string {
   return camel.replace(/([A-Z])/g, (match) => `_${match.toLowerCase()}`);
 }
 
-function cellParse(src: string): Cell {
-  return Cell.fromHex(src);
+function cellParse(src: string, response: unknown): Cell {
+  try {
+    return Cell.fromHex(src);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    throw new TonApiParsingError('Cell', msg, e, response);
+  }
 }
 
 function parseHexToBigInt(str: string) {
   return str.startsWith('-') ? BigInt(str.slice(1)) * -1n : BigInt(str);
 }
 
-async function prepareResponse<U>(promise: Promise<any>, orSchema?: any): Promise<U> {
-  return await promise
-      .then(obj => prepareResponseData<U>(obj, orSchema))
-      .catch(async response => {
-          let errorMessage: string = 'Unknown error occurred';
 
-          if (response instanceof Error) {
-            errorMessage = response.message || 'Unknown fetch error';
-          } else if (response && typeof response === 'object' && typeof response.error === 'string') {
-              try {
-                const errorJson = JSONParse(response.error);
-                errorMessage = typeof errorJson === 'string'
-                  ? errorJson :
-                  errorJson?.error || `Wrong error response: ${response.error}`;
-              } catch (jsonParseError: unknown) {
-                  if (jsonParseError instanceof Error) {
-                      errorMessage = `Failed to parse error response: ${jsonParseError.message}`;
-                  } else {
-                      errorMessage = 'Failed to parse error response: Unknown parsing error';
-                  }
-              }
-          }
 
-          throw new Error(errorMessage, { cause: response });
-      });
+function addressToString(value: Address | string | undefined): string | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (typeof value === 'string') {
+    // Validate format without parsing
+    if (!Address.isFriendly(value) && !Address.isRaw(value)) {
+      throw new TonApiValidationError('Address', `Invalid address format: ${value}`, value);
+    }
+    // Return string as-is, let the API handle it
+    return value;
+  }
+
+  // Return raw format for Address objects
+  return value.toRawString();
 }
 
-function prepareResponseData<U>(obj: any, orSchema?: any): U {
+function tokenOrAddressToString(value: Address | string | undefined): string | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (typeof value === 'string') {
+    // Return string as-is without validation
+    // This allows cryptocurrency codes like "ton", "btc" to pass through
+    return value;
+  }
+
+  // Return raw format for Address objects
+  return value.toRawString();
+}
+
+function cellToString(value: Cell | string | undefined, format: 'hex' | 'base64'): string | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (typeof value === 'string') {
+    // Parse and convert to expected format
+    let cell: Cell;
+    try {
+      cell = Cell.fromHex(value);
+    } catch {
+      try {
+        cell = Cell.fromBase64(value);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        throw new TonApiValidationError('Cell', `Invalid cell format: ${msg}`, value);
+      }
+    }
+    // Convert to expected format
+    return format === 'base64' ? cell.toBoc().toString('base64') : cell.toBoc().toString('hex');
+  }
+
+  return format === 'base64' ? value.toBoc().toString('base64') : value.toBoc().toString('hex');
+}
+
+/**
+ * Prepares and validates API response data
+ * @template U - The success response type
+ * @template E - The error type (defaults to TonApiError)
+ * @throws {E} Always throws error of type E on failure
+ */
+function prepareResponse<U, E = TonApiError>(promise: Promise<any>, orSchema?: any): TonApiPromise<U, E> {
+  return promise
+      .then(obj => {
+          try {
+              return prepareResponseData<U>(obj, orSchema, obj);
+          } catch (parseError: unknown) {
+              if (parseError instanceof TonApiParsingError) {
+                  throw parseError;
+              }
+
+              const message = parseError instanceof Error
+                  ? `SDK parsing error: ${parseError.message}`
+                  : 'SDK parsing error: Unknown error';
+
+              throw new TonApiParsingError('Unknown', message, parseError, obj);
+          }
+      })
+      .catch((response: any) => {
+          // Re-throw our custom errors without wrapping
+          if (response instanceof TonApiParsingError ||
+              response instanceof TonApiNetworkError ||
+              response instanceof TonApiHttpError ||
+              response instanceof TonApiValidationError ||
+              response instanceof TonApiUnknownError) {
+              throw response;
+          }
+
+          if (response instanceof Error) {
+              throw new TonApiNetworkError(
+                  response.message || 'Network error',
+                  response
+              );
+          }
+
+          if (response && typeof response === 'object' && response.status !== undefined) {
+              const status = response.status;
+              const url = response.url || '';
+              let message: string = 'Request failed';
+              let code: string | undefined = undefined;
+
+              if (typeof response.error === 'string') {
+                  try {
+                      const errorJson = JSONParse(response.error);
+
+                      if (typeof errorJson === 'string') {
+                          message = errorJson;
+                      } else if (errorJson && typeof errorJson === 'object') {
+                          message = errorJson.error || errorJson.message || 'Request failed';
+                          code = errorJson.code || errorJson.error_code;
+                      }
+                  } catch (jsonParseError: unknown) {
+                      message = 'Failed to parse error response';
+                  }
+              }
+
+              throw new TonApiHttpError(status, message, url, code, response);
+          }
+
+          throw new TonApiUnknownError('Unknown error occurred', response);
+      }) as TonApiPromise<U, E>;
+}
+
+function prepareResponseData<U>(obj: any, orSchema?: any, originalResponse: unknown = obj): U {
   const ref = (orSchema && orSchema.$ref) as ComponentRef | undefined;
   const schema = ref ? components[ref] : orSchema;
 
@@ -64,30 +214,62 @@ function prepareResponseData<U>(obj: any, orSchema?: any): U {
   if (Array.isArray(obj)) {
     const itemSchema = schema && schema.items;
 
-    return obj.map((item) => prepareResponseData(item, itemSchema)) as unknown as U;
+    return obj.map((item) => prepareResponseData(item, itemSchema, originalResponse)) as unknown as U;
   } else if (schema) {
     if (schema.type === "string") {
       if (schema.format === "address") {
-        return Address.parse(obj as string) as U;
+        try {
+          return Address.parse(obj as string) as U;
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          throw new TonApiParsingError('Address', msg, e, originalResponse);
+        }
+      }
+
+      if (schema.format === "maybe-address") {
+        if (!obj || obj === '') {
+          return null as U;
+        }
+        try {
+          return Address.parse(obj as string) as U;
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          throw new TonApiParsingError('MaybeAddress', msg, e, originalResponse);
+        }
       }
 
       if (schema.format === "cell") {
-        return obj && (cellParse(obj as string) as U);
+        return obj && (cellParse(obj as string, originalResponse) as U);
       }
 
       if (schema['x-js-format'] === 'bigint') {
+        try {
           return BigInt(obj as string) as U;
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          throw new TonApiParsingError('BigInt', msg, e, originalResponse);
+        }
       }
 
       // maybe not used
       if (schema.format === "cell-base64") {
-        return obj && (Cell.fromBase64(obj as string) as U);
+        try {
+          return obj && (Cell.fromBase64(obj as string) as U);
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          throw new TonApiParsingError('Cell', msg, e, originalResponse);
+        }
       }
     }
 
     if (schema.type === "integer") {
       if (schema['x-js-format'] === "bigint") {
-        return BigInt(obj as number) as U;
+        try {
+          return BigInt(obj as number) as U;
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          throw new TonApiParsingError('BigInt', msg, e, originalResponse);
+        }
       }
 
       return Number(obj as number) as U;
@@ -101,7 +283,7 @@ function prepareResponseData<U>(obj: any, orSchema?: any): U {
           const itemSchema = schema.properties.tuple.items;
             return {
               type: "tuple",
-              items: obj.tuple.map((item: any) => prepareResponseData(item, itemSchema))
+              items: obj.tuple.map((item: any) => prepareResponseData(item, itemSchema, originalResponse))
             } as U;
           case "num":
             return {
@@ -111,12 +293,12 @@ function prepareResponseData<U>(obj: any, orSchema?: any): U {
           case "cell":
             return {
               type: "cell",
-              cell: cellParse(obj.cell as string)
+              cell: cellParse(obj.cell as string, originalResponse)
             } as U;
           case "slice":
             return {
               type: "slice",
-              slice: cellParse(obj.slice as string)
+              slice: cellParse(obj.slice as string, originalResponse)
             } as U;
           case "null":
             return {
@@ -127,7 +309,12 @@ function prepareResponseData<U>(obj: any, orSchema?: any): U {
               type: "nan"
             } as U;
           default:
-            throw new Error(`Unknown tuple item type: ${obj.type}`);
+            throw new TonApiParsingError(
+              'TupleItem',
+              `Unknown tuple item type: ${obj.type}`,
+              obj,
+              originalResponse
+            );
         }
       }
     }
@@ -139,7 +326,7 @@ function prepareResponseData<U>(obj: any, orSchema?: any): U {
       (acc, key) => {
           if (!schema) {
               // If schema is undefined, do not convert keys
-              acc[key] = prepareResponseData(obj[key], undefined);
+              acc[key] = prepareResponseData(obj[key], undefined, originalResponse);
               return acc;
           }
 
@@ -152,7 +339,7 @@ function prepareResponseData<U>(obj: any, orSchema?: any): U {
           // Use the specific property schema or the additionalProperties schema
           const propertySchema = isDefinedProperty ? objSchema : schema.additionalProperties;
 
-          acc[camelCaseKey] = prepareResponseData(obj[key], propertySchema);
+          acc[camelCaseKey] = prepareResponseData(obj[key], propertySchema, originalResponse);
           return acc;
       },
       {} as Record<string, unknown>
@@ -172,20 +359,26 @@ function prepareRequestData(data: any, orSchema?: any): any {
       return data.map(item => prepareRequestData(item, itemSchema));
   } else if (schema) {
       if (schema.type === 'string') {
-          if (schema.format === 'address') {
-              return (data as Address).toRawString();
-          }
-
-          if (schema.format === 'cell') {
-              return (data as Cell).toBoc().toString('hex');
-          }
-
-          if (schema.format === 'cell-base64') {
-              return (data as Cell).toBoc().toString('base64');
+          // Check x-js-format first for custom formats
+          if (schema['x-js-format'] === 'token-or-address') {
+              return tokenOrAddressToString(data as Address | string);
           }
 
           if (schema['x-js-format'] === 'bigint') {
               return (data as bigint).toString();
+          }
+
+          // Then check standard format field
+          if (schema.format === 'address') {
+              return addressToString(data as Address | string);
+          }
+
+          if (schema.format === 'cell') {
+              return cellToString(data as Cell | string, 'hex');
+          }
+
+          if (schema.format === 'cell-base64') {
+              return cellToString(data as Cell | string, 'base64');
           }
       }
   }

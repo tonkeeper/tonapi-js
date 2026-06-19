@@ -120,3 +120,67 @@ export const getAccounts = {
         }
     ]
 };
+
+export const getAccountEvent = {
+    event_id: 'test-event-id',
+    account: {
+        address: '0:009d03ddede8c2620a72f999d03d5888102250a214bf574a29ff64df80162168',
+        is_scam: false,
+        is_wallet: true
+    },
+    timestamp: 1717957542,
+    actions: [
+        {
+            type: 'NftItemTransfer',
+            status: 'ok',
+            NftItemTransfer: {
+                nft: '0:7c9fc62291740a143086c807fe322accfd12737b3c2243676228176707c7ce40',
+                sender: {
+                    address: '0:009d03ddede8c2620a72f999d03d5888102250a214bf574a29ff64df80162168',
+                    is_scam: false,
+                    is_wallet: true
+                },
+                recipient: {
+                    address: '0:bada76699b7e8417300355f5c355dff83a96c5c9cd43df0dd9bc23c72e78bc0e',
+                    is_scam: false,
+                    is_wallet: true
+                }
+            }
+        }
+    ],
+    is_scam: false,
+    lt: 42259259000008,
+    in_progress: false
+};
+
+export const getAccountEventWithEmptyNft = {
+    event_id: 'test-event-id-empty',
+    account: {
+        address: '0:009d03ddede8c2620a72f999d03d5888102250a214bf574a29ff64df80162168',
+        is_scam: false,
+        is_wallet: true
+    },
+    timestamp: 1717957542,
+    actions: [
+        {
+            type: 'NftItemTransfer',
+            status: 'ok',
+            NftItemTransfer: {
+                nft: '',
+                sender: {
+                    address: '0:009d03ddede8c2620a72f999d03d5888102250a214bf574a29ff64df80162168',
+                    is_scam: false,
+                    is_wallet: true
+                },
+                recipient: {
+                    address: '0:bada76699b7e8417300355f5c355dff83a96c5c9cd43df0dd9bc23c72e78bc0e',
+                    is_scam: false,
+                    is_wallet: true
+                }
+            }
+        }
+    ],
+    is_scam: false,
+    lt: 42259259000009,
+    in_progress: false
+};

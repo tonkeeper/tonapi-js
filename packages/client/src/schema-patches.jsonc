@@ -1,0 +1,75 @@
+{
+  // Fix ChartPoints schema to use prefixItems for TypeScript tuple type
+  // Original has generic array structure, we need tuple [timestamp, price]
+  "components.schemas.ChartPoints.prefixItems": [
+    {
+      "type": "integer",
+      "format": "int64",
+      "description": "Unix timestamp of the data point"
+    },
+    {
+      "type": "number",
+      "description": "Decimal price of the token in the requested currency"
+    }
+  ],
+  "components.schemas.ChartPoints.items": false,
+  "components.schemas.ChartPoints.additionalItems": false,
+  "components.schemas.ChartPoints.example": [1668436763, 97.21323234],
+
+  // Fix /v2/rates/chart response to return array of ChartPoints
+  // Original has direct $ref to ChartPoints, but we need array of ChartPoints
+  "paths[\"/v2/rates/chart\"].get.responses[\"200\"].content[\"application/json\"].schema.properties.points": {
+    "type": "array",
+    "items": {
+      "$ref": "#/components/schemas/ChartPoints"
+    }
+  },
+
+  // Improve /v2/rates endpoint documentation
+  // Update tokens parameter description and example
+  "paths[\"/v2/rates\"].get.parameters[0].description": "accept cryptocurrencies and jetton master addresses, separated by commas",
+  "paths[\"/v2/rates\"].get.parameters[0].schema.example": ["ton", "btc", "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs"],
+
+  // Update currencies parameter description and example
+  "paths[\"/v2/rates\"].get.parameters[1].description": "accept cryptocurrencies and all possible fiat currencies",
+  "paths[\"/v2/rates\"].get.parameters[1].schema.example": ["ton", "btc", "usd", "rub"],
+
+  // Improve /v2/rates/chart endpoint documentation
+  // Update token parameter description
+  "paths[\"/v2/rates/chart\"].get.parameters[0].description": "accept cryptocurrency or jetton master address",
+
+  // Fix format for token-or-address parameters
+  // These parameters accept both Address objects and cryptocurrency codes (ton, btc, etc.)
+  // Redefine items/schema objects without format field, using only x-js-format
+  "paths[\"/v2/rates\"].get.parameters[0].schema.items": {
+    "type": "string",
+    "x-js-format": "token-or-address"
+  },
+  "paths[\"/v2/rates/chart\"].get.parameters[0].schema": {
+    "type": "string",
+    "x-js-format": "token-or-address",
+    "example": [
+      {
+        "value": "ton",
+        "description": "cryptocurrency code (ton, btc, etc.)"
+      },
+      {
+        "value": "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs",
+        "description": "jetton master address usdt for example"
+      }
+    ]
+  },
+
+  // Fix JettonTransferPayload response fields to use cell format
+  // custom_payload and state_init are hex-encoded BoC that should be parsed as Cell
+  "components.schemas.JettonTransferPayload.properties.custom_payload": {
+    "type": "string",
+    "format": "cell",
+    "description": "hex-encoded BoC"
+  },
+  "components.schemas.JettonTransferPayload.properties.state_init": {
+    "type": "string",
+    "format": "cell",
+    "description": "hex-encoded BoC"
+  }
+}

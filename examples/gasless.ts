@@ -11,16 +11,17 @@ import {
     storeMessageRelaxed
 } from '@ton/ton';
 
-import { TonApiClient } from '@ton-api/client';
+import { TonApiClient, TonApiHttpError } from '@ton-api/client';
 import { ContractAdapter } from '@ton-api/ton-adapter';
 
+// Create TonApiClient instance
 // if you need to send lots of requests in parallel, make sure you use a tonapi token.
-const ta = new TonApiClient({
+const tonApiClient = new TonApiClient({
     baseUrl: 'https://tonapi.io',
-    apiKey: 'YOUR_API_KEY'
+    // apiKey: 'YOUR_API_KEY'
 });
 
-const provider = new ContractAdapter(ta);
+const provider = new ContractAdapter(tonApiClient);
 
 const OP_CODES = {
     TK_RELAYER_FEE: 0x878da6e3,
@@ -47,13 +48,15 @@ const contract = provider.open(wallet);
 
 console.log('Wallet address:', wallet.address.toString());
 
-const jettonWalletAddressResult = await ta.blockchain.execGetMethodForBlockchainAccount(
-    usdtMaster,
-    'get_wallet_address',
-    {
+const jettonWalletAddressResult = await tonApiClient
+    .execGetMethodForBlockchainAccount(usdtMaster, 'get_wallet_address', {
         args: [wallet.address.toRawString()]
-    }
-);
+    })
+    .catch((getWalletError: unknown) => {
+        console.error('Error getting jetton wallet:',
+            getWalletError instanceof Error ? getWalletError.message : String(getWalletError));
+        process.exit(1);
+    });
 
 const jettonWallet = Address.parse(jettonWalletAddressResult.decoded.jetton_wallet_address);
 
@@ -90,11 +93,17 @@ const messageToEstimate = beginCell()
 // we send a single message containing a transfer from our wallet to a desired destination.
 // as a result of estimation, TonAPI returns a list of messages that we need to sign.
 // the first message is a fee transfer to the relay address, the second message is our original transfer.
-const params = await ta.gasless.gaslessEstimate(usdtMaster, {
-    walletAddress: wallet.address,
-    walletPublicKey: keyPair.publicKey.toString('hex'),
-    messages: [{ boc: messageToEstimate }]
-}); //.catch(error => console.error(error));
+const params = await tonApiClient
+    .gaslessEstimate(usdtMaster, {
+        walletAddress: wallet.address,
+        walletPublicKey: keyPair.publicKey.toString('hex'),
+        messages: [{ boc: messageToEstimate }]
+    })
+    .catch((estimateError: unknown) => {
+        console.error('Error estimating gasless transfer:',
+            estimateError instanceof Error ? estimateError.message : String(estimateError));
+        process.exit(1);
+    });
 
 console.log('Estimated transfer:', params);
 
@@ -129,19 +138,33 @@ const extMessage = beginCell()
     .endCell();
 
 // Send a gasless transfer
-ta.gasless
+const sendResult = await tonApiClient
     .gaslessSend({
         walletPublicKey: keyPair.publicKey.toString('hex'),
         boc: extMessage
     })
-    .then(() => console.log('A gasless transfer sent!'))
-    .catch(error => console.error(error.message));
+    .catch((sendError: unknown) => {
+        if (sendError instanceof TonApiHttpError) {
+            console.error('Error sending gasless transfer:', sendError.message, 'Status:', sendError.status);
+        } else {
+            console.error('Error sending gasless transfer:', sendError instanceof Error ? sendError.message : String(sendError));
+        }
+        return null;
+    });
+
+if (sendResult) {
+    console.log('A gasless transfer sent!');
+}
 
 async function printConfigAndReturnRelayAddress(): Promise<Address> {
-    const cfg = await ta.gasless.gaslessConfig();
+    const cfg = await tonApiClient.gaslessConfig().catch((error: unknown) => {
+        console.error('Error getting gasless config:',
+            error instanceof Error ? error.message : String(error));
+        process.exit(1);
+    });
 
     console.log('Available jettons for gasless transfer');
-    console.log(cfg.gasJettons.map(gasJetton => gasJetton.masterId));
+    console.log(cfg.gasJettons.map((gasJetton: any) => gasJetton.masterId));
 
     console.log(`Relay address to send fees to: ${cfg.relayAddress}`);
     return cfg.relayAddress;

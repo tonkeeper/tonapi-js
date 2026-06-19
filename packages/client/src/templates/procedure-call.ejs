@@ -1,5 +1,5 @@
 <%
-const { utils, route, config } = it;
+const { utils, route, config, isFlat } = it;
 const { requestBodyInfo, responseBodyInfo, responseBodySchema, specificArgNameResolver } = route;
 const { _, getInlineParseContent, getParseContent, parseSchema, getComponentByRef, require, clearSchemaReferenceInformation } = utils;
 const { parameters, path, method, payload, query, formData, security, requestParams } = route.request;
@@ -23,16 +23,50 @@ const pathParams = originPathParams.map(
 );
 // #endregion
 
+// #region Helper functions for Advanced API (global functions)
+const hasPathParams = () => pathParams.length > 0;
+const hasQueryParams = () => query != null;
+const hasBodyParams = () => payload != null;
+const isOptionsRequired = () => {
+    // Options required if there are non-optional path, body, or query params
+    const hasRequiredPath = pathParams.some(param => !param.optional);
+    const hasRequiredBody = payload && !payload.optional;
+    const hasRequiredQuery = query && !query.optional;
+    return hasRequiredPath || hasRequiredBody || hasRequiredQuery;
+};
+// #endregion
+
 const isFetchTemplate = config.httpClientType === HTTP_CLIENT.FETCH;
 
+// Use consistent parameter name for both class methods and global functions
 const requestConfigParam = {
-    name: specificArgNameResolver.resolve(RESERVED_REQ_PARAMS_ARG_NAMES),
+    name: 'params',
     optional: true,
     type: "RequestParams",
     defaultValue: "{}",
 }
 
-const argToTmpl = ({ name, optional, type, defaultValue }) => `${name}${!defaultValue && optional ? '?' : ''}: ${type}${defaultValue ? ` = ${defaultValue}` : ''}`;
+// Transform Address/Cell types to accept strings in parameter types
+const transformParameterType = (typeString) => {
+    if (!typeString) return typeString;
+
+    // Replace Address with (Address | string), Cell with (Cell | string)
+    // Handle all contexts:
+    // - Simple: Address -> (Address | string)
+    // - Arrays: Address[] -> (Address | string)[]
+    // - Unions: Address | null -> (Address | string) | null
+    // - Objects: { field: Address } -> { field: (Address | string) }
+    // - Nested: { items: Address[] } -> { items: (Address | string)[] }
+
+    return typeString
+        .replace(/\bAddress\b/g, '(Address | string)')
+        .replace(/\bCell\b/g, '(Cell | string)');
+};
+
+const argToTmpl = ({ name, optional, type, defaultValue }) => {
+    const paramType = transformParameterType(type);
+    return `${name}${!defaultValue && optional ? '?' : ''}: ${paramType}${defaultValue ? ` = ${defaultValue}` : ''}`;
+};
 
 const rawWrapperArgs = _.compact([
     ...pathParams,
@@ -42,10 +76,13 @@ const rawWrapperArgs = _.compact([
 ]);
 
 // Sort by optionality
-const wrapperArgs = _
-    .sortBy(rawWrapperArgs, [o => o.optional])
+const sortedWrapperArgs = _.sortBy(rawWrapperArgs, [o => o.optional]);
+const wrapperArgs = sortedWrapperArgs
     .map(argToTmpl)
     .join(', ');
+
+// For passing arguments to class method in correct order (use sorted order)
+const passedArgs = sortedWrapperArgs.map(arg => arg.name).join(', ');
 
 // RequestParams["type"]
 const requestContentKind = {
@@ -71,9 +108,11 @@ const bodyContentKindTmpl = requestContentKind[requestBodyInfo.contentKind] || n
 const responseFormatTmpl = responseContentKind[successResponse.contentKind] || null;
 const securityTmpl = security ? 'true' : null;
 
-const describeReturnType = () => !config.toJS ? '' : `Promise<HttpResponse<${type}, ${errorType}>`;
+// For throwOnError: true, return PromiseWithError<T, TonApiError>
+// For throwOnError: false, return Promise<Result<T>>
+const describeReturnType = () => `Promise<MethodResultSync<${type}, ThrowOnError>>`;
 
-const reducedPathParams = addressType.map((name) => `const ${name} = ${getNameAddressFromId(name)}.toRawString();`).join('\n');
+const reducedPathParams = addressType.map((name) => `const ${name} = addressToString(${getNameAddressFromId(name)});`).join('\n');
 
 const rawRequestBody = route.raw.requestBody;
 const rawRequestBodySchema = rawRequestBody && rawRequestBody.$ref ? getComponentByRef(rawRequestBody.$ref) : rawRequestBody;
@@ -87,15 +126,112 @@ const requestBodyTmpl = rawRequestBodySchemaContent ? `, ${JSON.stringify(utils.
 //     global.singleRunTestConsole = true;
 // }
 
-const queryAddressParams = route.routeParams.query.filter(param => param.format === 'address')
-const queryTmplValue = queryAddressParams.length === 0 ? queryTmpl : `${queryTmpl} && {
+const queryTokenOrAddressParams = route.routeParams.query.filter(param => {
+    if (!param.schema) return false;
+    // Check both schema and schema.items for x-js-format (items for arrays)
+    return param.schema['x-js-format'] === 'token-or-address' ||
+           (param.schema.items && param.schema.items['x-js-format'] === 'token-or-address');
+})
+const queryAddressParams = route.routeParams.query.filter(param => param.format === 'address' && !queryTokenOrAddressParams.includes(param))
+const queryAddressLikeParams = [...queryAddressParams, ...queryTokenOrAddressParams]
+const queryTmplValue = queryAddressLikeParams.length === 0 ? queryTmpl : `${queryTmpl} && {
     ...${queryTmpl},
-    ${queryAddressParams.map(param => `${param.name}: ${queryTmpl}.${param.name}?.toRawString()`).join(',\n')}
+    ${queryAddressParams.map(param => `${param.name}: addressToString(${queryTmpl}.${param.name})`).join(',\n')}${queryAddressParams.length > 0 && queryTokenOrAddressParams.length > 0 ? ',\n' : ''}${queryTokenOrAddressParams.map(param => {
+        const isArray = param.schema && param.schema.type === 'array';
+        return isArray
+            ? `${param.name}: ${queryTmpl}.${param.name}.map(item => tokenOrAddressToString(item))`
+            : `${param.name}: tokenOrAddressToString(${queryTmpl}.${param.name})`;
+    }).join(',\n')}
 }`
 const queryImplodeParams = route.routeParams.query.
     filter(param => param.explode === false)
     .map(param => param.name)
 const queryImplodeTmpl = queryImplodeParams.length === 0 ? null : JSON.stringify(queryImplodeParams)
+
+// #region Advanced API options type generation (for isFlat=true)
+const generatePathFieldName = (param) => {
+    // Remove _Address suffix to get original parameter name
+    return param.name.endsWith('_Address') ? param.name.slice(0, -8) : param.name;
+};
+
+// Generate type declaration for options (e.g., type StatusOptions<ThrowOnError> = {...})
+const generateOptionsTypeDeclaration = () => {
+    const fields = [];
+
+    // Always add client
+    fields.push('client?: TonApiClient;');
+
+    // Add path field if there are path parameters
+    if (hasPathParams()) {
+        const pathFields = pathParams.map(param => {
+            const fieldName = generatePathFieldName(param);
+            const optional = param.optional ? '?' : '';
+            const paramType = transformParameterType(param.type);
+            return `${fieldName}${optional}: ${paramType}`;
+        }).join(';\n        ');
+        fields.push(`path: {\n        ${pathFields};\n    };`);
+    }
+
+    // Add body field if there is a payload
+    if (hasBodyParams()) {
+        const bodyOptional = payload.optional ? '?' : '';
+        fields.push(`body${bodyOptional}: ${transformParameterType(payload.type)};`);
+    }
+
+    // Add query field if there are query parameters
+    if (hasQueryParams()) {
+        const queryOptional = query.optional ? '?' : '';
+        fields.push(`query${queryOptional}: ${transformParameterType(query.type)};`);
+    }
+
+    // Always add params
+    fields.push('params?: RequestParams;');
+
+    // Add throwOnError for conditional return type
+    fields.push('throwOnError?: ThrowOnError;');
+
+    const typeName = _.upperFirst(route.routeName.usage) + 'Options';
+    return `type ${typeName}<ThrowOnError extends boolean = false> = {\n    ${fields.join('\n    ')}\n};`;
+};
+
+// Generate the type name to use in function signature
+const generateOptionsTypeName = () => {
+    const typeName = _.upperFirst(route.routeName.usage) + 'Options';
+    return `${typeName}<ThrowOnError>`;
+};
+
+const optionsType = generateOptionsTypeName();
+const optionsArgument = `options${isOptionsRequired() ? '' : '?'}`;
+
+// Generate all arguments for calling the instance method
+// Must match the order of sortedWrapperArgs (which sorts by optionality)
+const generateAllArguments = () => {
+    const args = [];
+
+    // Build args using sortedWrapperArgs order (path, query, body, params sorted by optionality)
+    sortedWrapperArgs.forEach(arg => {
+        if (arg === requestConfigParam) {
+            // params argument - use optional chaining only if options itself is optional
+            args.push(isOptionsRequired() ? 'options.params' : 'options?.params');
+        } else if (arg === payload) {
+            // body argument
+            const isRequired = !payload.optional;
+            args.push(isRequired ? 'options.body' : 'options?.body');
+        } else if (arg === query) {
+            // query argument
+            const isRequired = !query.optional;
+            args.push(isRequired ? 'options.query' : 'options?.query');
+        } else if (pathParams.includes(arg)) {
+            // path parameter
+            const fieldName = generatePathFieldName(arg);
+            const isRequired = !arg.optional;
+            args.push(isRequired ? `options.path.${fieldName}` : `options?.path?.${fieldName}`);
+        }
+    });
+
+    return args.join(', ');
+};
+// #endregion
 %>
 /**
 <%~ routeDocs.description %>
@@ -105,9 +241,40 @@ const queryImplodeTmpl = queryImplodeParams.length === 0 ? null : JSON.stringify
 <%~ routeDocs.lines %>
 
  */
-<%~ route.routeName.usage %><%~ route.namespace ? ': ' : ' = ' %> (<%~ wrapperArgs %>)<%~ config.toJS ? `: ${describeReturnType()}` : "" %> => {
+<% if (isFlat) { %>
+<%~ generateOptionsTypeDeclaration() %>
+
+export const <%~ route.routeName.usage %> = async <ThrowOnError extends boolean = false>(<%~ optionsArgument %>: <%~ optionsType %>): <%~ describeReturnType() %> => {
+    try {
+        const client = <%= isOptionsRequired() ? 'options.client' : 'options?.client' %> || getDefaultClient();
+        const result = await client.<%~ route.routeName.usage %>(<%~ generateAllArguments() %>);
+
+        // If throwOnError is true, return data directly
+        if (options?.throwOnError) {
+            return result as MethodResultSync<<%~ type %>, ThrowOnError>;
+        }
+
+        return { data: result, error: null } as MethodResultSync<<%~ type %>, ThrowOnError>;
+    } catch (error) {
+        // If throwOnError is true, rethrow the error
+        if (options?.throwOnError) {
+            throw error;
+        }
+        return { data: null, error: error as TonApiError } as MethodResultSync<<%~ type %>, ThrowOnError>;
+    }
+};
+<% } else { %>
+/**
+<%~ routeDocs.description %>
+
+ *<% /* Here you can add some other JSDoc tags */ %>
+
+<%~ routeDocs.lines %>
+
+ */
+<%~ route.routeName.usage %>(<%~ wrapperArgs %>): TonApiPromise<<%~ type %>, TonApiError> {
     <%~ reducedPathParams %>
-    const req = <%~ config.singleHttpClient ? 'this.http.request' : 'this.request' %><<%~ type %>, <%~ errorType %>>({
+    const req = this.http.request<<%~ type %>, TonApiError>({
         path: `<%~ path %>`,
         method: '<%~ _.upperCase(method) %>',
         <%~ queryTmpl ? `query: ${queryTmplValue},` : '' %>
@@ -119,6 +286,7 @@ const queryImplodeTmpl = queryImplodeParams.length === 0 ? null : JSON.stringify
         ...<%~ _.get(requestConfigParam, "name") %>,
     });
 
-    return prepareResponse<<%~ type %>>(req<%~ schemaTmpl %>);
-}<%~ route.namespace ? ',' : '' %>
+    return prepareResponse<<%~ type %>, TonApiError>(req<%~ schemaTmpl %>);
+}
+<% } %>
 

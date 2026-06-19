@@ -3,18 +3,18 @@ import { mnemonicNew, mnemonicToPrivateKey } from '@ton/crypto';
 import { TonApiClient } from '@ton-api/client';
 import { ContractAdapter } from '@ton-api/ton-adapter';
 import { test, vi, expect } from 'vitest';
-
-// Initialize TonApi client
-const ta = new TonApiClient({
-    baseUrl: 'https://tonapi.io'
-    // apiKey: 'YOUR_API_KEY' // Uncomment this line and set your API key
-});
-
-// Create an adapter
-const adapter = new ContractAdapter(ta);
+import { createMockFetch } from './utils/test-helpers';
 
 // Create and use a wallet contract
-async function main() {
+async function main(mockFetch: typeof fetch) {
+    // Create TonApiClient with mocked fetch
+    const tonApiClient = new TonApiClient({
+        baseUrl: 'https://tonapi.io',
+        fetch: mockFetch
+    });
+
+    // Create an adapter with explicit client
+    const adapter = new ContractAdapter(tonApiClient);
     const mnemonics = await mnemonicNew();
     const keyPair = await mnemonicToPrivateKey(mnemonics);
     const wallet = WalletContractV5R1.create({ workchain: 0, publicKey: keyPair.publicKey });
@@ -45,12 +45,16 @@ async function main() {
 }
 
 test('Readme example', async () => {
+    const mockFetch = createMockFetch({
+        accounts: new Map() // All addresses return uninit with 0 balance
+    });
+
     const consoleLogMock = vi.spyOn(console, 'log').mockImplementation(() => {});
 
-    await main();
+    await main(mockFetch);
 
-    // Check if console.log was called twice
-    expect(consoleLogMock).toHaveBeenCalledTimes(1);
+    // Check if console.log was called (Balance + error from sendTransfer)
+    expect(consoleLogMock.mock.calls.length).toBeGreaterThanOrEqual(1);
 
     // Check the first console.log call (Balance)
     expect(consoleLogMock.mock.calls[0]).toEqual(['Balance:', '0']);
