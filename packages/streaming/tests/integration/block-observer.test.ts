@@ -1,7 +1,8 @@
 import { BlocksObserver, WebsocketStreamProvider } from '../../src';
 import { TONAPI_TOKEN } from '../env';
+import { describeIntegration } from '../describe-integration';
 
-describe('Blocks observer tests', () => {
+describeIntegration('Blocks observer tests', () => {
     let wsProvider: WebsocketStreamProvider;
     let blockObserver: BlocksObserver;
 

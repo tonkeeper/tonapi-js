@@ -142,7 +142,8 @@ class HttpClient {
             .map((val: any) => encodeURIComponent(typeof val === 'number' ? val : `${val}`))
             .join(',');
 
-        return this.encodeQueryParam(key, value);
+        // Don't double-encode: value is already encoded, only encode the key
+        return `${encodeURIComponent(key)}=${value}`;
     }
 
     protected addArrayQueryParam(query: QueryParamsType, key: string, implodeParams?: string[]) {
@@ -277,7 +278,7 @@ class HttpClient {
                                 return r;
                             }
                             r.error = data as E;
-                            
+
                             return r;
                         })
                         .catch(e => {
@@ -289,6 +290,8 @@ class HttpClient {
                 this.abortControllers.delete(cancelToken);
             }
 
+            // Return result object instead of throwing
+            // prepareResponse will handle error conversion
             if (!response.ok) throw result;
             return result.data;
         });

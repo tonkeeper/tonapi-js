@@ -4,7 +4,13 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**"]
+      "outputs": ["dist/**"],
+      "inputs": [
+        "src/**/*",
+        "tsup.config.ts",
+        "tsconfig.json",
+        "package.json"
+      ]
     },
     "build:watch": {
       "dependsOn": ["^build"],
@@ -13,6 +19,9 @@
     "test": {
       "dependsOn": ["build"],
       "inputs": ["src/**/*.tsx", "src/**/*.ts", "test/**/*.ts", "test/**/*.tsx"]
+    },
+    "typecheck": {
+      "outputs": []
     },
     "clean": {
       "cache": false

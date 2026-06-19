@@ -2,8 +2,10 @@ import { Address, Contract, ContractProvider, TupleItem } from '@ton/core';
 import { WalletContractV4 } from '@ton/ton';
 import { TonApiClient } from '@ton-api/client';
 
-const ta = new TonApiClient({
-    baseUrl: 'https://tonapi.io'
+// Create TonApiClient instance
+const tonApiClient = new TonApiClient({
+    baseUrl: 'https://tonapi.io',
+    apiKey: process.env.TONAPI_API_KEY
 });
 
 export class NftItem implements Contract {
@@ -37,15 +39,16 @@ export class WalletItem implements Contract {
     }
 
     static async createFromAddress(address: Address) {
-        const accountData = await ta.blockchain.execGetMethodForBlockchainAccount(
-            address,
-            'get_public_key'
-        );
-        const workchain = address.workChain;
-        const publicKey = BigInt(accountData.decoded.public_key);
-        const bufferPublicKey = Buffer.from(publicKey.toString(16), 'hex');
+        try {
+            const accountData = await tonApiClient.execGetMethodForBlockchainAccount(address, 'get_public_key');
+            const workchain = address.workChain;
+            const publicKey = BigInt(accountData.decoded.public_key);
+            const bufferPublicKey = Buffer.from(publicKey.toString(16), 'hex');
 
-        return new WalletItem(address, workchain, bufferPublicKey).walletContract;
+            return new WalletItem(address, workchain, bufferPublicKey).walletContract;
+        } catch (error) {
+            throw new Error(`Failed to get public key: ${error instanceof Error ? error.message : String(error)}`);
+        }
     }
 
     public getBalance(provider: ContractProvider) {

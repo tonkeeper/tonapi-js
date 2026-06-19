@@ -1,7 +1,8 @@
 import { TraceObserver, WebsocketStreamProvider } from '../../src';
 import { TONAPI_TOKEN } from '../env';
+import { describeIntegration } from '../describe-integration';
 
-describe('Trace observer tests', () => {
+describeIntegration('Trace observer tests', () => {
     let wsProvider: WebsocketStreamProvider;
     let traceObserver: TraceObserver;
 

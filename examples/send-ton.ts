@@ -3,14 +3,14 @@ import { mnemonicToPrivateKey } from '@ton/crypto';
 import { TonApiClient } from '@ton-api/client';
 import { ContractAdapter } from '@ton-api/ton-adapter';
 
-// Initialize TonApi client
-const ta = new TonApiClient({
+// Create TonApiClient instance
+const tonApiClient = new TonApiClient({
     baseUrl: 'https://tonapi.io',
-    apiKey: 'YOUR_API_KEY', // Optional, improves limits and access
+    // apiKey: 'YOUR_API_KEY', // Optional, improves limits and access
 });
 
 // Create an adapter for interacting with contracts
-const adapter = new ContractAdapter(ta);
+const adapter = new ContractAdapter(tonApiClient);
 
 // Convert mnemonic phrase to a private key
 const mnemonics = 'word1 word2 ...'.split(' '); // Replace with your mnemonic phrase
